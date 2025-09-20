@@ -1,2 +1,2 @@
 # WasteBins
-MicroProcessors Project
+This is a prototype for the microprocessors and microelectronics lab.
