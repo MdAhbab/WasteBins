@@ -1,0 +1,99 @@
+{% extends 'bins/base.html' %}
+
+{% block title %}Login - Smart Waste Management{% endblock %}
+
+{% block content %}
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h2>🔐 Welcome Back</h2>
+      <p>Sign in to your Smart Waste Management account</p>
+    </div>
+    
+    {% if form.errors %}
+      <div class="alert alert-error">
+        <strong>⚠️ Login Failed</strong>
+        <ul>
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+    
+    <form method="post" id="login-form" class="login-form">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label for="username">👤 Username</label>
+        <input 
+          type="text" 
+          name="username" 
+          id="username"
+          placeholder="Enter your username"
+          required 
+          autocomplete="username"
+          class="form-input"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label for="password">🔑 Password</label>
+        <input 
+          type="password" 
+          name="password" 
+          id="password"
+          placeholder="Enter your password"
+          required 
+          autocomplete="current-password"
+          class="form-input"
+        >
+      </div>
+      
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="remember" name="remember">
+          <label for="remember" class="checkbox-label">Remember me</label>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn-primary btn-full">
+        <span class="btn-text">🚀 Sign In</span>
+        <span class="btn-loading">⏳ Signing in...</span>
+      </button>
+    </form>
+    
+    <div class="login-footer">
+      <p>Don't have an account? <a href="/signup/">Create one here</a></p>
+      <p><a href="/password-reset/">Forgot your password?</a></p>
+    </div>
+    
+    <div class="login-info">
+      <div class="info-item">
+        <span class="info-icon">📊</span>
+        <span>Real-time monitoring</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🤖</span>
+        <span>AI-powered optimization</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🗺️</span>
+        <span>Smart route planning</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/bins/js/auth.js"></script>
+{% endblock %}

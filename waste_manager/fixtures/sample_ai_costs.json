@@ -1,0 +1,7 @@
+[
+  {"model": "bins.aicost", "pk": 1, "fields": {"node": 1, "features": {"temperature": 31.0, "humidity": 60.0, "gas_level": 0.35}, "predicted_cost": 0.50, "timestamp": "2025-09-02T00:00:00Z", "model_version": "rf_100_42"}},
+  {"model": "bins.aicost", "pk": 2, "fields": {"node": 2, "features": {"temperature": 28.0, "humidity": 63.0, "gas_level": 0.22}, "predicted_cost": 0.30, "timestamp": "2025-09-02T00:00:00Z", "model_version": "rf_100_42"}},
+  {"model": "bins.aicost", "pk": 3, "fields": {"node": 3, "features": {"temperature": 32.0, "humidity": 58.0, "gas_level": 0.45}, "predicted_cost": 0.70, "timestamp": "2025-09-02T00:00:00Z", "model_version": "rf_100_42"}},
+  {"model": "bins.aicost", "pk": 4, "fields": {"node": 4, "features": {"temperature": 27.0, "humidity": 70.0, "gas_level": 0.15}, "predicted_cost": 0.25, "timestamp": "2025-09-02T00:00:00Z", "model_version": "rf_100_42"}},
+  {"model": "bins.aicost", "pk": 5, "fields": {"node": 5, "features": {"temperature": 26.5, "humidity": 68.0, "gas_level": 0.18}, "predicted_cost": 0.28, "timestamp": "2025-09-02T00:00:00Z", "model_version": "rf_100_42"}}
+]

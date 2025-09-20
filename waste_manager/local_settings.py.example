@@ -1,0 +1,42 @@
+# local_settings.py - Development settings override
+# Copy this file and modify for your local development environment
+# This file should be in .gitignore and not committed to version control
+
+# Database - Override for local development
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# Security - Development only
+# SECRET_KEY = 'your-development-secret-key-here'
+
+# Debug settings
+# DEBUG = True
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+# Email backend for development
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Logging for development
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['console'],
+#             'level': 'INFO',
+#         },
+#         'bins': {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#         },
+#     },
+# }

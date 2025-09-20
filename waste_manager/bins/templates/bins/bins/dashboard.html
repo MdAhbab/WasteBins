@@ -1,0 +1,237 @@
+{% extends 'bins/base.html' %}
+
+{% block title %}Dashboard - Smart Waste Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>📊 Dashboard</h2>
+  <p>Real-time monitoring and smart optimization for waste management</p>
+</div>
+
+<section class="dashboard-stats">
+  <div class="stat-card">
+    <div class="stat-icon">🗑️</div>
+    <div class="stat-content">
+      <h3>Active Bins</h3>
+      <div class="stat-value">{{ active_bins|default:7 }}</div>
+      <div class="stat-change positive">+2 this week</div>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon">📈</div>
+    <div class="stat-content">
+      <h3>Collection Rate</h3>
+      <div class="stat-value">92%</div>
+      <div class="stat-change positive">+5% vs last month</div>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon">🤖</div>
+    <div class="stat-content">
+      <h3>AI Accuracy</h3>
+      <div class="stat-value">94.7%</div>
+      <div class="stat-change positive">+1.2% improvement</div>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon">⏱️</div>
+    <div class="stat-content">
+      <h3>Avg Route Time</h3>
+      <div class="stat-value">24min</div>
+      <div class="stat-change negative">-8min optimized</div>
+    </div>
+  </div>
+</section>
+
+<section class="widgets">
+  <div class="card readings-card">
+    <div class="card-header">
+      <h3>📡 Real-time Sensor Readings</h3>
+      <div class="status-indicator status-online"></div>
+      <span class="status-text">Live</span>
+    </div>
+    <div class="table-container">
+      <table id="readings-table" class="data-table">
+        <thead>
+          <tr>
+            <th>📍 Node</th>
+            <th>🌡️ Temp (°C)</th>
+            <th>💧 Humidity (%)</th>
+            <th>💨 Gas Level</th>
+            <th>⏰ Last Update</th>
+            <th>📊 Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in latest_readings %}
+          <tr>
+            <td class="node-name">{{ r.node.name }}</td>
+            <td class="temperature">{{ r.temperature|floatformat:1 }}</td>
+            <td class="humidity">{{ r.humidity|floatformat:1 }}</td>
+            <td class="gas-level">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ r.gas_level }}%"></div>
+              </div>
+              <span>{{ r.gas_level|floatformat:1 }}%</span>
+            </td>
+            <td class="timestamp">{{ r.timestamp }}</td>
+            <td class="status">
+              {% if r.gas_level > 80 %}
+                <span class="badge badge-danger">Critical</span>
+              {% elif r.gas_level > 60 %}
+                <span class="badge badge-warning">High</span>
+              {% else %}
+                <span class="badge badge-success">Normal</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="no-data">
+              <div class="empty-state">
+                <span class="empty-icon">📊</span>
+                <p>No sensor readings available</p>
+                <small>Readings will appear here when sensors start reporting</small>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer">
+      <small class="last-updated">Last updated: <span id="last-update">just now</span></small>
+      <button class="btn-small" onclick="pollReadings()">🔄 Refresh</button>
+    </div>
+  </div>
+
+  <div class="card route-card">
+    <div class="card-header">
+      <h3>🗺️ Optimized Collection Route</h3>
+      <div class="route-controls">
+        <label for="alpha" class="control-label">AI Weight (α):</label>
+        <input id="alpha" type="range" min="0" max="2" step="0.1" value="0.5" class="alpha-slider">
+        <span id="alpha-value" class="alpha-value">0.5</span>
+      </div>
+    </div>
+    <div class="route-content">
+      <pre id="route-card" class="route-display">{{ latest_route|default:"No route computed yet. Click 'Compute Route' to generate an optimized path." }}</pre>
+    </div>
+    <div class="card-footer">
+      <button onclick="computeRoute()" class="btn-primary">
+        🧮 Compute Optimal Route
+      </button>
+      <button onclick="clearRoute()" class="btn-secondary">
+        🗑️ Clear Route
+      </button>
+    </div>
+  </div>
+
+  <div class="card system-card">
+    <div class="card-header">
+      <h3>⚙️ System Health</h3>
+    </div>
+    <div class="system-stats">
+      <div class="system-item">
+        <span class="system-label">🕐 Server Time:</span>
+        <span id="server-time" class="system-value">{{ now|date:"H:i:s" }}</span>
+      </div>
+      <div class="system-item">
+        <span class="system-label">🤖 Model Version:</span>
+        <span id="model-version" class="system-value">{{ model_version|default:"v1.0.0" }}</span>
+      </div>
+      <div class="system-item">
+        <span class="system-label">📡 API Status:</span>
+        <span class="system-value">
+          <span class="status-indicator status-online"></span>
+          <span class="status-text">Online</span>
+        </span>
+      </div>
+      <div class="system-item">
+        <span class="system-label">🔄 Auto-refresh:</span>
+        <span class="system-value">
+          <button id="auto-refresh-toggle" onclick="toggleAutoRefresh()" class="btn-small btn-toggle active">
+            ON
+          </button>
+        </span>
+      </div>
+    </div>
+    <div class="performance-metrics">
+      <h4>📈 Performance Metrics</h4>
+      <div class="metric">
+        <span class="metric-label">Response Time:</span>
+        <span class="metric-value">
+          <span id="response-time">142ms</span>
+          <span class="badge badge-success">Fast</span>
+        </span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Database:</span>
+        <span class="metric-value">
+          <span class="status-indicator status-online"></span>
+          <span>Connected</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card analytics-card">
+    <div class="card-header">
+      <h3>📊 Quick Analytics</h3>
+    </div>
+    <div class="analytics-grid">
+      <div class="analytics-item">
+        <div class="analytics-icon">📈</div>
+        <div class="analytics-content">
+          <span class="analytics-label">Collections Today</span>
+          <span class="analytics-value">12</span>
+        </div>
+      </div>
+      <div class="analytics-item">
+        <div class="analytics-icon">💡</div>
+        <div class="analytics-content">
+          <span class="analytics-label">Efficiency Gain</span>
+          <span class="analytics-value">+15%</span>
+        </div>
+      </div>
+      <div class="analytics-item">
+        <div class="analytics-icon">🎯</div>
+        <div class="analytics-content">
+          <span class="analytics-label">Route Accuracy</span>
+          <span class="analytics-value">96.2%</span>
+        </div>
+      </div>
+      <div class="analytics-item">
+        <div class="analytics-icon">⚡</div>
+        <div class="analytics-content">
+          <span class="analytics-label">Processing Speed</span>
+          <span class="analytics-value">0.3s</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// Enhanced dashboard interactions
+document.getElementById('alpha').addEventListener('input', function() {
+  document.getElementById('alpha-value').textContent = this.value;
+});
+
+let autoRefresh = true;
+
+function toggleAutoRefresh() {
+  autoRefresh = !autoRefresh;
+  const button = document.getElementById('auto-refresh-toggle');
+  button.textContent = autoRefresh ? 'ON' : 'OFF';
+  button.classList.toggle('active', autoRefresh);
+}
+
+function clearRoute() {
+  document.getElementById('route-card').textContent = 'Route cleared. Click "Compute Optimal Route" to generate a new path.';
+}
+</script>
+{% endblock %}

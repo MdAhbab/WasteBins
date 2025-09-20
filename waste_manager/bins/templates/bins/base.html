@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Smart Waste Management System{% endblock %}</title>
+  <link rel="stylesheet" href="/static/bins/css/dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script defer src="/static/bins/js/dashboard.js"></script>
+</head>
+<body>
+  {% if user.is_authenticated %}
+  <header class="topbar">
+    <a href="/dashboard/" class="nav-brand">🗂️ WasteManager</a>
+    <nav class="nav-links">
+      <a href="/dashboard/" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>
+        📊 Dashboard
+      </a>
+      <a href="/profile/" {% if request.resolver_match.url_name == 'profile' %}class="active"{% endif %}>
+        👤 Profile
+      </a>
+      <a href="/settings/" {% if request.resolver_match.url_name == 'settings' %}class="active"{% endif %}>
+        ⚙️ Settings
+      </a>
+      <a href="/logout/" class="logout">
+        🚪 Logout
+      </a>
+    </nav>
+    <div class="nav-actions">
+      <div id="notif-bell" class="notif-bell" onclick="toggleNotif()">
+        🔔 <span id="notif-count">0</span>
+      </div>
+      <div id="notif-panel" class="notif-panel">
+        <div class="notif-header">
+          📢 Notifications
+        </div>
+        <div id="notif-content"></div>
+      </div>
+    </div>
+  </header>
+  {% endif %}
+  
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  
+  {% if user.is_authenticated %}
+  <script>
+    // Add smooth scroll behavior and enhanced interactions
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+  </script>
+  {% endif %}
+</body>
+</html>

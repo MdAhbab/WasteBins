@@ -1,0 +1,276 @@
+{% extends 'bins/base.html' %}
+
+{% block title %}Profile - Smart Waste Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>👤 User Profile</h2>
+  <p>Manage your account information and preferences</p>
+</div>
+
+<div class="profile-container">
+  <div class="profile-sidebar">
+    <div class="profile-avatar">
+      <div class="avatar-circle">
+        {{ user.first_name.0|default:user.username.0 }}{{ user.last_name.0|default:"" }}
+      </div>
+      <h3>{{ user.get_full_name|default:user.username }}</h3>
+      <p class="user-role">System Administrator</p>
+      <div class="user-stats">
+        <div class="stat">
+          <span class="stat-number">{{ user.date_joined|timesince }}</span>
+          <span class="stat-label">Member since</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">{{ user.last_login|timesince }}</span>
+          <span class="stat-label">Last login</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="profile-menu">
+      <a href="#personal" class="menu-item active" onclick="showTab('personal')">
+        ℹ️ Personal Information
+      </a>
+      <a href="#security" class="menu-item" onclick="showTab('security')">
+        🔒 Security
+      </a>
+      <a href="#preferences" class="menu-item" onclick="showTab('preferences')">
+        ⚙️ Preferences
+      </a>
+      <a href="#activity" class="menu-item" onclick="showTab('activity')">
+        📊 Activity Log
+      </a>
+    </div>
+  </div>
+  
+  <div class="profile-content">
+    <div id="personal" class="tab-content active">
+      <div class="section-header">
+        <h3>ℹ️ Personal Information</h3>
+        <p>Update your personal details and contact information</p>
+      </div>
+      
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+      
+      <form method="post" class="profile-form">
+        {% csrf_token %}
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="first_name">First Name</label>
+            <input 
+              type="text" 
+              id="first_name" 
+              name="first_name" 
+              value="{{ user.first_name }}"
+              class="form-input"
+              placeholder="Enter your first name"
+            >
+          </div>
+          <div class="form-group">
+            <label for="last_name">Last Name</label>
+            <input 
+              type="text" 
+              id="last_name" 
+              name="last_name" 
+              value="{{ user.last_name }}"
+              class="form-input"
+              placeholder="Enter your last name"
+            >
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            value="{{ user.email }}"
+            class="form-input"
+            placeholder="Enter your email address"
+          >
+        </div>
+        
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            value="{{ user.username }}"
+            class="form-input"
+            readonly
+            title="Username cannot be changed"
+          >
+          <small class="form-help">Username cannot be modified</small>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">
+            💾 Save Changes
+          </button>
+          <button type="reset" class="btn-secondary">
+            🔄 Reset
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <div id="security" class="tab-content">
+      <div class="section-header">
+        <h3>🔒 Security Settings</h3>
+        <p>Manage your password and security preferences</p>
+      </div>
+      
+      <div class="security-section">
+        <h4>Password</h4>
+        <p>Your password was last changed {{ user.date_joined|timesince }} ago</p>
+        <a href="/password-change/" class="btn-primary">
+          🔑 Change Password
+        </a>
+      </div>
+      
+      <div class="security-section">
+        <h4>Account Security</h4>
+        <div class="security-item">
+          <div class="security-info">
+            <strong>Two-Factor Authentication</strong>
+            <p>Add an extra layer of security to your account</p>
+          </div>
+          <button class="btn-secondary">
+            📱 Enable 2FA
+          </button>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <strong>Login History</strong>
+            <p>View recent login attempts and activity</p>
+          </div>
+          <button class="btn-secondary">
+            📋 View History
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="preferences" class="tab-content">
+      <div class="section-header">
+        <h3>⚙️ User Preferences</h3>
+        <p>Customize your personal dashboard and display options</p>
+      </div>
+      
+      <div class="preferences-grid">
+        <div class="preference-item">
+          <label class="preference-label">
+            <input type="checkbox" checked>
+            <span class="preference-title">Auto-refresh Dashboard</span>
+            <span class="preference-desc">Automatically update dashboard data every 30 seconds</span>
+          </label>
+        </div>
+        
+        <div class="preference-item">
+          <label class="preference-label">
+            <input type="checkbox" checked>
+            <span class="preference-title">Show Tooltips</span>
+            <span class="preference-desc">Display helpful tooltips and hints throughout the interface</span>
+          </label>
+        </div>
+        
+        <div class="preference-item">
+          <label class="preference-label">
+            <input type="checkbox">
+            <span class="preference-title">Compact View</span>
+            <span class="preference-desc">Use a more compact layout to show more information</span>
+          </label>
+        </div>
+        
+        <div class="preference-item">
+          <label class="preference-label">
+            <input type="checkbox" checked>
+            <span class="preference-title">Sound Effects</span>
+            <span class="preference-desc">Play sounds for important alerts and notifications</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="settings-redirect">
+        <p>📧 For notification settings, visit the <a href="/settings/" class="text-link">Settings page</a></p>
+      </div>
+      
+      <div class="form-actions">
+        <button class="btn-primary">
+          💾 Save Preferences
+        </button>
+      </div>
+    </div>
+    
+    <div id="activity" class="tab-content">
+      <div class="section-header">
+        <h3>📊 Activity Log</h3>
+        <p>Your recent activity and system interactions</p>
+      </div>
+      
+      <div class="activity-list">
+        <div class="activity-item">
+          <div class="activity-icon">🔐</div>
+          <div class="activity-content">
+            <strong>Logged in</strong>
+            <span class="activity-time">{{ user.last_login|timesince }} ago</span>
+          </div>
+        </div>
+        
+        <div class="activity-item">
+          <div class="activity-icon">🗺️</div>
+          <div class="activity-content">
+            <strong>Computed route optimization</strong>
+            <span class="activity-time">2 hours ago</span>
+          </div>
+        </div>
+        
+        <div class="activity-item">
+          <div class="activity-icon">📊</div>
+          <div class="activity-content">
+            <strong>Viewed dashboard</strong>
+            <span class="activity-time">3 hours ago</span>
+          </div>
+        </div>
+        
+        <div class="activity-item">
+          <div class="activity-icon">⚙️</div>
+          <div class="activity-content">
+            <strong>Updated profile settings</strong>
+            <span class="activity-time">1 day ago</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(tabName) {
+  // Hide all tab contents
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  
+  // Remove active class from all menu items
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // Show selected tab and activate menu item
+  document.getElementById(tabName).classList.add('active');
+  document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
+}
+</script>
+{% endblock %}
