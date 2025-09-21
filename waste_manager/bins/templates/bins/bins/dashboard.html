@@ -8,6 +8,56 @@
   <p>Real-time monitoring and smart optimization for waste management</p>
 </div>
 
+<!-- User Location Section -->
+<section class="location-section">
+  <div class="card location-card">
+    <div class="card-header">
+      <h3>📍 Your Location</h3>
+      <div class="location-status">
+        {% if user.settings.has_location %}
+          <span class="status-indicator status-online"></span>
+          <span class="status-text">Location Set</span>
+        {% else %}
+          <span class="status-indicator status-offline"></span>
+          <span class="status-text">No Location</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="location-content">
+      <div class="current-location">
+        {% if user.settings.has_location %}
+          <p><strong>Current Location:</strong> {{ user.settings.latitude|floatformat:4 }}, {{ user.settings.longitude|floatformat:4 }}</p>
+          {% if user.settings.location_name %}
+            <p><strong>Name:</strong> {{ user.settings.location_name }}</p>
+          {% endif %}
+        {% else %}
+          <p>No location set. Please set your location to enable route optimization.</p>
+        {% endif %}
+      </div>
+      
+      <div class="location-controls">
+        <div class="input-group">
+          <input type="number" id="quick_latitude" placeholder="Latitude" step="any" class="form-control"
+                 value="{% if user.settings.latitude %}{{ user.settings.latitude }}{% endif %}">
+          <input type="number" id="quick_longitude" placeholder="Longitude" step="any" class="form-control"
+                 value="{% if user.settings.longitude %}{{ user.settings.longitude }}{% endif %}">
+        </div>
+        <div class="button-group">
+          <button onclick="getCurrentLocation()" class="btn-primary">
+            📍 Get Current Location
+          </button>
+          <button onclick="updateLocation()" class="btn-secondary">
+            💾 Save Location
+          </button>
+          <button onclick="calculateRouteFromLocation()" class="btn-success">
+            🗺️ Calculate Route
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="dashboard-stats">
   <div class="stat-card">
     <div class="stat-icon">🗑️</div>
@@ -61,6 +111,7 @@
             <th>🌡️ Temp (°C)</th>
             <th>💧 Humidity (%)</th>
             <th>💨 Gas Level</th>
+            <th>🗑️ Waste Level</th>
             <th>⏰ Last Update</th>
             <th>📊 Status</th>
           </tr>
@@ -73,15 +124,21 @@
             <td class="humidity">{{ r.humidity|floatformat:1 }}</td>
             <td class="gas-level">
               <div class="progress-bar">
-                <div class="progress-fill" style="width: {{ r.gas_level }}%"></div>
+                <div class="progress-fill" style="width: {{ r.gas_level|floatformat:0 }}%"></div>
               </div>
-              <span>{{ r.gas_level|floatformat:1 }}%</span>
+              <span>{{ r.gas_level|floatformat:2 }}</span>
             </td>
-            <td class="timestamp">{{ r.timestamp }}</td>
+            <td class="waste-level">
+              <div class="progress-bar waste-progress">
+                <div class="progress-fill waste-fill" style="width: {{ r.waste_level|floatformat:0 }}%"></div>
+              </div>
+              <span>{{ r.waste_level|floatformat:2 }}</span>
+            </td>
+            <td class="timestamp">{{ r.node.last_update|default:r.timestamp }}</td>
             <td class="status">
-              {% if r.gas_level > 80 %}
+              {% if r.waste_level > 0.8 %}
                 <span class="badge badge-danger">Critical</span>
-              {% elif r.gas_level > 60 %}
+              {% elif r.waste_level > 0.6 %}
                 <span class="badge badge-warning">High</span>
               {% else %}
                 <span class="badge badge-success">Normal</span>
@@ -90,7 +147,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="6" class="no-data">
+            <td colspan="7" class="no-data">
               <div class="empty-state">
                 <span class="empty-icon">📊</span>
                 <p>No sensor readings available</p>
@@ -108,6 +165,32 @@
     </div>
   </div>
 
+  <!-- Priority Information Card -->
+  {% if priority_info %}
+  <div class="card priority-card">
+    <div class="card-header">
+      <h3>⭐ Node Priorities</h3>
+      <small>Based on your location: {{ priority_info.user_location.lat|floatformat:4 }}, {{ priority_info.user_location.lng|floatformat:4 }}</small>
+    </div>
+    <div class="priority-content">
+      <div class="priority-list">
+        {% for node_id, node_name, score in priority_info.top_nodes %}
+        <div class="priority-item">
+          <span class="priority-rank">#{{ forloop.counter }}</span>
+          <span class="priority-name">{{ node_name }}</span>
+          <div class="priority-score">
+            <div class="priority-bar">
+              <div class="priority-fill" style="width: {{ score|floatformat:0 }}%"></div>
+            </div>
+            <span class="priority-value">{{ score|floatformat:3 }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="card route-card">
     <div class="card-header">
       <h3>🗺️ Optimized Collection Route</h3>
@@ -118,7 +201,7 @@
       </div>
     </div>
     <div class="route-content">
-      <pre id="route-card" class="route-display">{{ latest_route|default:"No route computed yet. Click 'Compute Route' to generate an optimized path." }}</pre>
+      <pre id="route-card" class="route-display">{{ latest_route|default:"No route computed yet. Set your location and click 'Calculate Route' to generate an optimized path." }}</pre>
     </div>
     <div class="card-footer">
       <button onclick="computeRoute()" class="btn-primary">
@@ -177,43 +260,131 @@
       </div>
     </div>
   </div>
-
-  <div class="card analytics-card">
-    <div class="card-header">
-      <h3>📊 Quick Analytics</h3>
-    </div>
-    <div class="analytics-grid">
-      <div class="analytics-item">
-        <div class="analytics-icon">📈</div>
-        <div class="analytics-content">
-          <span class="analytics-label">Collections Today</span>
-          <span class="analytics-value">12</span>
-        </div>
-      </div>
-      <div class="analytics-item">
-        <div class="analytics-icon">💡</div>
-        <div class="analytics-content">
-          <span class="analytics-label">Efficiency Gain</span>
-          <span class="analytics-value">+15%</span>
-        </div>
-      </div>
-      <div class="analytics-item">
-        <div class="analytics-icon">🎯</div>
-        <div class="analytics-content">
-          <span class="analytics-label">Route Accuracy</span>
-          <span class="analytics-value">96.2%</span>
-        </div>
-      </div>
-      <div class="analytics-item">
-        <div class="analytics-icon">⚡</div>
-        <div class="analytics-content">
-          <span class="analytics-label">Processing Speed</span>
-          <span class="analytics-value">0.3s</span>
-        </div>
-      </div>
-    </div>
-  </div>
 </section>
+
+<style>
+.location-section {
+  margin-bottom: 2rem;
+}
+
+.location-card {
+  background: var(--color-accent);
+  color: var(--text-on-dark);
+}
+
+.location-card .card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.location-content {
+  padding: 1.5rem;
+}
+
+.current-location {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.input-group input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.button-group button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.waste-progress .waste-fill {
+  background: var(--color-accent);
+}
+
+.priority-card {
+  min-height: 300px;
+}
+
+.priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.priority-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--color-light);
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--color-accent);
+}
+
+.priority-rank {
+  font-weight: bold;
+  color: var(--color-accent);
+  min-width: 2rem;
+}
+
+.priority-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.priority-score {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 150px;
+}
+
+.priority-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--color-light);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.priority-fill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.3s ease;
+}
+
+.priority-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 3rem;
+}
+</style>
 
 <script>
 // Enhanced dashboard interactions
@@ -231,7 +402,147 @@ function toggleAutoRefresh() {
 }
 
 function clearRoute() {
-  document.getElementById('route-card').textContent = 'Route cleared. Click "Compute Optimal Route" to generate a new path.';
+  document.getElementById('route-card').textContent = 'Route cleared. Set your location and click "Calculate Route" to generate a new path.';
+}
+
+// Location functionality
+function getCurrentLocation() {
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        document.getElementById('quick_latitude').value = lat.toFixed(6);
+        document.getElementById('quick_longitude').value = lng.toFixed(6);
+        
+        alert(`Location found: ${lat.toFixed(6)}, ${lng.toFixed(6)}\nClick "Save Location" to store it.`);
+      },
+      function(error) {
+        let message = "Location access denied.";
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            message = "Location access denied by user.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            message = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            message = "Location request timed out.";
+            break;
+        }
+        alert(message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000
+      }
+    );
+  } else {
+    alert("Geolocation is not supported by this browser.");
+  }
+}
+
+function updateLocation() {
+  const lat = document.getElementById('quick_latitude').value;
+  const lng = document.getElementById('quick_longitude').value;
+  
+  if (!lat || !lng) {
+    alert("Please enter both latitude and longitude.");
+    return;
+  }
+  
+  fetch('/api/update-location/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng)
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert("Location updated successfully!");
+      location.reload();
+    } else {
+      alert("Error updating location: " + (data.error || "Unknown error"));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert("Error updating location. Please try again.");
+  });
+}
+
+function calculateRouteFromLocation() {
+  const lat = document.getElementById('quick_latitude').value;
+  const lng = document.getElementById('quick_longitude').value;
+  
+  if (!lat || !lng) {
+    alert("Please enter both latitude and longitude first.");
+    return;
+  }
+  
+  computeRouteWithLocation(parseFloat(lat), parseFloat(lng));
+}
+
+function computeRouteWithLocation(userLat, userLng) {
+  const alpha = document.getElementById('alpha').value;
+  
+  fetch('/api/compute-route/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      user_lat: userLat,
+      user_lng: userLng,
+      top_n: 5,
+      alpha: parseFloat(alpha)
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.route) {
+      document.getElementById('route-card').textContent = JSON.stringify(data.route, null, 2);
+    } else {
+      document.getElementById('route-card').textContent = 'Error: ' + (data.error || 'Unknown error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    document.getElementById('route-card').textContent = 'Error computing route. Please try again.';
+  });
+}
+
+function computeRoute() {
+  {% if user.settings.has_location %}
+    computeRouteWithLocation({{ user.settings.latitude }}, {{ user.settings.longitude }});
+  {% else %}
+    alert("Please set your location first using the location controls above.");
+  {% endif %}
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
 }
 </script>
 {% endblock %}

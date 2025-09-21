@@ -27,3 +27,10 @@ def get_model_version():
             data = json.load(f)
             return data.get('version', 'unknown')
     return 'unknown'
+
+def load_meta():
+    mp = meta_path()
+    if Path(mp).exists():
+        with open(mp, 'r') as f:
+            return json.load(f)
+    return {}

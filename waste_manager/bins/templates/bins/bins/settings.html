@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-header">
   <h2>⚙️ Settings</h2>
-  <p>Configure your system preferences and application settings</p>
+  <p>Configure your system preferences and location settings</p>
 </div>
 
 <form method="post" class="settings-form">
@@ -20,78 +20,102 @@
   {% endif %}
 
 <div class="settings-grid">
+  <!-- Location Settings Section -->
+  <div class="settings-section">
+    <h3>📍 Location Settings</h3>
+    
+    <div class="setting-item">
+      <div class="setting-info">
+        <h4>🌍 Your Location</h4>
+        <p>Set your location for optimal route calculation</p>
+      </div>
+      <div class="setting-control">
+        <div class="location-inputs">
+          {{ form.latitude.label_tag }}
+          {{ form.latitude }}
+          {% if form.latitude.help_text %}
+            <small class="help-text">{{ form.latitude.help_text }}</small>
+          {% endif %}
+          
+          {{ form.longitude.label_tag }}
+          {{ form.longitude }}
+          {% if form.longitude.help_text %}
+            <small class="help-text">{{ form.longitude.help_text }}</small>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="setting-item">
+      <div class="setting-info">
+        <h4>🏠 Location Name</h4>
+        <p>Optional name or address for your location</p>
+      </div>
+      <div class="setting-control">
+        {{ form.location_name }}
+        {% if form.location_name.help_text %}
+          <small class="help-text">{{ form.location_name.help_text }}</small>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="setting-item">
+      <div class="setting-info">
+        <h4>🔄 Auto-Update Location</h4>
+        <p>Automatically use current GPS location when available</p>
+      </div>
+      <div class="setting-control">
+        <label class="toggle-switch">
+          {{ form.auto_update_location }}
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    
+    <div class="location-actions">
+      <button type="button" class="btn-primary" onclick="getCurrentLocation()">
+        📱 Get Current Location
+      </button>
+      <button type="button" class="btn-secondary" onclick="testLocation()">
+        🧪 Test Location
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification Settings Section -->
   <div class="settings-section">
     <h3>🔔 Notification Settings</h3>
     
     <div class="setting-item">
-        <div class="setting-info">
-          <h4>📧 Email Notifications</h4>
-          <p>Receive email alerts for important system events</p>
-        </div>
-        <div class="setting-control">
-          <label class="toggle-switch">
-            <input type="checkbox" name="email_notifications" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+      <div class="setting-info">
+        <h4>📧 Email Notifications</h4>
+        <p>Receive email alerts for important system events</p>
       </div>
-      
-      <div class="setting-item">
-        <div class="setting-info">
-          <h4>🚨 Critical Alerts</h4>
-          <p>Get immediate notifications for critical bin conditions</p>
-        </div>
-        <div class="setting-control">
-          <label class="toggle-switch">
-            <input type="checkbox" name="critical_alerts" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+      <div class="setting-control">
+        <label class="toggle-switch">
+          {{ form.notify_email }}
+          <span class="toggle-slider"></span>
+        </label>
       </div>
-      
-      <div class="setting-item">
-        <div class="setting-info">
-          <h4>📊 Daily Reports</h4>
-          <p>Receive daily summary reports via email</p>
-        </div>
-        <div class="setting-control">
-          <label class="toggle-switch">
-            <input type="checkbox" name="daily_reports">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-      
-      <div class="setting-item">
-        <div class="setting-info">
-          <h4>📱 Browser Notifications</h4>
-          <p>Show browser notifications for real-time updates</p>
-        </div>
-        <div class="setting-control">
-          <label class="toggle-switch">
-            <input type="checkbox" name="browser_notifications" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-  </div>
-  
-  <div class="settings-section">
-    <h3>🎨 Display Preferences</h3>
+    </div>
     
     <div class="setting-item">
       <div class="setting-info">
-        <h4>🌙 Theme</h4>
-        <p>Choose your preferred visual theme</p>
+        <h4>⏱️ Polling Interval</h4>
+        <p>How often to check for updates (seconds)</p>
       </div>
       <div class="setting-control">
-        <select class="setting-select" name="theme">
-          <option value="light" selected>Light Theme</option>
-          <option value="dark">Dark Theme</option>
-          <option value="auto">Auto (System)</option>
-        </select>
+        {{ form.polling_interval_sec }}
+        {% if form.polling_interval_sec.help_text %}
+          <small class="help-text">{{ form.polling_interval_sec.help_text }}</small>
+        {% endif %}
       </div>
     </div>
+  </div>
+  
+  <!-- Display Preferences Section -->
+  <div class="settings-section">
+    <h3>🎨 Display Preferences</h3>
     
     <div class="setting-item">
       <div class="setting-info">
@@ -115,40 +139,11 @@
         </div>
       </div>
     </div>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>⏱️ Auto-refresh Interval</h4>
-        <p>How often to automatically update dashboard data</p>
-      </div>
-      <div class="setting-control">
-        <select class="setting-select" name="refresh_interval">
-          <option value="5">5 seconds</option>
-          <option value="8" selected>8 seconds</option>
-          <option value="15">15 seconds</option>
-          <option value="30">30 seconds</option>
-          <option value="60">1 minute</option>
-          <option value="0">Disabled</option>
-        </select>
-      </div>
-    </div>
   </div>
   
+  <!-- AI & Analytics Section -->
   <div class="settings-section">
     <h3>🤖 AI & Analytics</h3>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>📈 Model Training</h4>
-        <p>Automatically retrain AI models with new data</p>
-      </div>
-      <div class="setting-control">
-        <label class="toggle-switch">
-          <input type="checkbox" name="auto_training" checked>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    </div>
     
     <div class="setting-item">
       <div class="setting-info">
@@ -157,21 +152,8 @@
       </div>
       <div class="setting-control">
         <div class="range-control">
-          <input type="range" min="0" max="2" step="0.1" value="0.5" class="range-input" id="default-alpha">
+          <input type="range" min="0" max="2" step="0.1" value="0.5" class="range-input" id="default-alpha" title="Default Alpha Value for Route Optimization" aria-label="Default Alpha Value">
           <span class="range-value">0.5</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>🎯 Prediction Accuracy</h4>
-        <p>Minimum accuracy threshold for AI predictions</p>
-      </div>
-      <div class="setting-control">
-        <div class="range-control">
-          <input type="range" min="0.5" max="1" step="0.05" value="0.85" class="range-input" id="accuracy-threshold">
-          <span class="range-value">85%</span>
         </div>
       </div>
     </div>
@@ -180,158 +162,38 @@
       <button type="button" class="btn-primary" onclick="trainModel()">
         🧠 Train Model Now
       </button>
-      <button type="button" class="btn-secondary" onclick="resetModel()">
-        🔄 Reset to Default
+      <button type="button" class="btn-secondary" onclick="testPrediction()">
+        🎯 Test Prediction
       </button>
     </div>
   </div>
   
-  <div class="settings-section">
-    <h3>💾 Data Management</h3>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>🗄️ Data Retention</h4>
-        <p>How long to keep historical sensor data</p>
+  <!-- Current Location Info -->
+  {% if form.instance.has_location %}
+  <div class="settings-section location-info">
+    <h3>📊 Current Location Status</h3>
+    <div class="location-status">
+      <div class="status-item">
+        <span class="status-label">Latitude:</span>
+        <span class="status-value">{{ form.instance.latitude|floatformat:6 }}</span>
       </div>
-      <div class="setting-control">
-        <select class="setting-select" name="data_retention">
-          <option value="30">30 days</option>
-          <option value="90" selected>90 days</option>
-          <option value="180">6 months</option>
-          <option value="365">1 year</option>
-          <option value="0">Forever</option>
-        </select>
+      <div class="status-item">
+        <span class="status-label">Longitude:</span>
+        <span class="status-value">{{ form.instance.longitude|floatformat:6 }}</span>
       </div>
-    </div>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>📤 Auto Backup</h4>
-        <p>Automatically backup data and configurations</p>
+      {% if form.instance.location_name %}
+      <div class="status-item">
+        <span class="status-label">Name:</span>
+        <span class="status-value">{{ form.instance.location_name }}</span>
       </div>
-      <div class="setting-control">
-        <label class="toggle-switch">
-          <input type="checkbox" name="auto_backup" checked>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    </div>
-    
-    <div class="data-actions">
-      <button type="button" class="btn-primary" onclick="exportData()">
-        📁 Export Data
-      </button>
-      <button type="button" class="btn-secondary" onclick="importData()">
-        📥 Import Data
-      </button>
-      <button type="button" class="btn-warning" onclick="clearOldData()">
-        🗑️ Clear Old Data
-      </button>
-    </div>
-  </div>
-  
-  <div class="settings-section">
-    <h3>🔧 System Settings</h3>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>🛡️ Security Mode</h4>
-        <p>Enhanced security features and monitoring</p>
-      </div>
-      <div class="setting-control">
-        <label class="toggle-switch">
-          <input type="checkbox" name="security_mode" checked>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    </div>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>📋 Debug Logging</h4>
-        <p>Enable detailed logging for troubleshooting</p>
-      </div>
-      <div class="setting-control">
-        <label class="toggle-switch">
-          <input type="checkbox" name="debug_logging">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    </div>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>🌐 API Rate Limiting</h4>
-        <p>Maximum API requests per minute</p>
-      </div>
-      <div class="setting-control">
-        <input type="number" class="setting-input" value="100" min="10" max="1000" name="api_rate_limit">
-      </div>
-    </div>
-    
-    <div class="system-info">
-      <h4>📊 System Information</h4>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">Version:</span>
-          <span class="info-value">v2.1.0</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Database:</span>
-          <span class="info-value">MySQL 8.0</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Python:</span>
-          <span class="info-value">3.13</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Django:</span>
-          <span class="info-value">4.2</span>
-        </div>
+      {% endif %}
+      <div class="status-item">
+        <span class="status-label">Last Updated:</span>
+        <span class="status-value">{{ form.instance.updated_at|date:"M d, Y H:i" }}</span>
       </div>
     </div>
   </div>
-  
-  <div class="settings-section">
-    <h3>🔄 Advanced Options</h3>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>⚠️ Maintenance Mode</h4>
-        <p>Put the system in maintenance mode for updates</p>
-      </div>
-      <div class="setting-control">
-        <button type="button" class="btn-warning" onclick="toggleMaintenance()">
-          🔧 Enable Maintenance
-        </button>
-      </div>
-    </div>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>🧹 Cache Management</h4>
-        <p>Clear application cache and temporary data</p>
-      </div>
-      <div class="setting-control">
-        <button type="button" class="btn-secondary" onclick="clearCache()">
-          🗑️ Clear Cache
-        </button>
-      </div>
-    </div>
-    
-    <div class="setting-item">
-      <div class="setting-info">
-        <h4>🔄 Factory Reset</h4>
-        <p>Reset all settings to factory defaults</p>
-      </div>
-      <div class="setting-control">
-        <button type="button" class="btn-danger" onclick="factoryReset()">
-          ⚠️ Factory Reset
-        </button>
-      </div>
-    </div>
-  </div>
+  {% endif %}
 </div>
 
 </form>
@@ -339,7 +201,7 @@
 <div class="settings-footer">
   <div class="form-actions">
     <button type="submit" class="btn-primary btn-large">
-      💾 Save All Settings
+      💾 Save Settings
     </button>
     <button type="button" class="btn-secondary" onclick="resetForm()">
       🔄 Reset Changes
@@ -347,76 +209,278 @@
   </div>
 </div>
 
+<style>
+.location-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.location-inputs label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.location-inputs input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.help-text {
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.location-actions, .ai-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.location-status {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.status-value {
+  color: #007bff;
+  font-family: monospace;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #007bff;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+.range-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.range-input {
+  flex: 1;
+}
+
+.range-value {
+  min-width: 3rem;
+  text-align: center;
+  font-weight: 600;
+}
+</style>
+
 <script>
+// Location functionality
+function getCurrentLocation() {
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        document.getElementById('id_latitude').value = lat.toFixed(6);
+        document.getElementById('id_longitude').value = lng.toFixed(6);
+        
+        alert(`Location found: ${lat.toFixed(6)}, ${lng.toFixed(6)}\nClick "Save Settings" to store it.`);
+      },
+      function(error) {
+        let message = "Location access denied.";
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            message = "Location access denied by user.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            message = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            message = "Location request timed out.";
+            break;
+        }
+        alert(message);
+      }
+    );
+  } else {
+    alert("Geolocation is not supported by this browser.");
+  }
+}
+
+function testLocation() {
+  const lat = document.getElementById('id_latitude').value;
+  const lng = document.getElementById('id_longitude').value;
+  
+  if (!lat || !lng) {
+    alert("Please enter both latitude and longitude first.");
+    return;
+  }
+  
+  // Test the location by calculating priorities
+  fetch('/api/compute-route/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      user_lat: parseFloat(lat),
+      user_lng: parseFloat(lng),
+      top_n: 3
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.route) {
+      alert(`Location test successful!\nTop 3 priority nodes found.\nRoute calculated with ${data.route.path.length} stops.`);
+    } else {
+      alert("Location test failed: " + (data.error || "Unknown error"));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert("Location test failed. Please check your connection and try again.");
+  });
+}
+
 // Range input handlers
 document.getElementById('default-alpha').addEventListener('input', function() {
   this.nextElementSibling.textContent = this.value;
 });
 
-document.getElementById('accuracy-threshold').addEventListener('input', function() {
-  this.nextElementSibling.textContent = Math.round(this.value * 100) + '%';
-});
-
-// Settings actions
+// AI functions
 function trainModel() {
   if (confirm('Training the AI model may take several minutes. Continue?')) {
-    // Implementation would call training API
-    alert('Model training started. You will be notified when complete.');
+    fetch('/api/train-model/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'trained') {
+        alert(`Model training completed!\nVersion: ${data.meta.version}\nAccuracy: ${(data.meta.validation_r2 * 100).toFixed(1)}%`);
+      } else {
+        alert('Training failed: ' + (data.error || 'Unknown error'));
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Training failed. Please try again.');
+    });
   }
 }
 
-function resetModel() {
-  if (confirm('Reset AI model to factory defaults? This cannot be undone.')) {
-    // Implementation would reset model
-    alert('Model reset to factory defaults.');
-  }
-}
-
-function exportData() {
-  // Implementation would trigger data export
-  alert('Data export started. Download will begin shortly.');
-}
-
-function importData() {
-  // Implementation would open file picker for import
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json,.csv,.backup';
-  input.click();
-}
-
-function clearOldData() {
-  if (confirm('Delete all data older than retention period? This cannot be undone.')) {
-    // Implementation would clear old data
-    alert('Old data cleanup started.');
-  }
-}
-
-function toggleMaintenance() {
-  if (confirm('Enable maintenance mode? Users will be unable to access the system.')) {
-    // Implementation would enable maintenance mode
-    alert('Maintenance mode enabled. Remember to disable it when done.');
-  }
-}
-
-function clearCache() {
-  if (confirm('Clear all cached data? This may temporarily slow down the system.')) {
-    // Implementation would clear cache
-    alert('Cache cleared successfully.');
-  }
-}
-
-function factoryReset() {
-  const confirmation = prompt('Type "RESET" to confirm factory reset:');
-  if (confirmation === 'RESET') {
-    alert('Factory reset initiated. The system will restart shortly.');
-  }
+function testPrediction() {
+  fetch('/api/predict-cost/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.predictions && data.predictions.length > 0) {
+      let message = `Prediction test successful!\n\nResults for ${data.predictions.length} nodes:\n`;
+      data.predictions.slice(0, 3).forEach((pred, i) => {
+        message += `Node ${pred.node_id}: Priority ${pred.predicted_cost.toFixed(3)}\n`;
+      });
+      alert(message);
+    } else {
+      alert('Prediction test failed: ' + (data.error || 'No predictions generated'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Prediction test failed. Please try again.');
+  });
 }
 
 function resetForm() {
   if (confirm('Reset all changes to last saved values?')) {
     location.reload();
   }
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
 }
 </script>
 {% endblock %}

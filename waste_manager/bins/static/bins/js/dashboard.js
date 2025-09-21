@@ -10,13 +10,15 @@ async function pollReadings() {
     (data.readings || []).forEach(r => {
       const tr = document.createElement('tr');
       
-      // Create status badge
+      // Create status badge based on waste level (more critical than gas level)
       let statusBadge = 'badge-success">Normal';
-      if (r.gas_level > 80) statusBadge = 'badge-danger">Critical';
-      else if (r.gas_level > 60) statusBadge = 'badge-warning">High';
+      const wastePercent = (r.waste_level || 0) * 100;
+      if (wastePercent > 80) statusBadge = 'badge-danger">Critical';
+      else if (wastePercent > 60) statusBadge = 'badge-warning">High';
       
-      // Create progress bar width style
-      const progressWidth = Math.min(100, Math.max(0, r.gas_level));
+      // Create progress bar width styles
+      const gasProgressWidth = Math.min(100, Math.max(0, (r.gas_level || 0) * 100));
+      const wasteProgressWidth = Math.min(100, Math.max(0, wastePercent));
       
       tr.innerHTML = `
         <td class="node-name">${r.node.name}</td>
@@ -24,9 +26,15 @@ async function pollReadings() {
         <td class="humidity">${parseFloat(r.humidity).toFixed(1)}</td>
         <td class="gas-level">
           <div class="progress-bar">
-            <div class="progress-fill" data-width="${progressWidth}"></div>
+            <div class="progress-fill" data-width="${gasProgressWidth}"></div>
           </div>
-          <span>${parseFloat(r.gas_level).toFixed(1)}%</span>
+          <span>${parseFloat(r.gas_level || 0).toFixed(2)}</span>
+        </td>
+        <td class="waste-level">
+          <div class="progress-bar waste-progress">
+            <div class="progress-fill waste-fill" data-width="${wasteProgressWidth}"></div>
+          </div>
+          <span>${parseFloat(r.waste_level || 0).toFixed(2)}</span>
         </td>
         <td class="timestamp">${timeAgo(r.timestamp)}</td>
         <td class="status">
@@ -35,10 +43,15 @@ async function pollReadings() {
       `;
       tbody.appendChild(tr);
       
-      // Set progress bar width after DOM insertion
-      const progressFill = tr.querySelector('.progress-fill');
-      if (progressFill) {
-        progressFill.style.width = `${progressWidth}%`;
+      // Set progress bar widths after DOM insertion
+      const gasProgressFill = tr.querySelector('.gas-level .progress-fill');
+      const wasteProgressFill = tr.querySelector('.waste-level .progress-fill');
+      
+      if (gasProgressFill) {
+        gasProgressFill.style.width = `${gasProgressWidth}%`;
+      }
+      if (wasteProgressFill) {
+        wasteProgressFill.style.width = `${wasteProgressWidth}%`;
       }
     });
     
@@ -92,13 +105,27 @@ async function computeRoute() {
       routeCard.textContent = 'Computing optimal route...';
     }
     
+    // Try to get user geolocation for distance-aware priority
+    let payload = { alpha };
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(p => resolve(p), err => resolve(null), {timeout: 3000});
+      });
+      if (pos && pos.coords) {
+        payload.user_lat = pos.coords.latitude;
+        payload.user_lng = pos.coords.longitude;
+        payload.top_n = 5; // initially 1–5 nodes
+      }
+    } catch {}
+
     const res = await fetch('/api/compute-route/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCSRFToken()
       },
-      body: JSON.stringify({alpha})
+      body: JSON.stringify(payload)
     });
     
     const data = await res.json();

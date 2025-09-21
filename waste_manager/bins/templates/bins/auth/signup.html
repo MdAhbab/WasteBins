@@ -1,9 +1,104 @@
 {% extends 'bins/base.html' %}
+
+{% block title %}Sign Up - Smart Waste Management{% endblock %}
+
 {% block content %}
-<h2>Sign up</h2>
-<form method="post" id="signup-form">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Create account</button>
-</form>
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h2>👋 Join Us Today</h2>
+      <p>Create your Smart Waste Management account</p>
+    </div>
+    
+    {% if form.errors %}
+      <div class="alert alert-error">
+        <strong>⚠️ Registration Failed</strong>
+        <ul>
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+    
+    <form method="post" id="signup-form" class="login-form">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label for="id_username">👤 Username</label>
+        {{ form.username }}
+        {% if form.username.help_text %}
+          <small class="form-help">{{ form.username.help_text }}</small>
+        {% endif %}
+      </div>
+      
+      <div class="form-group">
+        <label for="id_first_name">📝 First Name</label>
+        {{ form.first_name }}
+      </div>
+      
+      <div class="form-group">
+        <label for="id_last_name">📝 Last Name</label>
+        {{ form.last_name }}
+      </div>
+      
+      <div class="form-group">
+        <label for="id_email">📧 Email Address</label>
+        {{ form.email }}
+      </div>
+      
+      <div class="form-group">
+        <label for="id_password1">🔑 Password</label>
+        {{ form.password1 }}
+        {% if form.password1.help_text %}
+          <small class="form-help">{{ form.password1.help_text }}</small>
+        {% endif %}
+      </div>
+      
+      <div class="form-group">
+        <label for="id_password2">🔑 Confirm Password</label>
+        {{ form.password2 }}
+        {% if form.password2.help_text %}
+          <small class="form-help">{{ form.password2.help_text }}</small>
+        {% endif %}
+      </div>
+      
+      <button type="submit" class="btn-primary btn-full">
+        <span class="btn-text">🚀 Create Account</span>
+        <span class="btn-loading">⏳ Creating account...</span>
+      </button>
+    </form>
+    
+    <div class="login-footer">
+      <p>Already have an account? <a href="/login/">Sign in here</a></p>
+    </div>
+    
+    <div class="login-info">
+      <div class="info-item">
+        <span class="info-icon">📊</span>
+        <span>Real-time monitoring</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🤖</span>
+        <span>AI-powered optimization</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🗺️</span>
+        <span>Smart route planning</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/bins/js/auth.js"></script>
 {% endblock %}
