@@ -1,0 +1,9 @@
+{
+  "node_id": 1,
+  "temperature": 25.5,
+  "humidity": 65.2,
+  "gas_level": 0.250,
+  "waste_level": 0.750,
+  "distance_to_next_bin": 350.5
+}
+

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="43c7defa-bdbe-4db4-99e5-42fc02e1ee71" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/waste_manager/bins/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/bins/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/waste_manager/bins/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/bins/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/waste_manager/waste_manager/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/waste_manager/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/waste_manager/waste_manager/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/waste_manager/urls.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;MdAhbab&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/MdAhbab/WasteBins.git&quot;,
+    &quot;accountId&quot;: &quot;a735fe0e-e9d9-45a6-bf4a-ed849340895c&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="32zhND6d0nn3F1sBiqP5BXJUubv" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Django Server.Wastebins.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Notification.DisplayName-DoNotAsk-DatabaseConfigFileWatcher.found": "New/updated database configurations found",
+    "Notification.DoNotAsk-DatabaseConfigFileWatcher.found": "true",
+    "RunOnceActivity.OpenDjangoStructureViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.pycharm.django.structure.promotion.once.per.project": "true",
+    "django.template.preview.state": "SHOW_EDITOR",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/Users/ahbab/Downloads/MicroLab/Wastebins",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ]
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="Wastebins" type="Python.DjangoServer" factoryName="Django server">
+      <module name="Wastebins" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="DJANGO_SETTINGS_MODULE" value="waste_manager.settings" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="launchJavascriptDebuger" value="false" />
+      <option name="port" value="8000" />
+      <option name="host" value="" />
+      <option name="additionalOptions" value="" />
+      <option name="browserUrl" value="" />
+      <option name="runTestServer" value="false" />
+      <option name="runNoReload" value="false" />
+      <option name="useCustomRunCommand" value="false" />
+      <option name="customRunCommand" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-PY-252.25557.178" />
+        <option value="bundled-python-sdk-ce6832f46686-7b97d883f26b-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.25557.178" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="43c7defa-bdbe-4db4-99e5-42fc02e1ee71" name="Changes" comment="" />
+      <created>1758429265909</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1758429265909</updated>
+      <workItem from="1758429267017" duration="858000" />
+      <workItem from="1758430372856" duration="2230000" />
+      <workItem from="1758440942326" duration="1399000" />
+      <workItem from="1758608160495" duration="591000" />
+      <workItem from="1758608763119" duration="731000" />
+      <workItem from="1758611756965" duration="615000" />
+      <workItem from="1758702571172" duration="1685000" />
+      <workItem from="1759830316807" duration="59000" />
+      <workItem from="1759843957477" duration="68000" />
+      <workItem from="1759896200625" duration="31000" />
+      <workItem from="1759915233262" duration="325000" />
+      <workItem from="1759916095603" duration="132000" />
+      <workItem from="1759916237460" duration="841000" />
+      <workItem from="1759917122340" duration="895000" />
+      <workItem from="1759918031427" duration="391000" />
+      <workItem from="1759999204771" duration="1111000" />
+      <workItem from="1760000334014" duration="3303000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

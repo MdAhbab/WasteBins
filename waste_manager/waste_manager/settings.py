@@ -5,7 +5,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'change-me-in-production'
 DEBUG = True
-ALLOWED_HOSTS = []
+
+# Allow access from any IP address on the LAN
+ALLOWED_HOSTS = ['*']
+
+# Configure CSRF for LAN access - allow any origin during development
+CSRF_TRUSTED_ORIGINS = [
+    'http://*:8000',
+    'https://*:8000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# For development, disable CSRF protection on API endpoints if needed
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,7 +69,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'waste_manager_db',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': '12345678',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {

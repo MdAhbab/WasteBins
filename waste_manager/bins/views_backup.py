@@ -104,7 +104,8 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
-
+@csrf_exempt
+#@login_required
 @login_required
 def dashboard_view(request):
     """
@@ -190,8 +191,8 @@ def dashboard_view(request):
         'priority_info': priority_info,
         'user_settings': user_settings,
     })
-
-@login_required
+@csrf_exempt
+#@login_required
 def profile_view(request):
     if request.method == 'POST':
         form = ProfileForm(request.POST, instance=request.user)
@@ -235,20 +236,15 @@ def api_submit_reading(request):
         payload = json.loads(request.body.decode('utf-8'))
         node_id = payload['node_id']
         node = Node.objects.get(id=node_id)
-
-        # Handle waste_level properly - ensure it's not None if provided
-        waste_level = payload.get('waste_level')
-        if waste_level is not None:
-            waste_level = float(waste_level)
-        else:
-            waste_level = 0.0  # Default value instead of None
-
         r = SensorReading.objects.create(
             node=node,
             temperature=float(payload.get('temperature', 0.0)),
             humidity=float(payload.get('humidity', 0.0)),
             gas_level=float(payload.get('gas_level', 0.0)),
-            waste_level=waste_level,
+            waste_level=(
+                float(payload.get('waste_level'))
+                if payload.get('waste_level') is not None else None
+            ),
             distance_to_next_bin=payload.get('distance_to_next_bin'),
         )
         return JsonResponse({'status': 'ok', 'reading': serialize_reading(r)}, status=201)
