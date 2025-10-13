@@ -121,10 +121,9 @@ def dashboard_view(request):
     
     latest_readings = list(latest_per_node.values())
     
-    # Enhance readings with node last update timestamps
-    for reading in latest_readings:
-        reading.node_last_update = reading.node.last_update
-    
+    # Prepare nodes for UI selections
+    nodes_for_select = Node.objects.all().order_by('name')
+
     # Get latest route
     latest_route = CollectionRoute.objects.order_by('-timestamp').first()
     
@@ -182,13 +181,15 @@ def dashboard_view(request):
             priority_info = None
     
     return render(request, 'bins/bins/dashboard.html', {
-        'latest_readings': [serialize_reading(r) for r in latest_readings],
+        # Pass model instances so template filters like `timesince` work
+        'latest_readings': latest_readings,
         'latest_route': latest_route.route_data if latest_route else None,
         'notif_count': notif_count,
         'now': datetime.now(),
         'model_version': model_version,
         'priority_info': priority_info,
         'user_settings': user_settings,
+        'nodes': nodes_for_select,
     })
 
 @login_required

@@ -6,13 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="43c7defa-bdbe-4db4-99e5-42fc02e1ee71" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IMPLEMENTATION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/postman_pre_request_script.js" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/postman_pre_request_script.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sample_sensor_data.json" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/sample_sensor_data.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/waste_manager/DEPLOYMENT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/waste_manager/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/waste_manager/local_settings.py.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/waste_manager/bins/templates/bins/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/bins/templates/bins/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/waste_manager/bins/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/waste_manager/bins/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -144,6 +140,7 @@
       <workItem from="1760000334014" duration="4094000" />
       <workItem from="1760386027484" duration="1702000" />
       <workItem from="1760387753224" duration="1512000" />
+      <workItem from="1760389365984" duration="3045000" />
     </task>
     <servers />
   </component>

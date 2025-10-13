@@ -728,17 +728,9 @@ This project demonstrates:
 
 ---
 
-## 📄 License
+## 📄 License & 👥 Contributors
 
-This project is developed for educational and research purposes as part of a Microprocessors and Microelectronics laboratory prototype.
-
----
-
-## 👥 Contributors
-
-Developed as a laboratory prototype for academic purposes.
-
----
+This project is developed by Ahbab and team for educational and research purposes as part of a Microprocessors and Microelectronics laboratory prototype.
 
 **For setup instructions, see [SETUP.md](SETUP.md)**
 

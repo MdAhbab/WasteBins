@@ -45,7 +45,39 @@
   <main>
     {% block content %}{% endblock %}
   </main>
-  
+<footer style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; margin-top: 60px;">
+  <div style="max-width: 1200px; margin: 0 auto;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-bottom: 30px;">
+      <div style="text-align: center;">
+        <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.2rem; margin-bottom: 15px; font-weight: 600;">📧 Contact</h3>
+        <p style="margin: 8px 0; font-size: 0.95rem;">
+          <a href="mailto:mkhan223869@bscse.uiu.ac.bd" style="color: white; text-decoration: none; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+            mkhan223869@bscse.uiu.ac.bd
+          </a>
+        </p>
+      </div>
+      <div style="text-align: center;">
+        <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.2rem; margin-bottom: 15px; font-weight: 600;">📱 Phone</h3>
+        <p style="margin: 8px 0; font-size: 0.95rem;">
+          <a href="tel:+8801234567890" style="color: white; text-decoration: none; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+            +880 1234-567890
+          </a>
+        </p>
+      </div>
+      <div style="text-align: center;">
+        <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.2rem; margin-bottom: 15px; font-weight: 600;">📍 Location</h3>
+        <p style="margin: 8px 0; font-size: 0.95rem;">United International University</p>
+        <p style="margin: 8px 0; font-size: 0.85rem; opacity: 0.9;">Dhaka, Bangladesh</p>
+      </div>
+    </div>
+    <div style="border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 20px; text-align: center;">
+      <small style="font-size: 0.9rem; opacity: 0.95;">
+        © <span id="year"></span> Smart Waste Management System — Md Ahbab Hamid Khan
+      </small>
+    </div>
+  </div>
+</footer>
+
   {% if user.is_authenticated %}
   <script>
     // Add smooth scroll behavior and enhanced interactions
@@ -60,5 +92,12 @@
     });
   </script>
   {% endif %}
+<script>
+  // Keep footer year up-to-date and enable sticky layout
+  (function(){
+    var y = document.getElementById('year');
+    if (y) y.textContent = new Date().getFullYear();
+  })();
+</script>
 </body>
 </html>
