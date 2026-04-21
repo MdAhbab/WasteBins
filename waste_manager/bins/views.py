@@ -95,6 +95,13 @@ def login_view(request):
         username = request.POST.get('username', '')
         password = request.POST.get('password', '')
         user = authenticate(request, username=username, password=password)
+        if user is None and '@' in username:
+            # Try treating the input as an email address
+            try:
+                matched = User.objects.get(email__iexact=username)
+                user = authenticate(request, username=matched.username, password=password)
+            except User.DoesNotExist:
+                pass
         if user:
             login(request, user)
             return redirect('dashboard')
@@ -250,6 +257,7 @@ def api_submit_reading(request):
             humidity=float(payload.get('humidity', 0.0)),
             gas_level=float(payload.get('gas_level', 0.0)),
             waste_level=waste_level,
+            traffic_density=float(payload.get('traffic_density', 0.0)),
             distance_to_next_bin=payload.get('distance_to_next_bin'),
         )
         return JsonResponse({'status': 'ok', 'reading': serialize_reading(r)}, status=201)
@@ -355,7 +363,7 @@ def api_compute_route(request):
             )
         
         # Calculate priorities using the new system
-        priorities = priority_calculator.calculate_node_priorities(
+        priorities, traffic_scores = priority_calculator.calculate_node_priorities(
             nodes=nodes,
             user_lat=user_lat,
             user_lng=user_lng,
@@ -374,6 +382,7 @@ def api_compute_route(request):
             nodes = [node for node, _ in top_priority_nodes]
             # Update priorities dict to only include selected nodes
             priorities = {node.id: priorities[node.id] for node in nodes}
+            traffic_scores = {node.id: traffic_scores[node.id] for node in nodes}
         
         # Compute optimal route using enhanced Dijkstra
         user_location = {'lat': user_lat, 'lng': user_lng}
@@ -381,6 +390,7 @@ def api_compute_route(request):
         result = compute_optimal_route(
             nodes=nodes,
             priority_scores=priorities,
+            traffic_scores=traffic_scores,
             source_node_id=source_node_id,
             user_location=user_location,
             alpha=alpha

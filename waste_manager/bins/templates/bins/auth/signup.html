@@ -2,103 +2,158 @@
 
 {% block title %}Sign Up - Smart Waste Management{% endblock %}
 
+{% block body_class %}auth-page auth-signup{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/bins/css/auth.css">
+{% endblock %}
+
 {% block content %}
-<div class="login-container">
-  <div class="login-card">
-    <div class="login-header">
-      <h2>👋 Join Us Today</h2>
-      <p>Create your Smart Waste Management account</p>
-    </div>
-    
-    {% if form.errors %}
-      <div class="alert alert-error">
-        <strong>⚠️ Registration Failed</strong>
-        <ul>
-          {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-              <li>{{ error }}</li>
+<div class="auth-page-wrap">
+  <header class="auth-simple-header">
+    <a href="/" class="auth-brand">WasteManager</a>
+    <nav class="auth-nav">
+      <a href="/login/">Login</a>
+      <a href="/signup/" class="active">Sign Up</a>
+    </nav>
+  </header>
+
+  <section class="auth-shell" id="about">
+    <div class="auth-panel auth-panel-form">
+      <div class="login-header auth-headline">
+        <p class="auth-kicker">Create Account</p>
+        <h1>Start managing smarter</h1>
+        <p>Create your account to access monitoring, AI insights, and optimized collection routes.</p>
+      </div>
+
+      {% if form.errors %}
+        <div class="alert alert-error">
+          <strong>Registration failed</strong>
+          <ul>
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
             {% endfor %}
-          {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
-    
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-          {{ message }}
+          </ul>
         </div>
-      {% endfor %}
-    {% endif %}
-    
-    <form method="post" id="signup-form" class="login-form">
-      {% csrf_token %}
-      
-      <div class="form-group">
-        <label for="id_username">👤 Username</label>
-        {{ form.username }}
-        {% if form.username.help_text %}
-          <small class="form-help">{{ form.username.help_text }}</small>
-        {% endif %}
+      {% endif %}
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" id="signup-form" class="login-form auth-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="id_username">Username</label>
+          <input
+            type="text"
+            id="id_username"
+            name="username"
+            class="form-input"
+            autocomplete="username"
+            value="{{ form.username.value|default_if_none:'' }}"
+            required
+          >
+          {% if form.username.help_text %}
+            <small class="form-help">{{ form.username.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="id_email">Email address</label>
+          <input
+            type="email"
+            id="id_email"
+            name="email"
+            class="form-input"
+            autocomplete="email"
+            value="{{ form.email.value|default_if_none:'' }}"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="id_password1">Password</label>
+          <input
+            type="password"
+            id="id_password1"
+            name="password1"
+            class="form-input"
+            autocomplete="new-password"
+            required
+          >
+          {% if form.password1.help_text %}
+            <small class="form-help">{{ form.password1.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="id_password2">Confirm password</label>
+          <input
+            type="password"
+            id="id_password2"
+            name="password2"
+            class="form-input"
+            autocomplete="new-password"
+            required
+          >
+          {% if form.password2.help_text %}
+            <small class="form-help">{{ form.password2.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn-primary btn-full">
+          <span class="btn-text">Create Account</span>
+          <span class="btn-loading">Creating account...</span>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <p>Already have an account? <a href="/login/">Sign in</a></p>
       </div>
-      
-      <div class="form-group">
-        <label for="id_first_name">📝 First Name</label>
-        {{ form.first_name }}
-      </div>
-      
-      <div class="form-group">
-        <label for="id_last_name">📝 Last Name</label>
-        {{ form.last_name }}
-      </div>
-      
-      <div class="form-group">
-        <label for="id_email">📧 Email Address</label>
-        {{ form.email }}
-      </div>
-      
-      <div class="form-group">
-        <label for="id_password1">🔑 Password</label>
-        {{ form.password1 }}
-        {% if form.password1.help_text %}
-          <small class="form-help">{{ form.password1.help_text }}</small>
-        {% endif %}
-      </div>
-      
-      <div class="form-group">
-        <label for="id_password2">🔑 Confirm Password</label>
-        {{ form.password2 }}
-        {% if form.password2.help_text %}
-          <small class="form-help">{{ form.password2.help_text }}</small>
-        {% endif %}
-      </div>
-      
-      <button type="submit" class="btn-primary btn-full">
-        <span class="btn-text">🚀 Create Account</span>
-        <span class="btn-loading">⏳ Creating account...</span>
-      </button>
-    </form>
-    
-    <div class="login-footer">
-      <p>Already have an account? <a href="/login/">Sign in here</a></p>
     </div>
-    
-    <div class="login-info">
-      <div class="info-item">
-        <span class="info-icon">📊</span>
-        <span>Real-time monitoring</span>
+
+    <div class="auth-panel auth-panel-info">
+      <p class="auth-kicker">Built for Modern Collection Teams</p>
+      <h2>From sensor reading to route decision in one workspace.</h2>
+      <p>
+        This software helps waste management teams reduce overflow risk, optimize pickup cycles,
+        and track operational health from a single interface.
+      </p>
+
+      <div class="auth-pill-row">
+        <span class="auth-pill">Predictive Analytics</span>
+        <span class="auth-pill">Priority Dashboard</span>
+        <span class="auth-pill">Actionable Alerts</span>
       </div>
-      <div class="info-item">
-        <span class="info-icon">🤖</span>
-        <span>AI-powered optimization</span>
-      </div>
-      <div class="info-item">
-        <span class="info-icon">🗺️</span>
-        <span>Smart route planning</span>
-      </div>
+
+      <ul class="auth-points">
+        <li>Prioritize bins using fill, gas, humidity, and temperature trends.</li>
+        <li>Coordinate field operations with practical route recommendations.</li>
+        <li>Maintain cleaner city zones through faster response cycles.</li>
+      </ul>
     </div>
-  </div>
+  </section>
 </div>
 
 <script src="/static/bins/js/auth.js"></script>
+{% endblock %}
+
+{% block site_footer %}
+<footer class="auth-simple-footer">
+  <div class="auth-simple-footer-inner">
+    <p>Smart Waste Management System</p>
+    <small>© <span id="year"></span> Built for efficient urban waste operations by Md Ahbab hamid Khan.</small>
+  </div>
+</footer>
 {% endblock %}

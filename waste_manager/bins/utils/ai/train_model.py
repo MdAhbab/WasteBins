@@ -20,13 +20,14 @@ def _haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     return R * c
 
-def _calculate_priority_score(distance_m, waste_level, gas_level, temperature, humidity):
+def _calculate_priority_score(distance_m, waste_level, gas_level, temperature, humidity, traffic_density):
     """
     Calculate priority score based on requirements:
     - Higher distance → lower priority
     - Higher waste level → higher priority
     - Higher gas level → higher priority
     - Higher temperature and humidity → slightly higher priority
+    - Higher traffic → slightly lower priority (don't send trucks to jammed areas)
     
     Returns priority score from 0.0 to 1.0 (higher = more urgent)
     """
@@ -46,14 +47,18 @@ def _calculate_priority_score(distance_m, waste_level, gas_level, temperature, h
     
     # Humidity priority (normalized, >70% = higher priority)
     humidity_priority = max(0.0, min(1.0, (humidity - 50.0) / 50.0))
+
+    # Traffic priority (1.0 = heavy traffic = low priority to visit)
+    traffic_priority = 1.0 - max(0.0, min(1.0, traffic_density))
     
     # Combined priority with weights
     priority = (
-        0.25 * distance_priority +  # Distance weight: 25%
-        0.35 * waste_priority +     # Waste level weight: 35%
-        0.25 * gas_priority +       # Gas level weight: 25%
+        0.20 * distance_priority +  # Distance weight: 20%
+        0.30 * waste_priority +     # Waste level weight: 30%
+        0.20 * gas_priority +       # Gas level weight: 20%
         0.10 * temp_priority +      # Temperature weight: 10%
-        0.05 * humidity_priority    # Humidity weight: 5%
+        0.05 * humidity_priority +  # Humidity weight: 5%
+        0.15 * traffic_priority     # Traffic weight: 15%
     )
     
     return max(0.0, min(1.0, priority))
@@ -87,7 +92,8 @@ def _extract_features_df(user_lat=23.7806, user_lng=90.2794):
             waste_level=latest_reading.waste_level,
             gas_level=latest_reading.gas_level,
             temperature=latest_reading.temperature,
-            humidity=latest_reading.humidity
+            humidity=latest_reading.humidity,
+            traffic_density=getattr(latest_reading, 'traffic_density', 0.0)
         )
         
         # Statistical features for better prediction
@@ -95,6 +101,7 @@ def _extract_features_df(user_lat=23.7806, user_lng=90.2794):
         humidities = [r.humidity for r in items[:10]]
         gas_levels = [r.gas_level for r in items[:10]]
         waste_levels = [r.waste_level for r in items[:10]]
+        traffic_levels = [getattr(r, 'traffic_density', 0.0) for r in items[:10]]
         
         # Time-based features
         hour = latest_reading.timestamp.hour
@@ -109,6 +116,7 @@ def _extract_features_df(user_lat=23.7806, user_lng=90.2794):
             'humidity': latest_reading.humidity,
             'gas_level': latest_reading.gas_level,
             'waste_level': latest_reading.waste_level,
+            'traffic_density': getattr(latest_reading, 'traffic_density', 0.0),
             'mean_temperature': np.mean(temperatures),
             'std_temperature': np.std(temperatures) if len(temperatures) > 1 else 0.0,
             'mean_humidity': np.mean(humidities),
@@ -117,6 +125,8 @@ def _extract_features_df(user_lat=23.7806, user_lng=90.2794):
             'std_gas': np.std(gas_levels) if len(gas_levels) > 1 else 0.0,
             'mean_waste': np.mean(waste_levels),
             'std_waste': np.std(waste_levels) if len(waste_levels) > 1 else 0.0,
+            'mean_traffic': np.mean(traffic_levels),
+            'std_traffic': np.std(traffic_levels) if len(traffic_levels) > 1 else 0.0,
             'hour': hour,
             'day_of_week': dow,
             'priority_score': priority_score  # Target variable
@@ -139,9 +149,9 @@ def train_from_db(n_estimators=100, random_state=42, test_size=0.2):
     
     # Define feature columns (exclude node_id and target)
     feature_cols = [
-        'distance_from_user', 'temperature', 'humidity', 'gas_level', 'waste_level',
+        'distance_from_user', 'temperature', 'humidity', 'gas_level', 'waste_level', 'traffic_density',
         'mean_temperature', 'std_temperature', 'mean_humidity', 'std_humidity',
-        'mean_gas', 'std_gas', 'mean_waste', 'std_waste', 'hour', 'day_of_week'
+        'mean_gas', 'std_gas', 'mean_waste', 'std_waste', 'mean_traffic', 'std_traffic', 'hour', 'day_of_week'
     ]
     
     X = df[feature_cols].values

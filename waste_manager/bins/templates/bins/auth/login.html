@@ -2,98 +2,133 @@
 
 {% block title %}Login - Smart Waste Management{% endblock %}
 
+{% block body_class %}auth-page auth-login{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/bins/css/auth.css">
+{% endblock %}
+
 {% block content %}
-<div class="login-container">
-  <div class="login-card">
-    <div class="login-header">
-      <h2>🔐 Welcome Back</h2>
-      <p>Sign in to your Smart Waste Management account</p>
-    </div>
-    
-    {% if form.errors %}
-      <div class="alert alert-error">
-        <strong>⚠️ Login Failed</strong>
-        <ul>
-          {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-              <li>{{ error }}</li>
+<div class="auth-page-wrap">
+  <header class="auth-simple-header">
+    <a href="/" class="auth-brand">WasteManager</a>
+    <nav class="auth-nav">
+      <a href="/login/" class="active">Login</a>
+      <a href="/signup/">Sign Up</a>
+    </nav>
+  </header>
+
+  <section class="auth-shell" id="about">
+    <div class="auth-panel auth-panel-form">
+      <div class="login-header auth-headline">
+        <p class="auth-kicker">Operations Portal</p>
+        <h1>Welcome back</h1>
+        <p>Sign in to monitor bins, predict priority, and dispatch routes in real time.</p>
+      </div>
+
+      {% if form.errors %}
+        <div class="alert alert-error">
+          <strong>Login failed</strong>
+          <ul>
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
             {% endfor %}
-          {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
-    
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-          {{ message }}
+          </ul>
         </div>
-      {% endfor %}
-    {% endif %}
-    
-    <form method="post" id="login-form" class="login-form">
-      {% csrf_token %}
-      
-      <div class="form-group">
-        <label for="username">👤 Username</label>
-        <input 
-          type="text" 
-          name="username" 
-          id="username"
-          placeholder="Enter your username"
-          required 
-          autocomplete="username"
-          class="form-input"
-        >
-      </div>
-      
-      <div class="form-group">
-        <label for="password">🔑 Password</label>
-        <input 
-          type="password" 
-          name="password" 
-          id="password"
-          placeholder="Enter your password"
-          required 
-          autocomplete="current-password"
-          class="form-input"
-        >
-      </div>
-      
-      <div class="form-group">
-        <div class="checkbox-group">
-          <input type="checkbox" id="remember" name="remember">
-          <label for="remember" class="checkbox-label">Remember me</label>
+      {% endif %}
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" id="login-form" class="login-form auth-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input
+            type="text"
+            name="username"
+            id="username"
+            placeholder="Enter your username"
+            required
+            autocomplete="username"
+            class="form-input"
+          >
         </div>
-      </div>
-      
-      <button type="submit" class="btn-primary btn-full">
-        <span class="btn-text">🚀 Sign In</span>
-        <span class="btn-loading">⏳ Signing in...</span>
-      </button>
-    </form>
-    
-    <div class="login-footer">
-      <p>Don't have an account? <a href="/signup/">Create one here</a></p>
-      <p><a href="/password-reset/">Forgot your password?</a></p>
-    </div>
-    
-    <div class="login-info">
-      <div class="info-item">
-        <span class="info-icon">📊</span>
-        <span>Real-time monitoring</span>
-      </div>
-      <div class="info-item">
-        <span class="info-icon">🤖</span>
-        <span>AI-powered optimization</span>
-      </div>
-      <div class="info-item">
-        <span class="info-icon">🗺️</span>
-        <span>Smart route planning</span>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            name="password"
+            id="password"
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+            class="form-input"
+          >
+        </div>
+
+        <div class="form-group checkbox-row">
+          <div class="checkbox-group">
+            <input type="checkbox" id="remember" name="remember">
+            <label for="remember" class="checkbox-label">Remember me</label>
+          </div>
+          <a href="/password-reset/" class="muted-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-primary btn-full">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-loading">Signing in...</span>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <p>New to the platform? <a href="/signup/">Create an account</a></p>
       </div>
     </div>
-  </div>
+
+    <div class="auth-panel auth-panel-info">
+      <p class="auth-kicker">Smart Waste Management Platform</p>
+      <h2>Cleaner routes. Faster collection. Better city operations.</h2>
+      <p>
+        The platform combines live sensor readings with machine learning and route optimization
+        to prioritize urgent bins and reduce operational delays.
+      </p>
+
+      <div class="auth-pill-row">
+        <span class="auth-pill">Live Sensor Feed</span>
+        <span class="auth-pill">AI Prioritization</span>
+        <span class="auth-pill">Route Optimization</span>
+      </div>
+
+      <ul class="auth-points">
+        <li>Track fill level, gas, humidity, and temperature from one dashboard.</li>
+        <li>Predict urgency scores before overflow and health-risk conditions happen.</li>
+        <li>Generate route recommendations based on distance and priority weights.</li>
+      </ul>
+    </div>
+  </section>
 </div>
 
 <script src="/static/bins/js/auth.js"></script>
+{% endblock %}
+
+{% block site_footer %}
+<footer class="auth-simple-footer">
+  <div class="auth-simple-footer-inner">
+    <p>Smart Waste Management System</p>
+    <small>© <span id="year"></span> Built for efficient urban waste operations by Md Ahbab hamid Khan.</small>
+  </div>
+</footer>
 {% endblock %}

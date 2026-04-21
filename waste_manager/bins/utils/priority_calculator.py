@@ -57,7 +57,8 @@ class PriorityCalculator:
                                 waste_level: float,
                                 gas_level: float,
                                 temperature: float,
-                                humidity: float) -> float:
+                                humidity: float,
+                                traffic_density: float = 0.0) -> float:
         """
         Calculate priority score for a single node
         
@@ -67,26 +68,23 @@ class PriorityCalculator:
             gas_level: Gas level (0.0-1.0)
             temperature: Temperature in Celsius
             humidity: Humidity percentage (0-100)
+            traffic_density: Traffic density (0.0-1.0)
         
         Returns:
             Priority score from 0.0 to 1.0 (higher = more urgent)
         """
-        # Distance priority (closer = higher priority)
-        distance_norm = min(1.0, max(0.0, distance_m / self.max_distance_m))
+        # Normalize inputs
+        distance_norm = max(0.0, min(1.0, distance_m / 2000.0))
         distance_priority = 1.0 - distance_norm
         
-        # Waste level priority (higher = higher priority)
         waste_priority = max(0.0, min(1.0, waste_level))
-        
-        # Gas level priority (higher = higher priority) 
         gas_priority = max(0.0, min(1.0, gas_level))
         
-        # Temperature priority (deviation from 25°C = higher priority)
-        temp_deviation = abs(temperature - 25.0) / 15.0  # ±15°C range
+        temp_deviation = abs(temperature - 25.0) / 15.0
         temp_priority = max(0.0, min(1.0, temp_deviation))
         
-        # Humidity priority (>70% = higher priority)
         humidity_priority = max(0.0, min(1.0, (humidity - 50.0) / 50.0))
+        traffic_priority = 1.0 - max(0.0, min(1.0, traffic_density))
         
         # Calculate weighted priority score
         priority = (
@@ -94,7 +92,8 @@ class PriorityCalculator:
             self.waste_weight * waste_priority +
             self.gas_weight * gas_priority +
             self.temperature_weight * temp_priority +
-            self.humidity_weight * humidity_priority
+            self.humidity_weight * humidity_priority +
+            0.10 * traffic_priority  # Fixed slight negative weight for high traffic
         )
         
         return max(0.0, min(1.0, priority))
@@ -114,9 +113,10 @@ class PriorityCalculator:
             use_ai_model: Whether to use trained AI model for prediction
         
         Returns:
-            Dict mapping node_id to priority score (0.0-1.0)
+            Tuple of (priorities_dict, traffic_scores_dict)
         """
         priorities = {}
+        traffic_scores = {}
         
         # Get latest readings for all nodes
         latest_readings = self._get_latest_readings(nodes)
@@ -148,12 +148,14 @@ class PriorityCalculator:
                     waste_level=reading.waste_level,
                     gas_level=reading.gas_level,
                     temperature=reading.temperature,
-                    humidity=reading.humidity
+                    humidity=reading.humidity,
+                    traffic_density=getattr(reading, 'traffic_density', 0.0)
                 )
             
             priorities[node.id] = priority
+            traffic_scores[node.id] = getattr(reading, 'traffic_density', 0.0)
         
-        return priorities
+        return priorities, traffic_scores
     
     def _get_latest_readings(self, nodes: List[Node]) -> Dict[int, SensorReading]:
         """Get the latest sensor reading for each node"""
@@ -188,13 +190,14 @@ class PriorityCalculator:
         """
         try:
             # Prepare features matching training data format
-            # This should match the feature order from train_model.py
+            traffic = getattr(reading, 'traffic_density', 0.0)
             features = [
                 distance_m,                    # distance_from_user
                 reading.temperature,           # temperature
                 reading.humidity,              # humidity
                 reading.gas_level,             # gas_level
                 reading.waste_level,           # waste_level
+                traffic,                       # traffic_density
                 reading.temperature,           # mean_temperature (simplified)
                 0.0,                          # std_temperature (simplified)
                 reading.humidity,              # mean_humidity (simplified)
@@ -203,6 +206,8 @@ class PriorityCalculator:
                 0.0,                          # std_gas (simplified)
                 reading.waste_level,           # mean_waste (simplified)
                 0.0,                          # std_waste (simplified)
+                traffic,                       # mean_traffic (simplified)
+                0.0,                          # std_traffic (simplified)
                 reading.timestamp.hour,        # hour
                 reading.timestamp.weekday()    # day_of_week
             ]
@@ -220,7 +225,8 @@ class PriorityCalculator:
                 waste_level=reading.waste_level,
                 gas_level=reading.gas_level,
                 temperature=reading.temperature,
-                humidity=reading.humidity
+                humidity=reading.humidity,
+                traffic_density=getattr(reading, 'traffic_density', 0.0)
             )
     
     def select_top_priority_nodes(self, 
@@ -241,7 +247,7 @@ class PriorityCalculator:
             List of (Node, priority_score) tuples sorted by priority (highest first)
         """
         # Calculate priorities for all nodes
-        priorities = self.calculate_node_priorities(nodes, user_lat, user_lng)
+        priorities, _ = self.calculate_node_priorities(nodes, user_lat, user_lng)
         
         # Sort nodes by priority (highest first)
         node_priorities = [

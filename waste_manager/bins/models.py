@@ -35,6 +35,7 @@ class SensorReading(models.Model):
         default=0.0,
         help_text="Waste level from 0.00 to 1.00 (0% to 100% full)"
     )
+    traffic_density = models.FloatField(default=0.0)  # Simulated traffic (0.0 = free, 1.0 = heavy)
     distance_to_next_bin = models.FloatField(null=True, blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
 

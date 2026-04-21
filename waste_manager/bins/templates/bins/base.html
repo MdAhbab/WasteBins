@@ -8,9 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
   <script defer src="/static/bins/js/dashboard.js"></script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   {% if user.is_authenticated %}
   <header class="topbar">
     <a href="/dashboard/" class="nav-brand">🗂️ WasteManager</a>
@@ -45,6 +46,7 @@
   <main>
     {% block content %}{% endblock %}
   </main>
+{% block site_footer %}
 <footer style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; margin-top: 60px;">
   <div style="max-width: 1200px; margin: 0 auto;">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-bottom: 30px;">
@@ -77,6 +79,7 @@
     </div>
   </div>
 </footer>
+{% endblock %}
 
   {% if user.is_authenticated %}
   <script>

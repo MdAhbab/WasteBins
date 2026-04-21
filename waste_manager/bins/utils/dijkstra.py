@@ -47,105 +47,78 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     return R * c
 
-def calculate_edge_weight(base_distance_m, destination_priority, alpha=0.5):
+def calculate_edge_weight(base_distance_m, destination_priority, destination_traffic=0.0, alpha=0.5):
     """
-    Calculate edge weight based on distance and destination node priority
-    Implementation as inverse function normalized by multiplying by 10:
+    Calculate edge weight based on distance, destination node priority, and traffic
     
-    weight = base_distance_m / (1 + alpha * (priority * 10))
-    
-    Args:
-        base_distance_m: Physical distance between nodes in meters
-        destination_priority: Priority score (0.0-1.0) of destination node
-        alpha: Weight factor for priority influence (default 0.5)
-    
-    Returns:
-        Edge weight (lower weight = higher priority route)
+    weight = (base_distance_m * (1 + destination_traffic * 3.0)) / (1 + alpha * (priority * 10))
     """
-    # Ensure priority is within valid range
     priority = max(0.0, min(1.0, destination_priority))
+    traffic = max(0.0, min(1.0, destination_traffic))
     
-    # Apply inverse function normalized by x10 as specified
-    weight = base_distance_m / (1.0 + alpha * (priority * 10.0))
+    # Increase base distance drastically when destination has high traffic
+    adjusted_distance = base_distance_m * (1.0 + traffic * 3.0)
     
+    # Apply inverse priority function
+    weight = adjusted_distance / (1.0 + alpha * (priority * 10.0))
     return weight
 
-def build_priority_graph(nodes, priority_scores, alpha=0.5):
+def build_priority_graph(nodes, priority_scores, traffic_scores=None, alpha=0.5):
     """
-    Build graph with edge weights calculated based on node priorities
-    
-    Args:
-        nodes: List of Node objects with latitude/longitude
-        priority_scores: Dict mapping node_id to priority score (0.0-1.0)
-        alpha: Weight factor for priority influence
-    
-    Returns:
-        Graph dict: {node_id: [(neighbor_id, weight), ...]}
+    Build graph with edge weights calculated based on node priorities and traffic
     """
+    if traffic_scores is None:
+        traffic_scores = {}
+
     graph = {}
     node_ids = [n.id for n in nodes]
     
-    # Initialize empty adjacency lists
     for node_id in node_ids:
         graph[node_id] = []
     
-    # Create fully connected graph with priority-based weights
     for i, node_u in enumerate(nodes):
         for j, node_v in enumerate(nodes):
             if i == j:
-                continue  # Skip self-loops
+                continue
             
-            # Calculate base distance
             base_distance = haversine_distance(
                 node_u.latitude or 0.0, node_u.longitude or 0.0,
                 node_v.latitude or 0.0, node_v.longitude or 0.0
             )
             
-            # Get destination node priority
             dest_priority = priority_scores.get(node_v.id, 0.0)
+            dest_traffic = traffic_scores.get(node_v.id, 0.0)
             
-            # Calculate edge weight favoring high-priority destinations
-            weight = calculate_edge_weight(base_distance, dest_priority, alpha)
-            
-            # Add edge to graph
+            weight = calculate_edge_weight(base_distance, dest_priority, dest_traffic, alpha)
             graph[node_u.id].append((node_v.id, weight))
     
     return graph
 
-def compute_optimal_route(nodes, priority_scores, source_node_id=None, user_location=None, alpha=0.5):
+def compute_optimal_route(nodes, priority_scores, traffic_scores=None, source_node_id=None, user_location=None, alpha=0.5):
     """
     Compute optimal route using Dijkstra's algorithm with priority-based edge weights
-    
-    Args:
-        nodes: List of Node objects
-        priority_scores: Dict mapping node_id to priority score (0.0-1.0)
-        source_node_id: Starting node ID (optional if user_location provided)
-        user_location: Dict with 'lat' and 'lng' keys (optional)
-        alpha: Weight factor for priority influence
-    
-    Returns:
-        Dict with route information including path, total_cost, and priorities
     """
+    if traffic_scores is None:
+        traffic_scores = {}
+
     if not nodes:
         raise ValueError("No nodes provided for routing")
     
-    # Build graph with priority-based weights
-    graph = build_priority_graph(nodes, priority_scores, alpha)
+    graph = build_priority_graph(nodes, priority_scores, traffic_scores, alpha)
     
-    # Handle virtual source node for user location
     virtual_source = None
     if user_location and 'lat' in user_location and 'lng' in user_location:
         virtual_source = 'user_location'
         graph[virtual_source] = []
         
-        # Connect user location to all nodes
         for node in nodes:
             base_distance = haversine_distance(
                 user_location['lat'], user_location['lng'],
                 node.latitude or 0.0, node.longitude or 0.0
             )
             dest_priority = priority_scores.get(node.id, 0.0)
-            weight = calculate_edge_weight(base_distance, dest_priority, alpha)
+            dest_traffic = traffic_scores.get(node.id, 0.0)
+            weight = calculate_edge_weight(base_distance, dest_priority, dest_traffic, alpha)
             graph[virtual_source].append((node.id, weight))
     
     # Determine source
