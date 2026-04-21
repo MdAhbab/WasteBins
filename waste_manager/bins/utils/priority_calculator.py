@@ -5,8 +5,19 @@ Implements the specified priority rules for dynamic node prioritization
 import math
 from typing import Dict, List, Tuple, Optional
 from django.db.models import QuerySet
+from django.conf import settings
 from bins.models import Node, SensorReading
 from .ai.model_store import load_model
+
+# Default features in case settings is missing them
+DEFAULT_DYNAMIC_FEATURES = {
+    'distance_m': {'type': 'priority', 'weight': 0.25, 'min_val': 0.0, 'max_val': 2000.0, 'impact': 'negative'},
+    'waste_level': {'type': 'priority', 'weight': 0.35, 'min_val': 0.0, 'max_val': 1.0, 'impact': 'positive'},
+    'gas_level': {'type': 'priority', 'weight': 0.25, 'min_val': 0.0, 'max_val': 1.0, 'impact': 'positive'},
+    'temperature': {'type': 'priority', 'weight': 0.10, 'min_val': 10.0, 'max_val': 40.0, 'optimal': 25.0, 'impact': 'deviation'},
+    'humidity': {'type': 'priority', 'weight': 0.05, 'min_val': 50.0, 'max_val': 100.0, 'impact': 'positive'},
+    'traffic_density': {'type': 'cost_multiplier', 'weight': 0.10, 'min_val': 0.0, 'max_val': 1.0, 'impact': 'negative'}
+}
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate haversine distance between two points in meters"""
@@ -52,51 +63,59 @@ class PriorityCalculator:
         self.humidity_weight = humidity_weight
         self.max_distance_m = max_distance_m
     
-    def calculate_single_priority(self, 
-                                distance_m: float,
-                                waste_level: float,
-                                gas_level: float,
-                                temperature: float,
-                                humidity: float,
-                                traffic_density: float = 0.0) -> float:
+    def calculate_single_priority(self, **kwargs) -> float:
         """
-        Calculate priority score for a single node
-        
-        Args:
-            distance_m: Distance from user location in meters
-            waste_level: Waste level (0.0-1.0)
-            gas_level: Gas level (0.0-1.0)
-            temperature: Temperature in Celsius
-            humidity: Humidity percentage (0-100)
-            traffic_density: Traffic density (0.0-1.0)
-        
-        Returns:
-            Priority score from 0.0 to 1.0 (higher = more urgent)
+        Calculate priority score dynamically based on available features and settings.
+        If a feature is missing from kwargs, it skips it and normalizes the weights
+        so the final score remains balanced between 0.0 and 1.0.
         """
-        # Normalize inputs
-        distance_norm = max(0.0, min(1.0, distance_m / 2000.0))
-        distance_priority = 1.0 - distance_norm
+        feature_config = getattr(settings, 'DYNAMIC_FEATURES', DEFAULT_DYNAMIC_FEATURES)
         
-        waste_priority = max(0.0, min(1.0, waste_level))
-        gas_priority = max(0.0, min(1.0, gas_level))
+        active_weight_sum = 0.0
+        priority_score = 0.0
         
-        temp_deviation = abs(temperature - 25.0) / 15.0
-        temp_priority = max(0.0, min(1.0, temp_deviation))
-        
-        humidity_priority = max(0.0, min(1.0, (humidity - 50.0) / 50.0))
-        traffic_priority = 1.0 - max(0.0, min(1.0, traffic_density))
-        
-        # Calculate weighted priority score
-        priority = (
-            self.distance_weight * distance_priority +
-            self.waste_weight * waste_priority +
-            self.gas_weight * gas_priority +
-            self.temperature_weight * temp_priority +
-            self.humidity_weight * humidity_priority +
-            0.10 * traffic_priority  # Fixed slight negative weight for high traffic
-        )
-        
-        return max(0.0, min(1.0, priority))
+        for feature, config in feature_config.items():
+            # Only process features that are present in our input and are meant to affect priority
+            if feature not in kwargs or kwargs[feature] is None:
+                continue
+                
+            val = float(kwargs[feature])
+            weight = config.get('weight', 0.0)
+            
+            # Allow cost_multipliers to also have a priority weight if requested
+            if weight <= 0.0:
+                continue
+                
+            min_v = config.get('min_val', 0.0)
+            max_v = config.get('max_val', 1.0)
+            impact = config.get('impact', 'positive')
+            
+            # Normalization Algebra
+            if impact == 'deviation' and 'optimal' in config:
+                opt = config['optimal']
+                # Max possible deviation is max(abs(max_v - opt), abs(min_v - opt))
+                max_dev = max(abs(max_v - opt), abs(min_v - opt))
+                norm = abs(val - opt) / max_dev if max_dev > 0 else 0.0
+            else:
+                norm = (val - min_v) / (max_v - min_v) if max_v > min_v else 0.0
+                
+            # Bound [0, 1]
+            norm = max(0.0, min(1.0, norm))
+            
+            # Invert for negative impact (e.g. higher distance = lower priority)
+            if impact == 'negative':
+                norm = 1.0 - norm
+                
+            priority_score += norm * weight
+            active_weight_sum += weight
+            
+        # Rescale based on active features
+        if active_weight_sum > 0:
+            final_priority = priority_score / active_weight_sum
+        else:
+            final_priority = 0.0
+            
+        return max(0.0, min(1.0, final_priority))
     
     def calculate_node_priorities(self, 
                                 nodes: List[Node],
@@ -142,15 +161,18 @@ class PriorityCalculator:
                     ai_model, node, reading, distance_m
                 )
             else:
-                # Use rule-based calculation
-                priority = self.calculate_single_priority(
-                    distance_m=distance_m,
-                    waste_level=reading.waste_level,
-                    gas_level=reading.gas_level,
-                    temperature=reading.temperature,
-                    humidity=reading.humidity,
-                    traffic_density=getattr(reading, 'traffic_density', 0.0)
-                )
+                # Use rule-based calculation with dynamic kwargs extraction
+                kwargs = {
+                    'distance_m': distance_m,
+                    'waste_level': reading.waste_level,
+                    'gas_level': reading.gas_level,
+                    'temperature': reading.temperature,
+                    'humidity': reading.humidity
+                }
+                if hasattr(reading, 'traffic_density') and reading.traffic_density is not None:
+                    kwargs['traffic_density'] = reading.traffic_density
+                
+                priority = self.calculate_single_priority(**kwargs)
             
             priorities[node.id] = priority
             traffic_scores[node.id] = getattr(reading, 'traffic_density', 0.0)
@@ -220,14 +242,16 @@ class PriorityCalculator:
             
         except Exception as e:
             # Fallback to rule-based calculation if AI prediction fails
-            return self.calculate_single_priority(
-                distance_m=distance_m,
-                waste_level=reading.waste_level,
-                gas_level=reading.gas_level,
-                temperature=reading.temperature,
-                humidity=reading.humidity,
-                traffic_density=getattr(reading, 'traffic_density', 0.0)
-            )
+            kwargs = {
+                'distance_m': distance_m,
+                'waste_level': reading.waste_level,
+                'gas_level': reading.gas_level,
+                'temperature': reading.temperature,
+                'humidity': reading.humidity
+            }
+            if hasattr(reading, 'traffic_density') and reading.traffic_density is not None:
+                kwargs['traffic_density'] = reading.traffic_density
+            return self.calculate_single_priority(**kwargs)
     
     def select_top_priority_nodes(self, 
                                 nodes: List[Node],

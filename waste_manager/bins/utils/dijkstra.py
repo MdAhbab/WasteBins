@@ -1,5 +1,11 @@
 import heapq
 import math
+from django.conf import settings
+
+# Default features in case settings is missing them
+DEFAULT_DYNAMIC_FEATURES = {
+    'traffic_density': {'type': 'cost_multiplier', 'routing_weight': 3.0, 'min_val': 0.0, 'max_val': 1.0, 'impact': 'negative'}
+}
 
 def dijkstra(graph, source):
     """
@@ -47,17 +53,35 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     return R * c
 
-def calculate_edge_weight(base_distance_m, destination_priority, destination_traffic=0.0, alpha=0.5):
+def calculate_edge_weight(base_distance_m, destination_priority, dynamic_costs=None, alpha=0.5):
     """
-    Calculate edge weight based on distance, destination node priority, and traffic
+    Calculate edge weight based on distance, destination node priority, and dynamic cost multipliers.
     
-    weight = (base_distance_m * (1 + destination_traffic * 3.0)) / (1 + alpha * (priority * 10))
+    cost_multiplier logic: weight = base_distance * PRODUCT(1 + (feature_val * routing_weight))
+    priority logic: weight = adjusted_distance / (1 + alpha * (priority * 10))
     """
     priority = max(0.0, min(1.0, destination_priority))
-    traffic = max(0.0, min(1.0, destination_traffic))
     
-    # Increase base distance drastically when destination has high traffic
-    adjusted_distance = base_distance_m * (1.0 + traffic * 3.0)
+    # Base adjustment
+    adjusted_distance = base_distance_m
+    
+    # Apply dynamic cost multipliers
+    feature_config = getattr(settings, 'DYNAMIC_FEATURES', DEFAULT_DYNAMIC_FEATURES)
+    if dynamic_costs:
+        for feature, val in dynamic_costs.items():
+            if feature in feature_config:
+                config = feature_config[feature]
+                if config.get('type') == 'cost_multiplier':
+                    scaling_weight = config.get('routing_weight', 1.0)
+                    min_v = config.get('min_val', 0.0)
+                    max_v = config.get('max_val', 1.0)
+                    
+                    # Normalize dynamic cost
+                    n_val = (val - min_v) / (max_v - min_v) if max_v > min_v else 0.0
+                    n_val = max(0.0, min(1.0, float(n_val)))
+                    
+                    # Inflate distance proportionally
+                    adjusted_distance *= (1.0 + n_val * scaling_weight)
     
     # Apply inverse priority function
     weight = adjusted_distance / (1.0 + alpha * (priority * 10.0))
@@ -87,9 +111,14 @@ def build_priority_graph(nodes, priority_scores, traffic_scores=None, alpha=0.5)
             )
             
             dest_priority = priority_scores.get(node_v.id, 0.0)
-            dest_traffic = traffic_scores.get(node_v.id, 0.0)
             
-            weight = calculate_edge_weight(base_distance, dest_priority, dest_traffic, alpha)
+            # Extract all dynamic costs for node_v from traffic_scores context
+            # In current implementation traffic_scores primarily held density, 
+            # we adapt it into a dynamic_costs dictionary for the new algorithm if it's a float
+            v_traffic = traffic_scores.get(node_v.id, 0.0)
+            dynamic_costs = {'traffic_density': v_traffic} if isinstance(v_traffic, (int, float)) else v_traffic
+            
+            weight = calculate_edge_weight(base_distance, dest_priority, dynamic_costs, alpha)
             graph[node_u.id].append((node_v.id, weight))
     
     return graph
@@ -117,8 +146,10 @@ def compute_optimal_route(nodes, priority_scores, traffic_scores=None, source_no
                 node.latitude or 0.0, node.longitude or 0.0
             )
             dest_priority = priority_scores.get(node.id, 0.0)
-            dest_traffic = traffic_scores.get(node.id, 0.0)
-            weight = calculate_edge_weight(base_distance, dest_priority, dest_traffic, alpha)
+            v_traffic = traffic_scores.get(node.id, 0.0)
+            dynamic_costs = {'traffic_density': v_traffic} if isinstance(v_traffic, (int, float)) else v_traffic
+            
+            weight = calculate_edge_weight(base_distance, dest_priority, dynamic_costs, alpha)
             graph[virtual_source].append((node.id, weight))
     
     # Determine source

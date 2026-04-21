@@ -156,3 +156,56 @@ try:
     from .local_settings import *
 except ImportError:
     pass
+
+# ---------------------------------------------------------------------------
+# Dynamic AI & Routing Feature Configuration
+# ---------------------------------------------------------------------------
+# Dynamic feature toggles and their weights. 
+# The algorithm math dynamically balances and normalizes if a feature is missing or added.
+DYNAMIC_FEATURES = {
+    'distance_m': {
+        'type': 'priority',
+        'weight': 0.25,
+        'min_val': 0.0,
+        'max_val': 2000.0,
+        'impact': 'negative'     # Closer = higher priority
+    },
+    'waste_level': {
+        'type': 'priority',
+        'weight': 0.35,
+        'min_val': 0.0,
+        'max_val': 1.0,
+        'impact': 'positive'     # Fuller = higher priority
+    },
+    'gas_level': {
+        'type': 'priority',
+        'weight': 0.25,
+        'min_val': 0.0,
+        'max_val': 1.0,
+        'impact': 'positive'     # Smelly = higher priority
+    },
+    'temperature': {
+        'type': 'priority',
+        'weight': 0.10,
+        'min_val': 10.0,
+        'max_val': 40.0,
+        'optimal': 25.0,         # Deviations from 25C increase priority (spoilage risk)
+        'impact': 'deviation'
+    },
+    'humidity': {
+        'type': 'priority',
+        'weight': 0.05,
+        'min_val': 50.0,
+        'max_val': 100.0,
+        'impact': 'positive'     # Higher humidity = higher priority
+    },
+    'traffic_density': {
+        'type': 'cost_multiplier', # Used in Dijkstra optimization
+        'routing_weight': 3.0,     # Multiplies physical distance (1 + traffic * weight)
+        'min_val': 0.0,
+        'max_val': 1.0,
+        # It also carries a small negative priority weight (optional, but requested to mirror previous behavior)
+        'weight': 0.10,
+        'impact': 'negative'       # High traffic slightly reduces a bin's raw priority
+    }
+}
