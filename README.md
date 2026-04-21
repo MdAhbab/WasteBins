@@ -3,7 +3,7 @@
 A Django-based intelligent waste management system with AI-powered route optimization using Random Forest machine learning and priority-based Dijkstra's algorithm for efficient waste collection.
 
 **Project Type:** Microprocessors and Microelectronics Lab Prototype  
-**Last Updated:** October 14, 2025
+**Last Updated:** April 21, 2026
 
 ---
 
@@ -23,17 +23,17 @@ A Django-based intelligent waste management system with AI-powered route optimiz
 
 ## 🎯 Overview
 
-This system optimizes waste collection routes by combining real-time sensor data with artificial intelligence. It uses a **Random Forest Regressor** to predict bin priorities and a modified **Dijkstra's algorithm** with dynamic edge weights to compute optimal collection routes.
+This system optimizes waste collection routes by combining real-time sensor data, Google Maps tracking, and artificial intelligence. It uses a **Random Forest Regressor** to predict bin priorities and a modified **traffic-aware Dijkstra's algorithm** with dynamic edge weights to compute optimal collection routes.
 
 ### Core Innovation
 
 The system implements a **priority-weighted routing algorithm** where high-priority bins appear "closer" in the graph through an inverse weight function:
 
 ```
-weight(u → v) = base_distance / (1 + α × (priority[v] × 10))
+weight(u → v) = base_distance(u, v) * (1 + (traffic_density[v] * 3.0)) / (1 + α × (priority[v] × 10))
 ```
 
-This creates up to **83% weight reduction** for urgent bins, naturally routing collectors through high-priority locations first.
+This ensures the shortest paths favor urgent bins while dynamically routing collectors away from high-traffic congestion.
 
 ---
 
@@ -44,6 +44,7 @@ This creates up to **83% weight reduction** for urgent bins, naturally routing c
 - **Humidity** monitoring (%)
 - **Gas level** detection (odor/methane, 0.0-1.0)
 - **Waste level** measurement (fill percentage, 0.0-1.0)
+- **Traffic Density** tracking (0.0-1.0) to model real-world street congestion
 - Automatic timestamp updates for each node
 
 ### 2. AI-Powered Priority Prediction
@@ -53,12 +54,12 @@ This creates up to **83% weight reduction** for urgent bins, naturally routing c
 - Temporal pattern recognition (hour, day of week)
 - Model validation: R² score ~0.93
 
-### 3. Smart Route Optimization
-- **Modified Dijkstra's algorithm** with priority weights
-- Routes favor high-priority bins automatically
-- Virtual source node for user GPS location
-- Top-N selection (1-5 most urgent bins)
-- Greedy TSP approximation for multi-bin routes
+### 3. Smart Traffic-Aware Routing
+- **Modified Dijkstra's algorithm** with priority and traffic-density weights.
+- Routes favor high-priority bins and penalize congested traffic nodes.
+- Virtual source node for user GPS location.
+- Live **Google Maps Integration** displaying user location, route polylines, and dynamic bin statuses.
+- Real-time simulation centered around **Mirpur, Dhaka** landmarks.
 
 ### 4. Multi-Criteria Priority System
 Calculates bin urgency using weighted factors:
@@ -75,11 +76,10 @@ Calculates bin urgency using weighted factors:
 - Role-based access control
 
 ### 6. Dashboard & Visualization
-- Live sensor readings display
-- Last update timestamps per node
-- Priority scores visualization
-- Route path visualization
-- System health monitoring
+- Premium **Sapphire Blue** flat UI (No-Glow aesthetics).
+- Live `@react-google-maps/api` map instance showing exact bin locations in Mirpur.
+- Priority scores visualization.
+- Interactive sidebars and system health monitoring.
 
 ---
 
@@ -119,7 +119,8 @@ Calculates bin urgency using weighted factors:
          ▼
 ┌─────────────────────────────────┐
 │  Graph Construction             │
-│  Dynamic edge weight = distance │
+│  Dynamic edge weight =          │
+│  distance * (1 + traffic*3.0)   │
 │  / (1 + α × priority × 10)      │
 └────────┬────────────────────────┘
          │
@@ -294,10 +295,11 @@ humidity_priority = max(0.0, min(1.0, (humidity - 50.0) / 50.0))
 
 **Formula:**
 ```
-weight(u → v) = base_distance(u, v) / (1 + α × (priority[v] × 10))
+weight(u → v) = base_distance(u, v) * (1 + (traffic_density[v] * 3.0)) / (1 + α × (priority[v] × 10))
 
 Where:
   base_distance = Haversine distance in meters
+  traffic_density = Live traffic multiplier (0.0 to 1.0) pushing the collector away from jams.
   priority[v] = Priority score of destination bin (0.0-1.0)
   α = Alpha parameter (default 0.5, configurable)
   × 10 = Normalization factor to amplify effect
@@ -375,9 +377,10 @@ std_value = np.std([reading1, reading2, ..., reading10])
 - **joblib 1.4.2** - Model persistence
 
 ### Frontend
-- **HTML5** - Structure
-- **CSS3** - Styling
-- **JavaScript (Vanilla)** - Interactivity
+- **React 18** (Vite)
+- **Google Maps API** (`@react-google-maps/api`)
+- **Lucide Icons**
+- **Vanilla CSS** (Premium Sapphire Blue theme)
 
 ### Database Schema
 
@@ -622,11 +625,20 @@ def __init__(self,
 
 ## 📖 Usage Guide
 
-### 1. Access Dashboard
+### 1. Zero-Config Launch (Recommended)
+
+To launch the full system (Backend, Frontend, and Dummy Sensor Data) in a single command, run the setup orchestrator from the project root:
+
+```bash
+python run_setup.py
 ```
-http://localhost:8000/dashboard/
+This handles dependencies, virtual environments, migrations, and process scaling automatically.
+
+### 2. Access Dashboard
 ```
-View real-time sensor readings, priorities, and routes.
+http://localhost:5173/login
+```
+*(The React Vite dev-server runs on port 5173 globally).*
 
 ### 2. Submit Sensor Data
 
@@ -640,7 +652,8 @@ Body:
   "temperature": 28.5,
   "humidity": 65.0,
   "gas_level": 0.45,
-  "waste_level": 0.78
+  "waste_level": 0.78,
+  "traffic_density": 0.8
 }
 ```
 
@@ -669,13 +682,12 @@ python manage.py shell
 >>> print(f"Model trained with R² = {result['validation_metrics']['r2']:.3f}")
 ```
 
-### 5. Load Sample Data
+### 5. Launch Mirpur Live Simulation
 
 ```bash
-python manage.py load_sample_data
+python send_dummy_data.py --username admin --password yourpassword
 ```
-
-Loads 5 nodes with 20 sensor readings for testing.
+*(This starts broadcasting traffic_density and bin levels directly to the local server, shifting coordinates to the Mirpur operational area).*
 
 ### 6. System Health Check
 

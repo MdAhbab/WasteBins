@@ -28,10 +28,10 @@ Complete installation guide for Windows and macOS.
 - **Internet:** Required for downloading dependencies
 
 ### Software Prerequisites
-- Python 3.8+
-- MySQL Server 8.0+
-- pip (Python package manager)
-- Git (optional, for cloning)
+- Python 3.13 (or 3.8+)
+- MySQL Server / MariaDB 8.0+
+- Node.js & npm
+- Git (optional)
 
 ---
 
@@ -74,65 +74,22 @@ Complete installation guide for Windows and macOS.
    - Find "MySQL80" service
    - Right-click → Start (if not running)
 
-### Step 3: Create Virtual Environment
+### Step 3: Run the Setup Orchestrator (New)
 
-1. **Navigate to project directory:**
+The easiest way to bootstrap the entire environment (Backend, Frontend, and Dummy Simulation) is via the unified setup script. This script automatically:
+- Creates a virtual environment (`.venv`).
+- Installs Python dependencies (`pip install`).
+- Installs Frontend dependencies (`npm install`).
+- Executes database migrations.
+- Bootstraps the Mirpur bin location data.
+- Launches all services in parallel.
+
+1. **Open a terminal in the project root directory**.
+2. **Run the script**:
    ```cmd
-   cd C:\path\to\Wastebins
+   python run_setup.py
    ```
-
-2. **Create virtual environment:**
-   ```cmd
-   python -m venv venv
-   ```
-
-3. **Activate virtual environment:**
-   ```cmd
-   venv\Scripts\activate
-   ```
-   You should see `(venv)` prefix in your command prompt.
-
-### Step 4: Install Dependencies
-
-1. **Upgrade pip and build tools:**
-   ```cmd
-   python -m pip install --upgrade pip setuptools wheel
-   ```
-
-2. **Install project dependencies:**
-   ```cmd
-   cd waste_manager
-   pip install -r requirements.txt
-   ```
-
-3. **If scikit-learn fails:**
-   ```cmd
-   pip install scikit-learn --no-cache-dir
-   ```
-
-### Step 5: Install mysqlclient (Windows-specific)
-
-**Option A: Using wheel file (Recommended)**
-
-1. Download the appropriate `.whl` file for your Python version from:
-   https://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient
-
-2. Install:
-   ```cmd
-   pip install mysqlclient-2.2.4-cp313-cp313-win_amd64.whl
-   ```
-
-**Option B: Using Microsoft C++ Build Tools**
-
-1. Download Visual Studio Build Tools:
-   https://visualstudio.microsoft.com/visual-cpp-build-tools/
-
-2. Install "Desktop development with C++"
-
-3. Install mysqlclient:
-   ```cmd
-   pip install mysqlclient
-   ```
+3. That's it! Access the dashboard at `http://localhost:5173/login`.
 
 ---
 
@@ -184,49 +141,21 @@ Complete installation guide for Windows and macOS.
    mysql --version
    ```
 
-### Step 4: Create Virtual Environment
+### Step 4: Run the Setup Orchestrator (New)
+
+Just like on Windows, you can automate your setup:
 
 1. **Navigate to project directory:**
    ```bash
    cd /Users/yourusername/Downloads/MicroLab/Wastebins
    ```
 
-2. **Create virtual environment:**
+2. **Run the script:**
    ```bash
-   python3 -m venv venv
+   python3 run_setup.py
    ```
 
-3. **Activate virtual environment:**
-   ```bash
-   source venv/bin/activate
-   ```
-   You should see `(venv)` prefix in your terminal.
-
-### Step 5: Install Dependencies
-
-1. **Upgrade pip:**
-   ```bash
-   pip install --upgrade pip setuptools wheel
-   ```
-
-2. **Install MySQL development files:**
-   ```bash
-   brew install mysql-client pkg-config
-   ```
-
-3. **Set environment variables for mysqlclient:**
-   ```bash
-   export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
-   export LDFLAGS="-L/opt/homebrew/opt/mysql-client/lib"
-   export CPPFLAGS="-I/opt/homebrew/opt/mysql-client/include"
-   export PKG_CONFIG_PATH="/opt/homebrew/opt/mysql-client/lib/pkgconfig"
-   ```
-
-4. **Install project dependencies:**
-   ```bash
-   cd waste_manager
-   pip install -r requirements.txt
-   ```
+The script will automatically configure your `.venv`, install all Python/Node packages, run migrations, and launch the platform at `http://localhost:5173/login`.
 
 ---
 
@@ -292,117 +221,29 @@ DATABASES = {
 
 ## 🚀 Initial Setup
 
-### Step 1: Run Migrations
+### Step 3: Run Setup Script
 
-**Windows:**
-```cmd
-cd waste_manager
-python manage.py migrate
-```
-
-**macOS:**
-```bash
-cd waste_manager
-python manage.py migrate
-```
-
-Expected output:
-```
-Operations to perform:
-  Apply all migrations: admin, auth, bins, contenttypes, sessions
-Running migrations:
-  Applying bins.0001_initial... OK
-  Applying bins.0002_alter_aicost_id_alter_bingroup_id... OK
-  ...
-```
-
-### Step 2: Create Superuser
-
-**Windows/macOS:**
-```bash
-python manage.py createsuperuser
-```
-
-Enter:
-- Username: (your choice, e.g., `admin`)
-- Email: (your email)
-- Password: (strong password)
-- Password confirmation: (same password)
-
-### Step 3: Load Sample Data (Optional)
-
-Load sample nodes and sensor readings for testing:
-
-```bash
-python manage.py load_sample_data
-```
-
-This creates:
-- 5 waste bin nodes with GPS coordinates
-- 20 sensor readings with realistic data
-- Sample for testing AI model and routing
-
-### Step 4: System Health Check
-
-```bash
-python manage.py check_system
-```
-
-Verifies:
-- ✓ Database connectivity
-- ✓ Sample data loaded
-- ✓ Node count
-- ✓ Sensor readings count
+The `run_setup.py` script automatically runs `manage.py migrate` and initializes the Mirpur operational nodes for you. It replaces manual data initialization.
 
 ---
 
 ## 🌐 Running the Server
 
-### Local Access Only
+### Using the Orchestrator (Zero-Config)
 
-**Windows:**
+**Windows & macOS:**
 ```cmd
-python manage.py runserver
+python run_setup.py
 ```
+This single command spins up three services simultaneously:
+- Django Backend
+- React / Vite Frontend
+- Mirpur Dummy Data Sender
 
-**macOS:**
-```bash
-python manage.py runserver
-```
+Access the dashboard at: http://localhost:5173/login
 
-Access at: http://localhost:8000/
-
-### LAN Access (All devices on network)
-
-**Windows:**
-```cmd
-python manage.py runserver 0.0.0.0:8000
-```
-
-**macOS:**
-```bash
-python manage.py runserver 0.0.0.0:8000
-```
-
-Find your IP address:
-
-**Windows:**
-```cmd
-ipconfig
-```
-Look for "IPv4 Address" (e.g., 192.168.1.100)
-
-**macOS:**
-```bash
-ifconfig | grep "inet "
-```
-Look for your local IP (e.g., 192.168.1.100)
-
-Access from other devices: http://192.168.1.100:8000/
-
-### Stop the Server
-
-Press `Ctrl + C` in the terminal.
+### Stop the Servers
+Press `Ctrl + C` in the orchestrator terminal. It will cleanly shut down all subprocesses.
 
 ---
 
@@ -410,7 +251,7 @@ Press `Ctrl + C` in the terminal.
 
 ### 1. Access Dashboard
 
-Visit: http://localhost:8000/dashboard/
+Visit: http://localhost:5173/login
 
 **First-time users:**
 - Click "Sign Up" to create an account
@@ -461,40 +302,7 @@ exit()
 
 ### Common Issues
 
-#### 1. "ModuleNotFoundError: No module named 'MySQLdb'"
-
-**Solution:**
-```bash
-pip install mysqlclient
-```
-
-If fails on Windows, use wheel file method (see Windows Step 5).
-
-#### 2. "Access denied for user 'root'@'localhost'"
-
-**Solution:**
-```sql
-mysql -u root -p
-ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
-FLUSH PRIVILEGES;
-```
-
-#### 3. "django.db.utils.OperationalError: (2003, "Can't connect to MySQL server")"
-
-**Solution:**
-
-**Windows:** Start MySQL service via Services app
-
-**macOS:**
-```bash
-brew services restart mysql
-```
-
-#### 4. "pip install fails with 'error: Microsoft Visual C++ 14.0 is required'"
-
-**Solution (Windows):**
-1. Install Visual Studio Build Tools
-2. Or use pre-compiled wheel files
+*(Note: `mysqlclient` and Visual Studio Build Tools are no longer required, as the project now uses pure-Python `pymysql`.)*
 
 #### 5. Virtual environment activation fails
 
@@ -665,27 +473,15 @@ deactivate
 
 ### Starting Work
 
-**Windows:**
+From the project root:
 ```cmd
-cd C:\path\to\Wastebins
-venv\Scripts\activate
-cd waste_manager
-python manage.py runserver 0.0.0.0:8000
-```
-
-**macOS:**
-```bash
-cd /path/to/Wastebins
-source venv/bin/activate
-cd waste_manager
-python manage.py runserver 0.0.0.0:8000
+python run_setup.py
 ```
 
 ### Stopping Work
 
-1. Press `Ctrl + C` to stop server
-2. Type `deactivate` to exit virtual environment
-3. Close terminal
+1. Press `Ctrl + C` in the orchestrator terminal.
+2. Close terminal.
 
 ---
 
@@ -741,31 +537,12 @@ After setup, verify these work:
 
 ### Complete Setup (Fresh Install)
 
-**Windows:**
+**Windows & macOS:**
+Just clone the repo, ensure MySQL is running, and execute:
 ```cmd
-python -m venv venv
-venv\Scripts\activate
-cd waste_manager
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py load_sample_data
-python manage.py runserver 0.0.0.0:8000
+python run_setup.py
 ```
-
-**macOS:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-cd waste_manager
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py load_sample_data
-python manage.py runserver 0.0.0.0:8000
-```
+*(The script will detect missing virtual environments, run NPM/PIP installs, make migrations, and launch!).*
 
 ---
 
