@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { RefreshCw, Cpu, TrendingUp, AlertTriangle, CheckCircle, Activity, Navigation } from 'lucide-react'
 import { fetchDashboard, fetchSettings } from '../api/endpoints'
 import { toast } from '../components/Toast'
+import { IS_DEMO, DEMO_DASHBOARD } from '../demo'
 import RingGauge from '../components/RingGauge'
 import RoutePanel from '../components/RoutePanel'
 
@@ -79,6 +80,10 @@ export default function Dashboard() {
 
   // Load settings to get user location for route computation
   useEffect(() => {
+    if (IS_DEMO) {
+      setUserLocation({ lat: 23.8069, lng: 90.3687 })
+      return
+    }
     fetchSettings()
       .then(res => {
         if (res.data.latitude && res.data.longitude) {
@@ -89,6 +94,12 @@ export default function Dashboard() {
   }, [])
 
   const load = async () => {
+    if (IS_DEMO) {
+      setData(DEMO_DASHBOARD)
+      if (DEMO_DASHBOARD.latest_route) setRoute(DEMO_DASHBOARD.latest_route)
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetchDashboard()
       setData(res.data)

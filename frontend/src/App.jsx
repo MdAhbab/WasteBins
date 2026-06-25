@@ -10,6 +10,7 @@ import Notifications from './pages/Notifications'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import { fetchMe, fetchNotifications } from './api/endpoints'
+import { IS_DEMO, DEMO_USER } from './demo'
 
 const PAGE_TITLES = {
   '/app/dashboard': 'Dashboard',
@@ -25,14 +26,20 @@ function Shell() {
   const [notifCount, setNotifCount] = useState(0)
 
   useEffect(() => {
-    fetchMe()
-      .then(res => setUser(res.data))
-      .catch(() => navigate('/login', { replace: true }))
+    // Preview/demo: skip the real auth check and show a demo viewer so visitors
+    // can explore the dashboard without a backend. Production is unaffected.
+    if (IS_DEMO) {
+      setUser(DEMO_USER)
+    } else {
+      fetchMe()
+        .then(res => setUser(res.data))
+        .catch(() => navigate('/login', { replace: true }))
+    }
 
     loadNotifCount()
     const iv = setInterval(loadNotifCount, 30000)
 
-    const onAuthRequired = () => navigate('/login', { replace: true })
+    const onAuthRequired = () => { if (!IS_DEMO) navigate('/login', { replace: true }) }
     window.addEventListener('auth:required', onAuthRequired)
 
     return () => {
@@ -86,9 +93,9 @@ export default function App() {
           <Route path="/signup/" element={<Signup />} />
           {/* App shell */}
           <Route path="/app/*" element={<Shell />} />
-          {/* Root & catch-all → login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Root & catch-all → dashboard in demo/preview, otherwise login */}
+          <Route path="/" element={<Navigate to={IS_DEMO ? '/app/dashboard' : '/login'} replace />} />
+          <Route path="*" element={<Navigate to={IS_DEMO ? '/app/dashboard' : '/login'} replace />} />
         </Routes>
       </SidebarProvider>
     </BrowserRouter>
