@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple, Optional
 from django.db.models import QuerySet
 from django.conf import settings
 from bins.models import Node, SensorReading
-from .ai.model_store import load_model
+from .ai.model_store import load_model, load_forward_bundle
 
 # Default features in case settings is missing them
 DEFAULT_DYNAMIC_FEATURES = {
@@ -136,26 +136,31 @@ class PriorityCalculator:
         """
         priorities = {}
         traffic_scores = {}
-        
+
         # Get latest readings for all nodes
         latest_readings = self._get_latest_readings(nodes)
-        
-        # Load AI model if requested and available
-        ai_model = load_model() if use_ai_model else None
-        
+
+        # Prefer the forward-looking (non-circular) bundle when available; it
+        # predicts hazard/time-to-overflow from the recent history rather than
+        # re-deriving a formula from the current reading.
+        forward_bundle = load_forward_bundle() if use_ai_model else None
+        ai_model = load_model() if (use_ai_model and forward_bundle is None) else None
+
         for node in nodes:
             reading = latest_readings.get(node.id)
             if not reading:
                 priorities[node.id] = 0.0
                 continue
-            
+
             # Calculate distance from user
             distance_m = haversine_distance(
                 user_lat, user_lng,
                 node.latitude or 0.0, node.longitude or 0.0
             )
-            
-            if ai_model:
+
+            if forward_bundle is not None:
+                priority = self._predict_priority_forward(forward_bundle, node)
+            elif ai_model:
                 # Use AI model for prediction
                 priority = self._predict_priority_with_ai(
                     ai_model, node, reading, distance_m
@@ -253,7 +258,47 @@ class PriorityCalculator:
                 kwargs['traffic_density'] = reading.traffic_density
             return self.calculate_single_priority(**kwargs)
     
-    def select_top_priority_nodes(self, 
+    def _predict_priority_forward(self, bundle, node: Node) -> float:
+        """
+        Risk-aware priority from the forward-looking bundle, using the node's
+        recent reading history to build the engineered feature row.
+        Falls back to the renormalised rule if anything is missing.
+        """
+        try:
+            from .ai.train_forward import FEATURE_COLS, ROLL, predict_forward
+            import numpy as np
+            recent = list(
+                SensorReading.objects.filter(node_id=node.id)
+                .order_by('-timestamp')[:ROLL]
+            )[::-1]
+            if not recent:
+                raise ValueError("no readings")
+            latest = recent[-1]
+
+            def series(attr):
+                return [float(getattr(r, attr)) for r in recent]
+
+            row = {}
+            for src, name in [('waste_level', 'waste'), ('gas_level', 'gas'),
+                              ('temperature', 'temp'), ('humidity', 'humidity')]:
+                vals = series(src)
+                row[name] = vals[-1]
+                row[f'mean_{name}'] = float(np.mean(vals))
+                row[f'std_{name}'] = float(np.std(vals)) if len(vals) > 1 else 0.0
+                row[f'trend_{name}'] = (vals[-1] - vals[0]) / ROLL if len(vals) > 1 else 0.0
+            row['hour'] = latest.timestamp.hour
+            row['dow'] = latest.timestamp.weekday()
+            row = {c: row.get(c, 0.0) for c in FEATURE_COLS}
+            return predict_forward(bundle, row)['risk_priority']
+        except Exception:
+            reading = SensorReading.objects.filter(node_id=node.id).order_by('-timestamp').first()
+            if not reading:
+                return 0.0
+            kwargs = {'waste_level': reading.waste_level, 'gas_level': reading.gas_level,
+                      'temperature': reading.temperature, 'humidity': reading.humidity}
+            return self.calculate_single_priority(**kwargs)
+
+    def select_top_priority_nodes(self,
                                 nodes: List[Node],
                                 user_lat: float,
                                 user_lng: float,

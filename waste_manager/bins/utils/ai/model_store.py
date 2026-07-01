@@ -34,3 +34,36 @@ def load_meta():
         with open(mp, 'r') as f:
             return json.load(f)
     return {}
+
+
+# ---------------------------------------------------------------------------
+# Forward-looking bundle (regressor + quantiles + calibrated hazard classifier)
+# ---------------------------------------------------------------------------
+def forward_path():
+    return settings.FORWARD_MODEL_FILENAME
+
+
+def forward_meta_path():
+    return settings.FORWARD_MODEL_META_FILENAME
+
+
+def save_forward_bundle(bundle: dict, meta: dict):
+    """bundle keys: 'regressor', 'q10', 'q50', 'q90', 'classifier', 'features'."""
+    dump(bundle, forward_path())
+    with open(forward_meta_path(), 'w') as f:
+        json.dump(meta, f)
+
+
+def load_forward_bundle():
+    p = forward_path()
+    if Path(p).exists():
+        return load(p)
+    return None
+
+
+def load_forward_meta():
+    mp = forward_meta_path()
+    if Path(mp).exists():
+        with open(mp, 'r') as f:
+            return json.load(f)
+    return {}

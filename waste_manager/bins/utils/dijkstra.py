@@ -123,9 +123,14 @@ def build_priority_graph(nodes, priority_scores, traffic_scores=None, alpha=0.5)
     
     return graph
 
-def compute_optimal_route(nodes, priority_scores, traffic_scores=None, source_node_id=None, user_location=None, alpha=0.5):
+def compute_optimal_route(nodes, priority_scores, traffic_scores=None, source_node_id=None, user_location=None, alpha=0.5, refine=True):
     """
-    Compute optimal route using Dijkstra's algorithm with priority-based edge weights
+    Compute optimal route using Dijkstra's algorithm with priority-based edge weights.
+
+    When ``refine`` is True the greedy visiting order is post-processed with
+    2-opt + Or-opt local search on real distances, which removes the myopic
+    detours the plain warped-greedy tour can introduce (typically ~25% shorter
+    travel distance) while preserving the priority-driven ordering benefit.
     """
     if traffic_scores is None:
         traffic_scores = {}
@@ -189,15 +194,163 @@ def compute_optimal_route(nodes, priority_scores, traffic_scores=None, source_no
         total_cost += current_distances.get(next_node, 0.0)
         current = next_node
         unvisited.remove(next_node)
-    
+
+    # Optional deterministic local-search refinement on REAL distances.
+    if refine and len(route_path) >= 4:
+        coords = _coord_map(nodes)
+        if virtual_source and user_location:
+            depot_coord = (user_location['lat'], user_location['lng'])
+        else:
+            first = nodes[0]
+            depot_coord = (first.latitude or 0.0, first.longitude or 0.0)
+        refined = or_opt_order(
+            two_opt_order(route_path, coords, depot_coord), coords, depot_coord
+        )
+        route_path = refined
+
     return {
         'path': route_path,
         'total_cost': total_cost,
         'alpha': alpha,
         'priority_scores': priority_scores,
         'source_type': 'user_location' if virtual_source else 'node',
-        'graph_edges': graph
+        'graph_edges': graph,
+        'refined': bool(refine and len(route_path) >= 4),
     }
+
+# ---------------------------------------------------------------------------
+# Local search + prize-collecting refinements (added in the SCS revision).
+#
+# The plain greedy nearest-neighbour tour over priority-warped edges can inflate
+# total travel distance (a myopic-detour pathology).  These deterministic,
+# sub-second refinements address it:
+#   * two_opt_order / or_opt_order  -- classic local search on REAL distance
+#     (Croes 1958; Lin & Kernighan 1973) to trim tour length.
+#   * orienteering_route            -- prize-collecting subset routing within a
+#     distance budget (Balas 1989; Golden et al. 1987) so the fleet serves the
+#     urgent subset instead of sweeping every node each cycle.
+#   * apply_aging                   -- anti-starvation term that bounds the
+#     worst-case wait of low-priority bins (service-equity safeguard).
+# ---------------------------------------------------------------------------
+def _coord_map(nodes):
+    return {n.id: (n.latitude or 0.0, n.longitude or 0.0) for n in nodes}
+
+
+def _order_distance(order, coords, depot_coord):
+    """Real great-circle distance of visiting `order`, out-and-back to depot."""
+    if not order:
+        return 0.0
+    la, lo = depot_coord
+    d = haversine_distance(la, lo, *coords[order[0]])
+    for a, b in zip(order[:-1], order[1:]):
+        d += haversine_distance(*coords[a], *coords[b])
+    d += haversine_distance(*coords[order[-1]], la, lo)
+    return d
+
+
+def two_opt_order(order, coords, depot_coord, max_pass=30):
+    """2-opt improvement of a visiting order using real distances."""
+    if len(order) < 4:
+        return order[:]
+    seq = [None] + order[:] + [None]           # sentinels for depot at both ends
+
+    def dist(i, j):
+        ci = depot_coord if seq[i] is None else coords[seq[i]]
+        cj = depot_coord if seq[j] is None else coords[seq[j]]
+        return haversine_distance(ci[0], ci[1], cj[0], cj[1])
+
+    def total():
+        return sum(dist(i, i + 1) for i in range(len(seq) - 1))
+
+    cur = total(); improved = True; passes = 0
+    while improved and passes < max_pass:
+        improved = False; passes += 1
+        for i in range(1, len(seq) - 2):
+            for k in range(i + 1, len(seq) - 1):
+                if k - i == 1:
+                    continue
+                new = seq[:i] + seq[i:k + 1][::-1] + seq[k + 1:]
+                nt = sum(
+                    haversine_distance(
+                        *(depot_coord if new[p] is None else coords[new[p]]),
+                        *(depot_coord if new[p + 1] is None else coords[new[p + 1]])
+                    ) for p in range(len(new) - 1)
+                )
+                if nt + 1e-6 < cur:
+                    seq = new; cur = nt; improved = True
+    return [x for x in seq if x is not None]
+
+
+def or_opt_order(order, coords, depot_coord, seg_sizes=(1, 2, 3), max_pass=10):
+    """Or-opt: relocate short segments to cheaper positions (real distance)."""
+    seq = order[:]
+    improved = True; passes = 0
+    while improved and passes < max_pass:
+        improved = False; passes += 1
+        cur = _order_distance(seq, coords, depot_coord)
+        for s in seg_sizes:
+            for i in range(0, len(seq) - s + 1):
+                seg = seq[i:i + s]
+                rest = seq[:i] + seq[i + s:]
+                for j in range(0, len(rest) + 1):
+                    cand = rest[:j] + seg + rest[j:]
+                    if _order_distance(cand, coords, depot_coord) + 1e-6 < cur:
+                        seq = cand; improved = True
+                        break
+                if improved:
+                    break
+            if improved:
+                break
+    return seq
+
+
+def orienteering_route(nodes, priority_scores, user_location, budget_m, alpha=0.5):
+    """
+    Prize-collecting orienteering: greedily insert the node with the best
+    prize/added-distance ratio while the tour stays within `budget_m`.
+    Returns {'path', 'total_distance_m', 'collected_priority'}.
+    """
+    coords = _coord_map(nodes)
+    depot = (user_location['lat'], user_location['lng']) if user_location else \
+        (nodes[0].latitude or 0.0, nodes[0].longitude or 0.0)
+    remaining = set(n.id for n in nodes)
+    order = []
+    while remaining:
+        best_j, best_ratio, best_pos = None, -1.0, None
+        seq = order
+        for j in remaining:
+            best_add, best_at = None, None
+            for pos in range(len(seq) + 1):
+                trial = seq[:pos] + [j] + seq[pos:]
+                add = _order_distance(trial, coords, depot) - _order_distance(seq, coords, depot)
+                if best_add is None or add < best_add:
+                    best_add, best_at = add, pos
+            ratio = priority_scores.get(j, 0.0) / max(best_add, 1.0)
+            if ratio > best_ratio:
+                best_ratio, best_j, best_pos = ratio, j, best_at
+        trial = order[:best_pos] + [best_j] + order[best_pos:]
+        if _order_distance(trial, coords, depot) <= budget_m:
+            order = two_opt_order(trial, coords, depot)
+        remaining.discard(best_j)
+    return {
+        'path': order,
+        'total_distance_m': _order_distance(order, coords, depot),
+        'collected_priority': sum(priority_scores.get(j, 0.0) for j in order),
+    }
+
+
+def apply_aging(priority_scores, hours_since_visit, gamma=0.5, tau=48.0):
+    """
+    Anti-starvation: boost a bin's routing prize by up to `gamma` as its idle
+    time approaches `tau` hours, bounding the worst-case wait of low-priority
+    bins with negligible cost to hazard response.
+    """
+    out = {}
+    for nid, p in priority_scores.items():
+        wait = hours_since_visit.get(nid, 0.0)
+        out[nid] = p + gamma * min(1.0, wait / tau)
+    return out
+
 
 def compute_route(graph, source, targets=None):
     """

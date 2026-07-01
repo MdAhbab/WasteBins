@@ -151,6 +151,17 @@ MODEL_STORE_DIR.mkdir(exist_ok=True)
 MODEL_FILENAME = MODEL_STORE_DIR / 'rf_cost_model.joblib'
 MODEL_META_FILENAME = MODEL_STORE_DIR / 'rf_cost_model_meta.json'
 
+# Forward-looking (non-circular) prediction bundle: a histogram gradient-boosting
+# regressor for time-to-overflow, P10/P50/P90 quantile regressors for uncertainty,
+# and a calibrated hazard classifier. See bins/utils/ai/train_forward.py.
+FORWARD_MODEL_FILENAME = MODEL_STORE_DIR / 'forward_bundle.joblib'
+FORWARD_MODEL_META_FILENAME = MODEL_STORE_DIR / 'forward_bundle_meta.json'
+
+# Routing refinements toggle (2-opt/Or-opt local search + orienteering budget).
+ROUTING_REFINE = True
+ROUTING_AGING_GAMMA = 0.5      # anti-starvation weight (0 disables)
+ROUTING_AGING_TAU_H = 48.0     # hours at which the aging boost saturates
+
 # Local settings override
 try:
     from .local_settings import *

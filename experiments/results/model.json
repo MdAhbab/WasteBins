@@ -1,0 +1,124 @@
+{
+  "dataset": {
+    "n_records": 129597,
+    "n_bins": 30,
+    "days": 180,
+    "n_train": 86397,
+    "n_test": 43200,
+    "hazard_rate_test": 0.18578703703703703
+  },
+  "A_circular_pitfall": {
+    "target": "deterministic priority formula of the SAME inputs",
+    "model": "RandomForest (manuscript config)",
+    "r2_test": 0.993,
+    "interpretation": "self-consistency, not predictive skill"
+  },
+  "B_forward_regression_time_to_overflow": {
+    "target": "hours until fill>=1.0",
+    "temporal_split": "first 120d train / last 60d test",
+    "models": {
+      "persistence_mean": {
+        "r2": -0.0002,
+        "mae_h": 7.955
+      },
+      "ridge_current_state": {
+        "r2": 0.6977,
+        "mae_h": 3.89
+      },
+      "random_forest": {
+        "r2": 0.8116,
+        "mae_h": 2.421
+      },
+      "hist_grad_boost": {
+        "r2": 0.8246,
+        "mae_h": 2.167
+      }
+    }
+  },
+  "D_uncertainty_quantile": {
+    "method": "quantile gradient boosting (P10/P50/P90)",
+    "nominal_interval": 0.8,
+    "empirical_coverage_P10_P90": 0.93,
+    "median_r2": 0.8043,
+    "use": "P10 (soonest-overflow) drives risk-aware priority for critical bins"
+  },
+  "C_forward_classification_hazard": {
+    "random_forest": {
+      "roc_auc": 0.9791,
+      "avg_precision": 0.9199,
+      "brier": 0.0368
+    },
+    "hist_grad_boost": {
+      "roc_auc": 0.9813,
+      "avg_precision": 0.9392,
+      "brier": 0.033
+    },
+    "baseline_current_fill": {
+      "roc_auc": 0.97
+    },
+    "baseline_current_gas": {
+      "roc_auc": 0.8962
+    },
+    "hist_grad_boost_calibrated": {
+      "roc_auc": 0.9816,
+      "avg_precision": 0.9407,
+      "brier": 0.0327
+    },
+    "reliability_curve_calibrated": {
+      "mean_predicted": [
+        0.0,
+        0.0,
+        0.001,
+        0.002,
+        0.005,
+        0.019,
+        0.041,
+        0.103,
+        0.708,
+        0.966
+      ],
+      "fraction_positive": [
+        0.0,
+        0.0,
+        0.001,
+        0.001,
+        0.006,
+        0.023,
+        0.044,
+        0.089,
+        0.718,
+        0.978
+      ]
+    }
+  },
+  "feature_importance_permutation": {
+    "waste": 1.1689,
+    "mean_waste": 0.0467,
+    "trend_gas": 0.0338,
+    "std_waste": 0.0332,
+    "gas": 0.0123,
+    "hour": 0.0078,
+    "mean_gas": 0.0069,
+    "dow": 0.0067,
+    "trend_waste": 0.0058,
+    "std_gas": 0.0021,
+    "temp": 0.0014,
+    "std_temp": 0.0011,
+    "trend_temp": 0.0007,
+    "mean_humidity": 0.0007,
+    "std_humidity": 0.0005,
+    "trend_humidity": 0.0001,
+    "humidity": 0.0001,
+    "mean_temp": -0.0004
+  },
+  "F_inference_latency": {
+    "model": "hist_grad_boost",
+    "n": 5000,
+    "total_ms": 37.48,
+    "per_1000_ms": 7.497
+  },
+  "group_kfold_by_bin_hgb": {
+    "r2_mean": 0.8075,
+    "r2_std": 0.0494
+  }
+}
