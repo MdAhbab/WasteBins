@@ -1,0 +1,113 @@
+{
+  "n_snapshots": 25,
+  "speed_kmh": 20.0,
+  "co2_kg_per_km": 1.05,
+  "A_static_full": {
+    "distance_km": 22.051,
+    "co2_kg": 23.153,
+    "n_visited": 30.0,
+    "n_critical_served": 11.48,
+    "mean_time_to_critical_h": 0.495,
+    "worst_time_to_critical_h": 1.018,
+    "missed_overflow": 6.28
+  },
+  "B_threshold": {
+    "distance_km": 14.626,
+    "co2_kg": 15.358,
+    "n_visited": 10.12,
+    "n_critical_served": 9.44,
+    "mean_time_to_critical_h": 0.372,
+    "worst_time_to_critical_h": 0.652,
+    "missed_overflow": 6.28
+  },
+  "C_priority_warped_a1": {
+    "distance_km": 30.486,
+    "co2_kg": 32.01,
+    "n_visited": 30.0,
+    "n_critical_served": 11.48,
+    "mean_time_to_critical_h": 0.431,
+    "worst_time_to_critical_h": 0.928,
+    "missed_overflow": 6.28
+  },
+  "D_priority_plus_localsearch": {
+    "distance_km": 22.554,
+    "co2_kg": 23.682,
+    "n_visited": 30.0,
+    "n_critical_served": 11.48,
+    "mean_time_to_critical_h": 0.545,
+    "worst_time_to_critical_h": 1.012,
+    "missed_overflow": 6.28
+  },
+  "D_localsearch_dist_reduction_pct": 25.71,
+  "E_orienteering_65pct_budget": {
+    "distance_km": 13.449,
+    "co2_kg": 14.121,
+    "n_visited": 19.24,
+    "n_critical_served": 8.8,
+    "mean_time_to_critical_h": 0.337,
+    "worst_time_to_critical_h": 0.587,
+    "missed_overflow": 4.84,
+    "critical_coverage_pct": 76.684,
+    "prize_collected_pct": 67.888
+  },
+  "_latency_ms": {
+    "static": 33.79,
+    "proposed": 43.0
+  },
+  "C_alpha_sweep_mean": {
+    "0.0": {
+      "distance_km": 27.2,
+      "co2_kg": 28.56,
+      "n_visited": 30.0,
+      "n_critical_served": 11.48,
+      "mean_time_to_critical_h": 0.481,
+      "worst_time_to_critical_h": 1.083,
+      "missed_overflow": 6.32
+    },
+    "0.25": {
+      "distance_km": 28.175,
+      "co2_kg": 29.584,
+      "n_visited": 30.0,
+      "n_critical_served": 11.48,
+      "mean_time_to_critical_h": 0.466,
+      "worst_time_to_critical_h": 0.966,
+      "missed_overflow": 6.28
+    },
+    "0.5": {
+      "distance_km": 29.861,
+      "co2_kg": 31.354,
+      "n_visited": 30.0,
+      "n_critical_served": 11.48,
+      "mean_time_to_critical_h": 0.459,
+      "worst_time_to_critical_h": 0.996,
+      "missed_overflow": 6.28
+    },
+    "1.0": {
+      "distance_km": 30.486,
+      "co2_kg": 32.01,
+      "n_visited": 30.0,
+      "n_critical_served": 11.48,
+      "mean_time_to_critical_h": 0.431,
+      "worst_time_to_critical_h": 0.928,
+      "missed_overflow": 6.28
+    },
+    "2.0": {
+      "distance_km": 31.278,
+      "co2_kg": 32.842,
+      "n_visited": 30.0,
+      "n_critical_served": 11.48,
+      "mean_time_to_critical_h": 0.424,
+      "worst_time_to_critical_h": 0.889,
+      "missed_overflow": 6.32
+    },
+    "4.0": {
+      "distance_km": 31.823,
+      "co2_kg": 33.414,
+      "n_visited": 30.0,
+      "n_critical_served": 11.48,
+      "mean_time_to_critical_h": 0.415,
+      "worst_time_to_critical_h": 0.872,
+      "missed_overflow": 6.32
+    }
+  }
+}

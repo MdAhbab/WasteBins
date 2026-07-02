@@ -1,0 +1,11 @@
+# Large regenerable caches (rebuild with dataset.py)
+results/*.pkl
+results/*.parquet
+results/*.out
+
+# Downloaded real datasets (fetch per README)
+realdata/
+
+# Python
+__pycache__/
+*.pyc

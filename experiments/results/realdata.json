@@ -1,0 +1,33 @@
+{
+  "dataset": "iot_telemetry_data.csv",
+  "n_records": 34569,
+  "groups": 3,
+  "resample": "1min",
+  "horizon_steps": 30,
+  "hazard_pctl": 95,
+  "hazard_rate_test": 0.026464208242950107,
+  "calibrated_hgb": {
+    "roc_auc": 0.7993,
+    "avg_precision": 0.159,
+    "brier": 0.0263
+  },
+  "baseline_current_gas": {
+    "roc_auc": 0.6428
+  },
+  "features": [
+    "temp",
+    "mean_temp",
+    "std_temp",
+    "trend_temp",
+    "humidity",
+    "mean_humidity",
+    "std_humidity",
+    "trend_humidity",
+    "gas",
+    "mean_gas",
+    "std_gas",
+    "trend_gas",
+    "hour",
+    "dow"
+  ]
+}

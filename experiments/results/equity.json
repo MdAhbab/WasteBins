@@ -1,0 +1,50 @@
+{
+  "shift_h": 8,
+  "days": 14,
+  "tau_h": 48.0,
+  "sweep": [
+    {
+      "gamma": 0.0,
+      "worst_wait_h": 231.7,
+      "mean_wait_h": 59.1,
+      "gini_visits": 0.343,
+      "never_served": 0,
+      "mean_time_to_critical_h": 0.268,
+      "total_visits": 718
+    },
+    {
+      "gamma": 0.25,
+      "worst_wait_h": 143.8,
+      "mean_wait_h": 44.6,
+      "gini_visits": 0.33,
+      "never_served": 0,
+      "mean_time_to_critical_h": 0.281,
+      "total_visits": 714
+    },
+    {
+      "gamma": 0.5,
+      "worst_wait_h": 111.6,
+      "mean_wait_h": 34.6,
+      "gini_visits": 0.325,
+      "never_served": 0,
+      "mean_time_to_critical_h": 0.281,
+      "total_visits": 714
+    },
+    {
+      "gamma": 1.0,
+      "worst_wait_h": 66.0,
+      "mean_wait_h": 30.1,
+      "gini_visits": 0.297,
+      "never_served": 0,
+      "mean_time_to_critical_h": 0.282,
+      "total_visits": 711
+    }
+  ],
+  "headline": {
+    "worst_wait_reduction_h": 120.1,
+    "gini_improvement": 0.018,
+    "never_served_before": 0,
+    "never_served_after": 0,
+    "critical_response_cost_h": 0.013
+  }
+}
