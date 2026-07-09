@@ -51,8 +51,8 @@
     "prize_collected_pct": 67.888
   },
   "_latency_ms": {
-    "static": 33.79,
-    "proposed": 43.0
+    "static": 16.01,
+    "proposed": 20.42
   },
   "C_alpha_sweep_mean": {
     "0.0": {

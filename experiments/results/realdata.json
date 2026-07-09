@@ -7,9 +7,9 @@
   "hazard_pctl": 95,
   "hazard_rate_test": 0.026464208242950107,
   "calibrated_hgb": {
-    "roc_auc": 0.7993,
-    "avg_precision": 0.159,
-    "brier": 0.0263
+    "roc_auc": 0.8231,
+    "avg_precision": 0.2328,
+    "brier": 0.0252
   },
   "baseline_current_gas": {
     "roc_auc": 0.6428

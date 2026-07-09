@@ -30,27 +30,27 @@
         "mae_h": 2.421
       },
       "hist_grad_boost": {
-        "r2": 0.8246,
-        "mae_h": 2.167
+        "r2": 0.8263,
+        "mae_h": 2.16
       }
     }
   },
   "D_uncertainty_quantile": {
     "method": "quantile gradient boosting (P10/P50/P90)",
     "nominal_interval": 0.8,
-    "empirical_coverage_P10_P90": 0.93,
-    "median_r2": 0.8043,
+    "empirical_coverage_P10_P90": 0.989,
+    "median_r2": 0.8045,
     "use": "P10 (soonest-overflow) drives risk-aware priority for critical bins"
   },
   "C_forward_classification_hazard": {
     "random_forest": {
       "roc_auc": 0.9791,
-      "avg_precision": 0.9199,
-      "brier": 0.0368
+      "avg_precision": 0.9203,
+      "brier": 0.0395
     },
     "hist_grad_boost": {
       "roc_auc": 0.9813,
-      "avg_precision": 0.9392,
+      "avg_precision": 0.9387,
       "brier": 0.033
     },
     "baseline_current_fill": {
@@ -61,8 +61,8 @@
     },
     "hist_grad_boost_calibrated": {
       "roc_auc": 0.9816,
-      "avg_precision": 0.9407,
-      "brier": 0.0327
+      "avg_precision": 0.9392,
+      "brier": 0.0326
     },
     "reliability_curve_calibrated": {
       "mean_predicted": [
@@ -72,53 +72,53 @@
         0.002,
         0.005,
         0.019,
-        0.041,
-        0.103,
-        0.708,
+        0.04,
+        0.108,
+        0.712,
         0.966
       ],
       "fraction_positive": [
         0.0,
+        0.001,
         0.0,
         0.001,
-        0.001,
         0.006,
-        0.023,
-        0.044,
-        0.089,
-        0.718,
-        0.978
+        0.024,
+        0.041,
+        0.091,
+        0.723,
+        0.976
       ]
     }
   },
   "feature_importance_permutation": {
-    "waste": 1.1689,
-    "mean_waste": 0.0467,
-    "trend_gas": 0.0338,
-    "std_waste": 0.0332,
-    "gas": 0.0123,
-    "hour": 0.0078,
-    "mean_gas": 0.0069,
-    "dow": 0.0067,
-    "trend_waste": 0.0058,
-    "std_gas": 0.0021,
-    "temp": 0.0014,
-    "std_temp": 0.0011,
-    "trend_temp": 0.0007,
-    "mean_humidity": 0.0007,
-    "std_humidity": 0.0005,
-    "trend_humidity": 0.0001,
-    "humidity": 0.0001,
-    "mean_temp": -0.0004
+    "waste": 1.2165,
+    "trend_gas": 0.0305,
+    "std_waste": 0.0263,
+    "mean_waste": 0.0253,
+    "gas": 0.0122,
+    "hour": 0.0074,
+    "dow": 0.0065,
+    "trend_waste": 0.006,
+    "mean_gas": 0.0036,
+    "std_gas": 0.0012,
+    "std_temp": 0.0008,
+    "std_humidity": 0.0004,
+    "temp": 0.0004,
+    "mean_humidity": 0.0003,
+    "trend_temp": 0.0002,
+    "trend_humidity": 0.0,
+    "humidity": -0.0,
+    "mean_temp": -0.0002
   },
   "F_inference_latency": {
     "model": "hist_grad_boost",
     "n": 5000,
-    "total_ms": 37.48,
-    "per_1000_ms": 7.497
+    "total_ms": 9.56,
+    "per_1000_ms": 1.911
   },
   "group_kfold_by_bin_hgb": {
-    "r2_mean": 0.8075,
-    "r2_std": 0.0494
+    "r2_mean": 0.7907,
+    "r2_std": 0.0415
   }
 }

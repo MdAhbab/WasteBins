@@ -53,7 +53,7 @@ def _resolve_csv():
     local = HERE / "realdata" / "iot_telemetry_data.csv"
     if local.exists():
         return local
-    root = HERE.parent.parent.parent / "iot_telemetry_data.csv"   # Micro Paper/ root
+    root = HERE.parent.parent / "iot_telemetry_data.csv"   # Micro Paper/ root
     return root if root.exists() else local
 
 
@@ -179,16 +179,18 @@ def main():
     (RES / "realdata.json").write_text(json.dumps(out, indent=2))
     print(json.dumps(out, indent=2))
 
+    import figstyle
+    figstyle.apply()
     frac, mean = calibration_curve(yte, p, n_bins=10, strategy="quantile")
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.plot([0, 1], [0, 1], "k--", alpha=0.6, label="Perfect")
-    ax.plot(mean, frac, "o-", color="#2c7fb8", label="Calibrated HGB (real data)")
+    fig, ax = plt.subplots(figsize=(figstyle.COL_W, 3.1))
+    ax.plot([0, 1], [0, 1], "--", color=figstyle.GREY, label="Perfect calibration")
+    ax.plot(mean, frac, "o-", color=figstyle.BLUE, label="Calibrated gradient boosting")
     ax.set_xlabel("Mean predicted hazard probability")
     ax.set_ylabel("Observed hazard frequency")
-    ax.set_title(f"Real IoT telemetry: forward gas-hazard (AUC={out['calibrated_hgb']['roc_auc']})")
-    ax.legend(); fig.tight_layout(); fig.savefig(FIG / "fig_realdata.png", dpi=600)
+    ax.set_title(f"Real telemetry: forward gas-hazard (AUC = {out['calibrated_hgb']['roc_auc']:.2f})")
+    ax.legend(loc="upper left"); fig.savefig(FIG / "fig_realdata.png")
     print("\nSaved results/realdata.json and results/figures/fig_realdata.png")
-    print("Paste the AUC/AP/Brier into the commented block in Manuscript.tex / main.tex.")
+    print("Paste the AUC/AP/Brier into Manuscript.tex if they change.")
 
 
 if __name__ == "__main__":
