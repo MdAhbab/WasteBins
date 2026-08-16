@@ -1,6 +1,35 @@
 # OS metadata
 .DS_Store
+Thumbs.db
 
 # IDE metadata
 .idea/
 .vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+waste_manager/waste_manager/local_settings.py
+
+# Secrets / local configuration
+.env
+.env.local
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Large local datasets (documented in experiments/README.md)
+experiments/realdata/*.csv
+experiments/results/*.parquet
+experiments/results/*.pkl
