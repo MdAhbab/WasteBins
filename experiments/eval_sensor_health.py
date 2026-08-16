@@ -81,14 +81,22 @@ def clean_fleet(n_nodes: int = N_NODES, n: int = N_STEPS, seed: int = 0) -> Dict
 
 def sequential_assess(fleet: Dict, n: int = N_STEPS, window: int = WINDOW,
                       stride: int = STRIDE):
-    """Slide a window over the stream, carrying trust forward between cycles."""
-    trust: Dict = {}
+    """
+    Slide a window over the stream, carrying detector state forward.
+
+    The whole recursive state is carried, not just the trust scalar: the
+    confirmation counters that separate an isolated statistical alarm from a
+    sustained fault live in it, and harvesting only ``trust`` would silently
+    reset them on every cycle.  ``health.carry_state`` is the same call the
+    Django service makes between assessments.
+    """
+    state: Dict = {}
     final: Dict = {}
     for end in range(window, n + 1, stride):
         snapshot = {i: {c: v[end - window:end] for c, v in ch.items()}
                     for i, ch in fleet.items()}
-        final = H.assess_fleet(snapshot, previous_trust=trust)
-        trust = {i: {c: a.trust for c, a in ch.items()} for i, ch in final.items()}
+        final = H.assess_fleet(snapshot, previous_trust=state)
+        state = H.carry_state(final)
     return final
 
 
@@ -264,11 +272,20 @@ def main() -> None:
         "renormalisation_priority_error": renorm,
         "thresholds": {
             "drift_z": H.DRIFT_Z_THRESHOLD,
+            "drift_self_z": H.DRIFT_SELF_Z_THRESHOLD,
             "peer_z": H.PEER_Z_THRESHOLD,
+            "dispersion_z": H.DISPERSION_Z_THRESHOLD,
+            "redundancy_z": H.REDUNDANCY_Z_THRESHOLD,
+            "redundancy_min_r2": H.REDUNDANCY_MIN_R2,
+            "spike_z": H.SPIKE_Z_THRESHOLD,
+            "min_fleet_for_peers": H.MIN_FLEET_FOR_PEERS,
             "trust_suspect": H.TRUST_SUSPECT,
             "trust_degraded": H.TRUST_DEGRADED,
             "trust_failed": H.TRUST_FAILED,
             "anomaly_deadband": H.ANOMALY_DEADBAND,
+            "unconfirmed_floor": H.UNCONFIRMED_FLOOR,
+            "reliability_recovery": round(H.RELIABILITY_RECOVERY, 5),
+            "reliability_suspect": H.RELIABILITY_SUSPECT,
         },
     }
     (RESULTS / "sensor_health.json").write_text(json.dumps(payload, indent=2))

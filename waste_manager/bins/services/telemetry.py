@@ -117,10 +117,26 @@ def readings_to_hours(readings: Sequence[SensorReading]) -> List[float]:
     return [(r.timestamp - start).total_seconds() / 3600.0 for r in readings]
 
 
-def load_previous_trust(node_ids: Sequence[int]) -> Dict[int, Dict[str, float]]:
-    out: Dict[int, Dict[str, float]] = {}
-    for row in SensorHealth.objects.filter(node_id__in=list(node_ids)):
-        out.setdefault(row.node_id, {})[row.channel] = float(row.trust)
+def load_previous_trust(node_ids: Sequence[int]) -> Dict[int, Dict[str, object]]:
+    """
+    Recursive detector state per node and channel, newest first.
+
+    Returns the full state dict when one has been persisted and falls back to
+    the bare trust column otherwise, so a database written by the previous
+    version keeps working: ``health.ChannelState.coerce`` accepts either form.
+    Carrying only ``trust`` would reset every detector's confirmation counter on
+    each cycle, which is exactly what makes an isolated statistical alarm
+    indistinguishable from a sustained fault.
+    """
+    node_ids = list(node_ids)
+    if not node_ids:
+        return {}
+    out: Dict[int, Dict[str, object]] = {}
+    for row in SensorHealth.objects.filter(node_id__in=node_ids):
+        detail = row.detail if isinstance(row.detail, dict) else {}
+        state = detail.get("state")
+        out.setdefault(row.node_id, {})[row.channel] = (
+            state if isinstance(state, dict) else float(row.trust))
     return out
 
 
@@ -156,8 +172,8 @@ def assess_nodes(node_ids: Sequence[int], window: int = DEFAULT_WINDOW,
         for nid, hist in histories.items()
     }
     core_previous = {
-        nid: {CHANNEL_FIELDS[f]: t for f, t in trusts.items() if f in CHANNEL_FIELDS}
-        for nid, trusts in previous.items()
+        nid: {CHANNEL_FIELDS[f]: s for f, s in states.items() if f in CHANNEL_FIELDS}
+        for nid, states in previous.items()
     }
     core_results = CORE_HEALTH.assess_fleet(core_histories, previous_trust=core_previous)
 
@@ -190,7 +206,12 @@ def _persist_health(results: Dict[int, Dict[str, CORE_HEALTH.ChannelAssessment]]
                 drift_estimate=assessment.drift_estimate,
                 stuck_streak=assessment.stuck_streak,
                 missing_streak=assessment.missing_streak,
-                detail={"scores": assessment.scores, "flags": assessment.flags},
+                detail={"scores": assessment.scores, "flags": assessment.flags,
+                        # The recursive detector memory rides along in `detail`
+                        # so no schema migration is needed to make the ensemble
+                        # stateful across assessments.
+                        "state": assessment.state,
+                        "reliability": assessment.reliability},
             )
             if assessment.status == CORE_HEALTH.STATUS_OK:
                 payload["last_ok_at"] = now
