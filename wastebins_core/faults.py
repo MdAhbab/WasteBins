@@ -52,13 +52,48 @@ FAULT_MODES = (
     "noise_burst", "bursty_loss", "weather_correlated", "poisoning",
 )
 
+# Channel naming.  The core uses short names; the Django models use field names.
+# Both must resolve to the same physical constants, so every table below is
+# keyed by the canonical short name and looked up through `canonical_channel`.
+CHANNEL_ALIASES: Dict[str, str] = {
+    "waste": "waste", "waste_level": "waste", "fill": "waste",
+    "gas": "gas", "gas_level": "gas", "smoke": "gas",
+    "temp": "temp", "temperature": "temp",
+    "humidity": "humidity", "hum": "humidity",
+}
+
+
+def canonical_channel(channel: str) -> str:
+    """Map any accepted spelling of a channel onto its canonical short name."""
+    return CHANNEL_ALIASES.get(str(channel), str(channel))
+
+
 # Physically admissible ranges per channel, used by injectors and detectors.
-CHANNEL_RANGE: Dict[str, Tuple[float, float]] = {
-    "waste_level": (0.0, 1.3),
-    "gas_level": (0.0, 1.0),
-    "temperature": (-10.0, 80.0),
+_CHANNEL_RANGE: Dict[str, Tuple[float, float]] = {
+    "waste": (0.0, 1.3),
+    "gas": (0.0, 1.0),
+    "temp": (-10.0, 80.0),
     "humidity": (0.0, 100.0),
 }
+
+
+class _AliasedRanges(dict):
+    """Range table that accepts either naming convention."""
+
+    def __missing__(self, key):
+        canonical = canonical_channel(key)
+        if canonical in _CHANNEL_RANGE:
+            return _CHANNEL_RANGE[canonical]
+        raise KeyError(key)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+
+CHANNEL_RANGE = _AliasedRanges(_CHANNEL_RANGE)
 
 
 @dataclass

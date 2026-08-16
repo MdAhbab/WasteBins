@@ -1,69 +1,68 @@
+"""
+Backward-compatible facade over :mod:`bins.services.models_registry`.
+
+Existing views and management commands import these names; the implementation
+now lives in the service layer, which adds caching, artefact hashing and the
+continual-learning state that this module never had.
+"""
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Dict, Optional
+
 from django.conf import settings
 from joblib import dump, load
 
-def model_path():
-    return settings.MODEL_FILENAME
+from bins.services.models_registry import (get_model_version, load_forward_bundle,
+                                           load_forward_meta, save_forward_bundle)
 
-def meta_path():
-    return settings.MODEL_META_FILENAME
+__all__ = [
+    "model_path", "meta_path", "save_model", "load_model", "get_model_version",
+    "load_meta", "forward_path", "forward_meta_path", "save_forward_bundle",
+    "load_forward_bundle", "load_forward_meta",
+]
 
-def save_model(model, meta: dict):
-    dump(model, model_path())
-    with open(meta_path(), 'w') as f:
-        json.dump(meta, f)
+
+def model_path() -> Path:
+    return Path(settings.MODEL_FILENAME)
+
+
+def meta_path() -> Path:
+    return Path(settings.MODEL_META_FILENAME)
+
+
+def forward_path() -> Path:
+    return Path(settings.FORWARD_MODEL_FILENAME)
+
+
+def forward_meta_path() -> Path:
+    return Path(settings.FORWARD_MODEL_META_FILENAME)
+
+
+def save_model(model, meta: Dict) -> None:
+    """Persist the legacy random-forest artefact (retained for comparison runs)."""
+    path = model_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    dump(model, path)
+    meta_path().write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
 
 def load_model():
-    p = model_path()
-    if Path(p).exists():
-        return load(p)
-    return None
-
-def get_model_version():
-    mp = meta_path()
-    if Path(mp).exists():
-        with open(mp, 'r') as f:
-            data = json.load(f)
-            return data.get('version', 'unknown')
-    return 'unknown'
-
-def load_meta():
-    mp = meta_path()
-    if Path(mp).exists():
-        with open(mp, 'r') as f:
-            return json.load(f)
-    return {}
+    path = model_path()
+    if not path.exists():
+        return None
+    try:
+        return load(path)
+    except Exception:
+        return None
 
 
-# ---------------------------------------------------------------------------
-# Forward-looking bundle (regressor + quantiles + calibrated hazard classifier)
-# ---------------------------------------------------------------------------
-def forward_path():
-    return settings.FORWARD_MODEL_FILENAME
-
-
-def forward_meta_path():
-    return settings.FORWARD_MODEL_META_FILENAME
-
-
-def save_forward_bundle(bundle: dict, meta: dict):
-    """bundle keys: 'regressor', 'q10', 'q50', 'q90', 'classifier', 'features'."""
-    dump(bundle, forward_path())
-    with open(forward_meta_path(), 'w') as f:
-        json.dump(meta, f)
-
-
-def load_forward_bundle():
-    p = forward_path()
-    if Path(p).exists():
-        return load(p)
-    return None
-
-
-def load_forward_meta():
-    mp = forward_meta_path()
-    if Path(mp).exists():
-        with open(mp, 'r') as f:
-            return json.load(f)
-    return {}
+def load_meta() -> Dict:
+    path = meta_path()
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}

@@ -1,0 +1,168 @@
+{
+  "protocol": {
+    "n_nodes": 20,
+    "n_steps": 140,
+    "window": 20,
+    "stride": 4,
+    "victims": [
+      0,
+      3,
+      7
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "evaluation": "sequential sliding window with trust carried forward, matching how the service runs",
+    "detected_when": "channel status is not 'ok'"
+  },
+  "specificity": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "false_positive_rate_per_seed": [
+      0.25,
+      0.175,
+      0.125,
+      0.05
+    ],
+    "false_positive_rate_mean": 0.15,
+    "false_positive_rate_max": 0.25
+  },
+  "detection": {
+    "dropout": {
+      "recall": 1.0,
+      "precision": 0.242,
+      "f1": 0.3822,
+      "false_positive_rate": 0.1428,
+      "description": "Independent packet loss; the sample is missing (NaN), not zero."
+    },
+    "zero_stuck": {
+      "recall": 1.0,
+      "precision": 0.2716,
+      "f1": 0.41,
+      "false_positive_rate": 0.1396,
+      "description": "Hard zero from an ADC or supply failure (the only mode evaluated originally)."
+    },
+    "stuck_at": {
+      "recall": 1.0,
+      "precision": 0.2786,
+      "f1": 0.4201,
+      "false_positive_rate": 0.1299,
+      "description": "Frozen register repeating the last valid value."
+    },
+    "drift": {
+      "recall": 0.6666,
+      "precision": 0.1763,
+      "f1": 0.2606,
+      "false_positive_rate": 0.1332,
+      "description": "Unbounded additive ramp from electro-chemical sensor ageing."
+    },
+    "calibration": {
+      "recall": 0.3333,
+      "precision": 0.1206,
+      "f1": 0.1649,
+      "false_positive_rate": 0.1331,
+      "description": "Gain and offset error following a bad re-calibration."
+    },
+    "noise_burst": {
+      "recall": 0.8334,
+      "precision": 0.2331,
+      "f1": 0.3447,
+      "false_positive_rate": 0.1364,
+      "description": "Variance inflation from electromagnetic interference."
+    },
+    "bursty_loss": {
+      "recall": 0.4166,
+      "precision": 0.1531,
+      "f1": 0.2119,
+      "false_positive_rate": 0.1461,
+      "description": "Gilbert-Elliott two-state channel; loss is autocorrelated, not i.i.d."
+    },
+    "weather_correlated": {
+      "recall": 1.0,
+      "precision": 0.2805,
+      "f1": 0.4231,
+      "false_positive_rate": 0.1267,
+      "description": "Rain/condensation knocks out many nearby nodes simultaneously."
+    },
+    "poisoning": {
+      "recall": 0.5833,
+      "precision": 0.1912,
+      "f1": 0.2736,
+      "false_positive_rate": 0.1267,
+      "description": "Adversarial amplify/suppress within a stealth budget to divert or starve service."
+    },
+    "_mean": {
+      "recall": 0.7592,
+      "precision": 0.2163,
+      "f1": 0.3212,
+      "false_positive_rate": 0.1349
+    }
+  },
+  "renormalisation_priority_error": {
+    "dropout": {
+      "zero_fill": 0.08898,
+      "renormalise": 0.03894,
+      "trust_weighted": 0.03373
+    },
+    "zero_stuck": {
+      "zero_fill": 0.08898,
+      "renormalise": 0.0416,
+      "trust_weighted": 0.03464
+    },
+    "stuck_at": {
+      "zero_fill": 0.08439,
+      "renormalise": 0.03905,
+      "trust_weighted": 0.03377
+    },
+    "drift": {
+      "zero_fill": 0.07882,
+      "renormalise": 0.04436,
+      "trust_weighted": 0.04068
+    },
+    "calibration": {
+      "zero_fill": 0.0727,
+      "renormalise": 0.04204,
+      "trust_weighted": 0.03837
+    },
+    "noise_burst": {
+      "zero_fill": 0.07897,
+      "renormalise": 0.04029,
+      "trust_weighted": 0.03566
+    },
+    "bursty_loss": {
+      "zero_fill": 0.08259,
+      "renormalise": 0.03044,
+      "trust_weighted": 0.02777
+    },
+    "weather_correlated": {
+      "zero_fill": 0.07636,
+      "renormalise": 0.04708,
+      "trust_weighted": 0.03932
+    },
+    "poisoning": {
+      "zero_fill": 0.07513,
+      "renormalise": 0.04114,
+      "trust_weighted": 0.03742
+    },
+    "_mean": {
+      "zero_fill": 0.08077,
+      "renormalise": 0.04055,
+      "trust_weighted": 0.03571
+    }
+  },
+  "thresholds": {
+    "drift_z": 3.0,
+    "peer_z": 2.5,
+    "trust_suspect": 0.75,
+    "trust_degraded": 0.45,
+    "trust_failed": 0.15,
+    "anomaly_deadband": 0.15
+  }
+}
