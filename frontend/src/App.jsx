@@ -1,9 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Sidebar, { SidebarProvider, useSidebar } from './components/Sidebar'
 import TopBar from './components/TopBar'
 import { ToastContainer } from './components/Toast'
 import Dashboard from './pages/Dashboard'
+import Fleet from './pages/Fleet'
+import SensorHealth from './pages/SensorHealth'
+import Explainability from './pages/Explainability'
+import Models from './pages/Models'
+import Emissions from './pages/Emissions'
+import Audit from './pages/Audit'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Notifications from './pages/Notifications'
@@ -11,9 +17,16 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import { fetchMe, fetchNotifications } from './api/endpoints'
 import { IS_DEMO, DEMO_USER } from './demo'
+import './components/ui.css'
 
 const PAGE_TITLES = {
   '/app/dashboard': 'Dashboard',
+  '/app/fleet': 'Fleet dispatch',
+  '/app/sensors': 'Sensing integrity',
+  '/app/explain': 'Explainability',
+  '/app/models': 'Models',
+  '/app/emissions': 'Sustainability',
+  '/app/audit': 'Audit ledger',
   '/app/profile': 'Profile',
   '/app/settings': 'Settings',
   '/app/notifications': 'Notifications',
@@ -22,12 +35,13 @@ const PAGE_TITLES = {
 function Shell() {
   const { collapsed } = useSidebar()
   const navigate = useNavigate()
+  const location = useLocation()
   const [user, setUser] = useState(null)
   const [notifCount, setNotifCount] = useState(0)
 
   useEffect(() => {
-    // Preview/demo: skip the real auth check and show a demo viewer so visitors
-    // can explore the dashboard without a backend. Production is unaffected.
+    // Preview/demo: skip the real auth check so visitors can explore without a
+    // backend. Production is unaffected.
     if (IS_DEMO) {
       setUser(DEMO_USER)
     } else {
@@ -59,7 +73,9 @@ function Shell() {
     else setNotifCount(c => Math.max(0, c + delta))
   }
 
-  const title = PAGE_TITLES[window.location.pathname] || 'WasteBins'
+  // Derived from the router rather than window.location, so the title actually
+  // updates on client-side navigation.
+  const title = PAGE_TITLES[location.pathname] || 'WasteBins'
 
   return (
     <div className="app-shell">
@@ -69,9 +85,16 @@ function Shell() {
         <main className="page-content">
           <Routes>
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="fleet" element={<Fleet />} />
+            <Route path="sensors" element={<SensorHealth />} />
+            <Route path="explain" element={<Explainability />} />
+            <Route path="models" element={<Models />} />
+            <Route path="emissions" element={<Emissions />} />
+            <Route path="audit" element={<Audit />} />
             <Route path="profile" element={<Profile onUserChange={setUser} />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="notifications" element={<Notifications onNotifCountChange={handleNotifCountChange} />} />
+            <Route path="notifications"
+                   element={<Notifications onNotifCountChange={handleNotifCountChange} />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>

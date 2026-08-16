@@ -2,7 +2,8 @@ import { useState, createContext, useContext } from 'react'
 import { useNavigate, useLocation, NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, User, Settings, Bell,
-  ChevronLeft, ChevronRight, LogOut
+  ChevronLeft, ChevronRight, LogOut,
+  Truck, Activity, Brain, Leaf, ShieldCheck, Boxes,
 } from 'lucide-react'
 
 const SidebarCtx = createContext({ collapsed: false })
@@ -18,11 +19,39 @@ export function SidebarProvider({ children }) {
   )
 }
 
-const NAV_ITEMS = [
-  { to: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/app/notifications', label: 'Notifications', icon: Bell },
-  { to: '/app/profile', label: 'Profile', icon: User },
-  { to: '/app/settings', label: 'Settings', icon: Settings },
+// Grouped so the navigation reads as the operator's workflow: monitor the
+// network, dispatch the fleet, then inspect why the system decided what it did.
+const NAV_GROUPS = [
+  {
+    label: 'Operations',
+    items: [
+      { to: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/app/fleet', label: 'Fleet dispatch', icon: Truck },
+      { to: '/app/notifications', label: 'Notifications', icon: Bell },
+    ],
+  },
+  {
+    label: 'Assurance',
+    items: [
+      { to: '/app/sensors', label: 'Sensing integrity', icon: Activity },
+      { to: '/app/explain', label: 'Explainability', icon: Brain },
+      { to: '/app/models', label: 'Models', icon: Boxes },
+      { to: '/app/audit', label: 'Audit ledger', icon: ShieldCheck },
+    ],
+  },
+  {
+    label: 'Sustainability',
+    items: [
+      { to: '/app/emissions', label: 'Emissions', icon: Leaf },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { to: '/app/profile', label: 'Profile', icon: User },
+      { to: '/app/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ]
 
 export default function Sidebar({ notifCount = 0 }) {
@@ -66,29 +95,34 @@ export default function Sidebar({ notifCount = 0 }) {
 
       {/* Nav */}
       <div className="sidebar-nav">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            title={collapsed ? label : undefined}
-          >
-            <div style={{ position: 'relative' }}>
-              <Icon className="nav-icon" />
-              {label === 'Notifications' && notifCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: -6, right: -6,
-                  background: 'var(--red)', color: '#fff',
-                  borderRadius: '99px', fontSize: 9, fontWeight: 700,
-                  padding: '0 3px', minWidth: 14, height: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {notifCount > 9 ? '9+' : notifCount}
-                </span>
-              )}
-            </div>
-            <span className="nav-label">{label}</span>
-          </NavLink>
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="nav-group">
+            {!collapsed && <div className="nav-group-label">{group.label}</div>}
+            {group.items.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                title={collapsed ? label : undefined}
+              >
+                <div style={{ position: 'relative' }}>
+                  <Icon className="nav-icon" />
+                  {label === 'Notifications' && notifCount > 0 && (
+                    <span style={{
+                      position: 'absolute', top: -6, right: -6,
+                      background: 'var(--red)', color: '#fff',
+                      borderRadius: '99px', fontSize: 9, fontWeight: 700,
+                      padding: '0 3px', minWidth: 14, height: 14,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {notifCount > 9 ? '9+' : notifCount}
+                    </span>
+                  )}
+                </div>
+                <span className="nav-label">{label}</span>
+              </NavLink>
+            ))}
+          </div>
         ))}
       </div>
 

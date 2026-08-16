@@ -730,3 +730,30 @@ html, body, #root {
 .text-xs { font-size: 12px; }
 .font-bold { font-weight: 700; }
 .font-semibold { font-weight: 600; }
+
+/* ── Sidebar navigation groups ── */
+.nav-group { display: flex; flex-direction: column; }
+.nav-group + .nav-group { margin-top: 14px; }
+.nav-group-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: rgba(240, 244, 255, 0.28);
+  padding: 0 14px 5px;
+}
+.sidebar.collapsed .nav-group + .nav-group { margin-top: 10px; }
+
+/* ── Inline status banner ── */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 15px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: 10px;
+  font-size: 12.5px;
+  transition: border-color var(--transition);
+}
+a.banner:hover { border-color: var(--accent); }
