@@ -373,6 +373,19 @@ corrected to match the constraint that actually binds, rather than redefining
 the constraint silently, but the underlying model is still wrong and it spans
 `vrp`, `scenario` and `dispatch`.
 
+**Additive attribution is a lossy summary of this model.** The Shapley values
+satisfy efficiency exactly — baseline plus contributions equals the prediction, and
+the dashboard shows both numbers so it can be checked — but the *fidelity* of the
+additive form, the R² of the additive approximation against the model's actual
+local behaviour, is only about 0.20. That is not undersampling: it is flat across
+500 to 8,000 coalitions (0.225, 0.204, 0.206, 0.196, 0.191), drifting slightly
+down as the estimate stabilises. The gradient-boosted model is strongly
+interacting locally, and no additive decomposition can represent it faithfully.
+The honest claim is that the attributions are a valid Shapley decomposition and a
+partial account of the model, not a full one; `fidelity_r2` is reported on every
+explanation rather than hidden, and exact TreeSHAP is available for audit. The
+1,000-coalition default is chosen because more does not help.
+
 **The measured false-positive rate is fixture-dependent.** The held-out 0.004 is
 measured on a fleet of bins that share one generative model. The seeded network
 does not: bins carry different waste streams, and gas generation scales with

@@ -95,8 +95,10 @@ export default function Models() {
                 tone="accent" icon={TrendingUp} />
         <Metric label="Test MAE" value={fmt.num(metrics.reg_mae_h, 2)} unit="h"
                 hint={`baseline ${fmt.num(metrics.baseline_mean_mae_h, 2)} h`} />
-        <Metric label="Grouped CV R²" value={fmt.num(metrics.reg_cv_r2_mean, 3)}
-                hint={`± ${fmt.num(metrics.reg_cv_r2_std, 3)} across bins`} />
+        {/* Purged expanding-window folds, not grouped-by-bin: the spread is across
+            time blocks, so "across bins" was describing a splitter no longer used. */}
+        <Metric label="Purged CV R²" value={fmt.num(metrics.reg_cv_r2_mean, 3)}
+                hint={`± ${fmt.num(metrics.reg_cv_r2_std, 3)} across time folds`} />
         <Metric label="Hazard AUC" value={fmt.num(metrics.hazard_roc_auc, 3)}
                 hint={`Brier ${fmt.num(metrics.hazard_brier, 3)}`} icon={ShieldCheck} />
         <Metric label="Interval coverage" value={fmt.frac(metrics.interval_coverage_p10_p90, 1)}
