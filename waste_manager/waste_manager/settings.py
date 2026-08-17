@@ -277,6 +277,17 @@ FLEET_DEFAULTS = {
     "AVG_SPEED_KMH": env_float("FLEET_AVG_SPEED_KMH", 20.0),
     "DEPOT_LAT": env_float("FLEET_DEPOT_LAT", 23.8069),
     "DEPOT_LNG": env_float("FLEET_DEPOT_LNG", 90.3687),
+    # Search budget for a plan requested from the UI.  The solver treats this as
+    # an upper bound and only starts an improvement round it has time to finish,
+    # so raising it buys quality and lowers responsiveness with no risk of an
+    # overrun.  The interactive default is deliberately well below the budget the
+    # experiments use: an operator waiting on a page has a different tolerance
+    # than a benchmark run, and the published figures come from the experiment
+    # scripts calling the solver directly, not from this endpoint.
+    "PLAN_TIME_BUDGET_S": env_float("FLEET_PLAN_BUDGET_S", 2.0),
+    # Comparison runs every installed solver in sequence, so its per-solver
+    # budget is smaller again -- the page cost is this multiplied by five.
+    "COMPARE_TIME_BUDGET_S": env_float("FLEET_COMPARE_BUDGET_S", 1.0),
 }
 
 

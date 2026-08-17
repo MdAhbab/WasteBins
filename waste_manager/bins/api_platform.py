@@ -142,7 +142,8 @@ class FleetPlanAPIView(APIView):
                 {"error": f"solver '{algorithm}' is not installed in this deployment"},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        budget = _float(request, "time_budget_s", 5.0)
+        budget = _float(request, "time_budget_s",
+                        settings.FLEET_DEFAULTS["PLAN_TIME_BUDGET_S"])
         budget = max(0.5, min(30.0, budget))     # bound so a client cannot hang a worker
 
         result = dispatch.generate_plan(
@@ -175,7 +176,9 @@ class FleetCompareAPIView(APIView):
     def post(self, request):
         requested = request.data.get("algorithms") or ["proposed", "risk_graph", "genetic", "aco"]
         available = CORE_META.available_solvers()
-        budget = max(0.5, min(15.0, _float(request, "time_budget_s", 3.0)))
+        budget = max(0.5, min(15.0, _float(
+            request, "time_budget_s",
+            settings.FLEET_DEFAULTS["COMPARE_TIME_BUDGET_S"])))
 
         results: Dict[str, Dict] = {}
         for name in requested:

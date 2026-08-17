@@ -7,11 +7,13 @@ import '../auth.css'
 
 const BG = '/ImageAssets/img1.jpg'
 
+// Kept deliberately claim-free: a hard-coded bin count goes stale the moment the
+// network changes, and naming the algorithm on a login screen dates the product.
 const FEATURES = [
-  { icon: BarChart3, color: '#3b82f6', text: 'Live fill-level monitoring across all 6 bins' },
-  { icon: Cpu,       color: '#10b981', text: 'Random Forest AI predicts priority in real time' },
-  { icon: MapPin,    color: '#6366f1', text: 'Dijkstra routing optimises every collection run' },
-  { icon: Zap,       color: '#f59e0b', text: 'Gas, temp & humidity sensors — all in one view' },
+  { icon: BarChart3, color: '#3b82f6', text: 'Live fill, gas, temperature and humidity across the network' },
+  { icon: Cpu,       color: '#10b981', text: 'Forecasts which bins overflow next, with the reasoning shown' },
+  { icon: MapPin,    color: '#6366f1', text: 'Multi-vehicle routes that respect capacity, shifts and windows' },
+  { icon: Zap,       color: '#f59e0b', text: 'Flags failing sensors before they distort a dispatch decision' },
 ]
 
 export default function Login() {
