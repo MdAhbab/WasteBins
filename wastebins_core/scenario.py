@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from . import aging
 from . import emissions as EM
 from . import traffic as TR
 from . import vrp
@@ -84,8 +85,10 @@ def make_tasks(node_ids: Sequence[int],
             window_end_min=float(win[1]),
             stream=str(streams.get(nid, "general")),
             hazard=bool(hazards.get(nid, False)),
-            tier=int(tiers.get(nid, 0 if hazards.get(nid) else 1)),
+            tier=int(tiers.get(nid, aging.TIER_HAZARD if hazards.get(nid)
+                               else aging.TIER_NORMAL)),
             time_to_overflow_h=float(tto_hours.get(nid, float("inf"))),
+            density_kg_per_m3=float(densities.get(nid, 220.0)),
         ))
     return tasks
 
@@ -97,8 +100,17 @@ def make_fleet(n_vehicles: int = 2,
                avg_speed_kmh: float = 20.0,
                euro_class: str = "euro4",
                kerb_mass_kg: float = 12000.0,
+               body_volume_m3: float = 16.0,
                accepts_streams: Sequence[str] = ()) -> List[vrp.VehicleSpec]:
-    """A homogeneous fleet; heterogeneous fleets are built directly."""
+    """
+    A homogeneous fleet; heterogeneous fleets are built directly.
+
+    ``body_volume_m3`` defaults to 16 cubic metres, a common rear-loader body.
+    With a 2.5 compaction ratio that holds about 40 cubic metres of loose waste,
+    so at a household density near 220 kilograms per cubic metre the volume limit
+    and the 6000 kilogram mass limit bind at roughly the same point. Both
+    constraints are therefore live rather than one being decorative.
+    """
     fleet = []
     for i in range(n_vehicles):
         fleet.append(vrp.VehicleSpec(
@@ -106,6 +118,7 @@ def make_fleet(n_vehicles: int = 2,
             name=f"Truck-{i + 1}",
             depot_index=depot_index,
             capacity_kg=capacity_kg,
+            body_volume_m3=body_volume_m3,
             shift_minutes=shift_minutes,
             avg_speed_kmh=avg_speed_kmh,
             accepts_streams=tuple(accepts_streams),

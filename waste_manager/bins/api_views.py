@@ -18,6 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from wastebins_core import aging as CORE_AGING
+
 from .drf_serializers import (
     UserSerializer,
     UserSettingSerializer,
@@ -101,7 +103,8 @@ class DashboardAPIView(APIView):
             tiered = dispatch.apply_equity(scores, nodes)
             ranked = sorted(
                 scores.items(),
-                key=lambda kv: (tiered[kv[0]].tier if kv[0] in tiered else 1,
+                key=lambda kv: (tiered[kv[0]].tier if kv[0] in tiered
+                                else CORE_AGING.TIER_NORMAL,
                                 -(tiered[kv[0]].score if kv[0] in tiered else kv[1]['priority'])),
             )
             priority_info = {
@@ -114,7 +117,8 @@ class DashboardAPIView(APIView):
                         'score': round(float(entry['priority']), 3),
                         'effective_score': round(float(tiered[nid].score), 3)
                         if nid in tiered else None,
-                        'tier': tiered[nid].tier if nid in tiered else 1,
+                        'tier': (tiered[nid].tier if nid in tiered
+                                 else CORE_AGING.TIER_NORMAL),
                         'hazard_prob': round(float(entry.get('hazard_prob', 0.0)), 3),
                         'confidence': entry['rule']['confidence'],
                         'actionable': entry['actionable'],

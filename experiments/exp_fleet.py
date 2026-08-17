@@ -205,31 +205,46 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
     rows = []
 
     for gamma in (0.55, 0.70, 0.85):
-        bound = AG.worst_case_wait_bound(gamma, AG.DEFAULT_TAU_H,
-                                         AG.DEFAULT_KAPPA, cycle_h)
         observed_max, breaches, total_obs = 0.0, 0, 0
+        worst_backlog, worst_bound = 0, 0.0
         for snapshot in snapshots[:8]:               # 8 networks x 40 cycles
             state = dict(snapshot)
             state["waits"] = {nid: 0.0 for nid in snapshot["node_ids"]}
             travel = travel_for(state, when)
             fleet = scarce_fleet(state)
+            cleared_history = []
             for cycle in range(n_cycles):
+                overdue_before = [n for n in state["node_ids"]
+                                  if state["waits"][n] >= AG.DEFAULT_TAU_H]
                 tasks = build_tasks(state, gamma=gamma)
                 plan = VRP.solve(tasks, fleet, travel, weights,
                                  time_budget_s=time_budget_s)
                 served = {s.task.node_id for r in plan.routes for s in r.stops}
+                cleared_history.append(len(set(overdue_before) & served))
                 for nid in state["node_ids"]:
                     state["waits"][nid] = (0.0 if nid in served
                                            else state["waits"][nid] + cycle_h)
                 if cycle >= burn_in:
+                    # The bound is evaluated against the backlog actually present,
+                    # which is what the derivation is stated in terms of.  Using a
+                    # backlog of 1 would be asserting a guarantee the deployment
+                    # does not satisfy.
+                    m = max(1, len(overdue_before))
+                    c = max(1, min(cleared_history[-1] or 1, m))
+                    bound = AG.worst_case_wait_bound(
+                        tau_h=AG.DEFAULT_TAU_H, cycle_h=cycle_h,
+                        max_overdue=m, served_overdue_per_cycle=c)
                     worst = max(state["waits"].values())
                     observed_max = max(observed_max, worst)
+                    worst_backlog = max(worst_backlog, m)
+                    worst_bound = max(worst_bound, bound if math.isfinite(bound) else 0.0)
                     total_obs += 1
                     if math.isfinite(bound) and worst > bound + 1e-9:
                         breaches += 1
         rows.append({
             "gamma": gamma,
-            "certified_bound_h": None if not math.isfinite(bound) else round(bound, 2),
+            "max_overdue_backlog_seen": worst_backlog,
+            "bound_at_worst_backlog_h": round(worst_bound, 2),
             "observed_max_wait_h": round(observed_max, 2),
             "breaches": breaches,
             "observations": total_obs,
@@ -590,12 +605,14 @@ def main() -> None:
     print(f"  {rollout['n_networks']} networks x {rollout['n_cycles']} cycles of "
           f"{rollout['cycle_h']:.0f} h, all bins starting at zero wait, "
           f"first {rollout['burn_in_cycles']} discarded as burn-in")
-    print(f"  {'gamma':>7}{'bound h':>10}{'observed max h':>16}{'breaches':>10}{'verdict':>10}")
-    print("  " + "-" * 53)
+    print(f"  {'gamma':>7}{'backlog':>9}{'bound h':>10}{'observed max h':>16}"
+          f"{'breaches':>11}{'verdict':>10}")
+    print("  " + "-" * 63)
     for row in rollout["sweep"]:
-        print(f"  {row['gamma']:>7.2f}{str(row['certified_bound_h']):>10}"
+        print(f"  {row['gamma']:>7.2f}{row['max_overdue_backlog_seen']:>9}"
+              f"{row['bound_at_worst_backlog_h']:>10.1f}"
               f"{row['observed_max_wait_h']:>16.1f}"
-              f"{row['breaches']:>7}/{row['observations']:<4}"
+              f"{row['breaches']:>8}/{row['observations']:<4}"
               f"{'HOLDS' if row['holds'] else 'VIOLATED':>10}")
 
     payload = {

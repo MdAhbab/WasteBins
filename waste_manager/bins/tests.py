@@ -184,11 +184,53 @@ class FleetFeasibilityTests(SimpleTestCase):
                         "instance produced an empty plan; nothing to corrupt")
         self.assertEqual(V.plan_violations(plan, travel), [])
 
-        for route in plan.routes:                      # make capacity impossible
+        for route in plan.routes:                      # make the mass limit impossible
             route.vehicle.capacity_kg = 1.0
         planted = V.plan_violations(plan, travel)
-        self.assertTrue(any("capacity" in v for v in planted),
-                        f"validator missed a planted capacity breach: {planted}")
+        self.assertTrue(any("mass" in v for v in planted),
+                        f"validator missed a planted mass breach: {planted}")
+
+    def test_validator_detects_a_planted_volume_breach(self):
+        """
+        The volume limit is a separate constraint from the mass limit, so it
+        needs its own guard: a plan can be well inside the axle rating and still
+        not fit in the body, which is the normal case for household waste.
+        """
+        from wastebins_core import validate as V, vrp
+        travel, tasks, vehicles = self._instance(1)
+        for task in tasks:
+            task.density_kg_per_m3 = 220.0
+        for vehicle in vehicles:
+            vehicle.body_volume_m3 = 16.0
+        plan = vrp.solve(tasks, vehicles, travel, vrp.ObjectiveWeights(),
+                         improve=False, time_budget_s=1.0)
+        self.assertEqual(V.plan_violations(plan, travel), [])
+
+        for route in plan.routes:                      # keep mass legal, shrink the body
+            route.vehicle.body_volume_m3 = 0.01
+        planted = V.plan_violations(plan, travel)
+        self.assertTrue(any("volume" in v for v in planted),
+                        f"validator missed a planted volume breach: {planted}")
+
+    def test_compaction_reduces_volume_and_not_mass(self):
+        """
+        Mass is conserved under compaction; only the volume it occupies falls.
+        This was wrong for a long time: the capacity check divided mass by the
+        compaction ratio, so a truck appeared able to carry 2.5 times its rating.
+        """
+        from wastebins_core import vrp
+        task = vrp.BinTask(node_id=1, index=1, load_kg=440.0,
+                           density_kg_per_m3=220.0)
+        self.assertAlmostEqual(task.loose_volume_m3, 2.0, places=6)
+
+        vehicle = vrp.VehicleSpec(vehicle_id=1, capacity_kg=1000.0,
+                                  body_volume_m3=10.0, compaction_ratio=2.5)
+        # 440 kg is under the mass limit whatever the compaction ratio.
+        self.assertFalse(vrp._exceeds(440.0, 2.0 / 2.5, vehicle))
+        # Mass above the rating is a breach; compaction must not rescue it.
+        self.assertTrue(vrp._exceeds(1200.0, 0.1, vehicle))
+        # Volume above the body is a breach even when the mass is legal.
+        self.assertTrue(vrp._exceeds(10.0, 12.0, vehicle))
 
     def test_plans_are_feasible_across_seeds(self):
         from wastebins_core import validate as V, vrp

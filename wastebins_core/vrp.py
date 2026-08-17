@@ -67,6 +67,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from . import emissions as EM
+from .aging import TIER_HAZARD, TIER_NORMAL, TIER_OVERDUE
 
 
 def _finite(value: float, default: float = 0.0) -> float:
@@ -86,6 +87,27 @@ def _finite(value: float, default: float = 0.0) -> float:
     return v if math.isfinite(v) else default
 
 
+def _exceeds(mass_kg: float, volume_m3: float, vehicle: "VehicleSpec",
+             tol: float = 1e-9) -> bool:
+    """
+    Whether a load breaches either capacity limit of ``vehicle``.
+
+    A refuse body is bounded twice, and the two limits are not interchangeable.
+    Mass is bounded by the axle rating, and compaction does not reduce it.
+    Volume is bounded by the body, and compaction is exactly what reduces it.
+    Household waste is light and bulky, so volume normally binds first; a route
+    of dense material binds on mass instead.  Both are checked, and the volume
+    check is skipped when the instance carries no density information, so
+    mass-only problems still work.
+    """
+    if _finite(mass_kg) > float(vehicle.capacity_kg) + tol:
+        return True
+    body = float(vehicle.body_volume_m3)
+    if body > 0.0 and _finite(volume_m3) > body + tol:
+        return True
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Problem definition
 # ---------------------------------------------------------------------------
@@ -102,8 +124,20 @@ class BinTask:
     window_end_min: float = 1440.0
     stream: str = "general"
     hazard: bool = False
-    tier: int = 1                  # 0 = hazard override (must be served first)
+    tier: int = TIER_NORMAL        # 0 hazard, 1 overdue, 2 normal
     time_to_overflow_h: float = math.inf
+    # Loose density of this bin's contents, in kilograms per cubic metre, used to
+    # convert the collected mass into the volume it occupies in the body.  Zero
+    # means unknown, and the volume constraint is then skipped for this bin.
+    density_kg_per_m3: float = 0.0
+
+    @property
+    def loose_volume_m3(self) -> float:
+        """Volume this load occupies before compaction."""
+        rho = float(self.density_kg_per_m3)
+        if rho <= 0.0:
+            return 0.0
+        return max(0.0, _finite(self.load_kg)) / rho
 
 
 @dataclass
@@ -113,11 +147,21 @@ class VehicleSpec:
     vehicle_id: int
     name: str = "truck"
     depot_index: int = 0
+    # Payload mass limit, in kilograms.  Mass is conserved: compacting waste does
+    # not make it lighter, so this figure is never divided by the compaction
+    # ratio.  An earlier version did exactly that, which is dimensionally wrong.
     capacity_kg: float = 6000.0
     shift_minutes: float = 480.0
     shift_start_minute: int = 360
     avg_speed_kmh: float = 20.0
+    # Compaction reduces the *volume* the load occupies, which is why a refuse
+    # body carries far more waste than its loose volume suggests.
     compaction_ratio: float = 2.5
+    # Usable body volume in cubic metres.  Household waste is light and bulky, so
+    # this is usually the constraint that binds first, not the mass limit.  Left
+    # at zero the volume constraint is not enforced, which keeps instances that
+    # carry no density information working as pure mass problems.
+    body_volume_m3: float = 0.0
     tipping_minutes: float = 15.0   # time to discharge at the depot
     accepts_streams: Tuple[str, ...] = ()
     profile: EM.VehicleProfile = field(default_factory=EM.VehicleProfile)
@@ -133,6 +177,13 @@ class ObjectiveWeights:
     hours: float = 12.0
     lambda_prize: float = 45.0      # cost charged per unit of unserved prize
     hazard_multiplier: float = 6.0  # extra penalty for skipping a hazard bin
+    # Extra penalty for skipping a bin that has passed its equity deadline.  The
+    # overdue tier orders such bins first, but ordering alone only decides which
+    # bin the planner *tries* first: a prize-collecting objective can still drop
+    # one when the detour costs more than the forgone prize.  Skipping has to be
+    # the expensive option, or the wait bound is an ordering claim with no effect
+    # on what actually gets collected.
+    overdue_multiplier: float = 4.0
     missed_overflow_penalty: float = 80.0
     # A deadline beyond this horizon is not this shift's problem.  Without the
     # bound, a bin predicted to overflow in a fortnight attracts exactly the same
@@ -168,14 +219,19 @@ class VehicleRoute:
     @property
     def payload_kg(self) -> float:
         """
-        Mass that actually occupies the body, i.e. what ``capacity_kg`` bounds.
+        Mass carried, which is what ``capacity_kg`` bounds.
 
-        ``load_kg`` is the raw mass lifted out of the bins; the body only ever
-        holds it compacted.  Reporting utilisation against the raw figure
-        overstates it by exactly the compaction ratio -- it produced a "250%
-        utilised" reading for a route that filled its body precisely three times.
+        Identical to ``load_kg``: mass is conserved under compaction.  This
+        property previously divided by the compaction ratio, which treated
+        compacting the load as making it lighter.
         """
-        return self.load_kg / max(self.vehicle.compaction_ratio, 1e-6)
+        return self.load_kg
+
+    @property
+    def compacted_volume_m3(self) -> float:
+        """Body volume the load occupies after compaction."""
+        loose = sum(s.task.loose_volume_m3 for s in self.stops)
+        return loose / max(self.vehicle.compaction_ratio, 1e-9)
 
     @property
     def node_ids(self) -> List[int]:
@@ -274,7 +330,8 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
     route = VehicleRoute(vehicle=vehicle, trips=1)
 
     clock = 0.0            # minutes after shift start
-    load = 0.0
+    load = 0.0             # mass on board, kilograms
+    volume = 0.0           # compacted volume on board, cubic metres
     position = depot
     trip_index = 0
 
@@ -284,12 +341,15 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
 
         # A non-finite load would pass every comparison below (``nan > x`` is
         # False), so the route would look feasible while overflowing the body.
-        effective_load = _finite(task.load_kg) / max(vehicle.compaction_ratio, 1e-6)
-        if effective_load > vehicle.capacity_kg + 1e-9:
+        # Mass is not divided by the compaction ratio: compacting waste changes
+        # the volume it occupies, not its mass.
+        added_mass = _finite(task.load_kg)
+        added_volume = task.loose_volume_m3 / max(vehicle.compaction_ratio, 1e-9)
+        if _exceeds(added_mass, added_volume, vehicle):
             return None                     # a single bin exceeds the body
 
         # --- tip at the depot when the next bin would overflow -----------
-        if load + effective_load > vehicle.capacity_kg + 1e-9:
+        if _exceeds(load + added_mass, volume + added_volume, vehicle):
             if not allow_multi_trip:
                 return None
             back_min = travel.minutes(position, depot)
@@ -299,6 +359,7 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
             route.distance_m += back_dist
             route.co2_kg += back_co2
             load = 0.0
+            volume = 0.0
             position = depot
             trip_index += 1
             route.trips = trip_index + 1
@@ -321,7 +382,7 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
         leg_co2 = travel.leg_co2(
             position, task.index, load, vehicle.profile,
             idle_minutes=task.service_minutes,
-            lifts=1, lifted_kg=effective_load,
+            lifts=1, lifted_kg=added_mass,
         )
 
         # --- shift feasibility must include getting home ------------------
@@ -329,7 +390,8 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
         if departure + return_min > vehicle.shift_minutes + 1e-9:
             return None
 
-        load += effective_load
+        load += added_mass
+        volume += added_volume
         route.distance_m += leg_dist
         route.co2_kg += leg_co2
         route.stops.append(Stop(
@@ -398,8 +460,10 @@ def skip_cost(task: BinTask, weights: ObjectiveWeights) -> float:
     left over to reinsert it.
     """
     penalty = weights.lambda_prize * max(0.0, _finite(task.prize))
-    if task.hazard or task.tier == 0:
+    if task.hazard or task.tier == TIER_HAZARD:
         penalty *= weights.hazard_multiplier
+    elif task.tier == TIER_OVERDUE:
+        penalty *= weights.overdue_multiplier
     if _overflows_within_horizon(task, weights):
         penalty += weights.missed_overflow_penalty
     return penalty

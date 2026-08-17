@@ -461,17 +461,36 @@ def ortools_solver(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     routing.SetArcCostEvaluatorOfAllVehicles(transit)
 
     # --- capacity ------------------------------------------------------
+    # Mass, in kilograms, not divided by the compaction ratio: compacting waste
+    # reduces the volume it occupies, not its mass.
     def demand_cb(from_index):
         node = manager.IndexToNode(from_index)
         if node == depot_local:
             return 0
-        t = task_list[node - 1]
-        vehicle_compaction = vehicles[0].compaction_ratio
-        return int(round(t.load_kg / max(vehicle_compaction, 1e-6)))
+        return int(round(task_list[node - 1].load_kg))
 
     demand = routing.RegisterUnaryTransitCallback(demand_cb)
     routing.AddDimensionWithVehicleCapacity(
         demand, 0, [int(v.capacity_kg) for v in vehicles], True, "Capacity")
+
+    # Compacted volume, in litres so it stays integral for the solver.  Added as
+    # a second dimension only when the fleet declares a body volume, since
+    # otherwise there is nothing to bound.
+    if any(float(v.body_volume_m3) > 0.0 for v in vehicles):
+        ratio = max(float(vehicles[0].compaction_ratio), 1e-9)
+
+        def volume_cb(from_index):
+            node = manager.IndexToNode(from_index)
+            if node == depot_local:
+                return 0
+            litres = task_list[node - 1].loose_volume_m3 * 1000.0 / ratio
+            return int(round(litres))
+
+        volume = routing.RegisterUnaryTransitCallback(volume_cb)
+        routing.AddDimensionWithVehicleCapacity(
+            volume, 0,
+            [int(round(float(v.body_volume_m3) * 1000.0)) or 10 ** 9 for v in vehicles],
+            True, "Volume")
 
     # --- time windows + shift ------------------------------------------
     def time_cb(from_index, to_index):

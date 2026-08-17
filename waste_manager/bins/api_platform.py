@@ -271,25 +271,34 @@ class EquityAPIView(APIView):
         kappa = CORE_AGING.DEFAULT_KAPPA
         cycle = _float(request, "cycle_h", 12.0)
 
+        # The bound scales with how many bins are already overdue, because a newly
+        # promoted bin waits behind them.  Reported across a range of backlogs so
+        # the capacity condition is visible: the guarantee holds only while the
+        # fleet clears overdue bins at least as fast as they are promoted.
+        overdue_now = int(report.get("overdue_now", 0))
         sweep = []
-        for g in (0.0, 0.2, 0.4, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9):
-            bound = CORE_AGING.worst_case_wait_bound(g, tau, kappa, cycle)
+        for m in (1, 2, 3, 5, 8, max(1, overdue_now)):
+            bound = CORE_AGING.worst_case_wait_bound(
+                tau_h=tau, cycle_h=cycle, max_overdue=m, served_overdue_per_cycle=1)
             sweep.append({
-                "gamma": g,
+                "overdue_backlog": m,
                 "bound_h": None if bound == float("inf") else round(bound, 2),
-                "guaranteed": bound != float("inf"),
+                "is_current_backlog": m == max(1, overdue_now),
             })
 
         target = _float(request, "target_wait_h")
         recommendation = None
         if target:
-            suggested = CORE_AGING.gamma_for_target_wait(target, tau, kappa, cycle)
+            suggested = CORE_AGING.tau_for_target_wait(
+                target, cycle_h=cycle, max_overdue=max(1, overdue_now),
+                served_overdue_per_cycle=1)
             recommendation = {
                 "target_wait_h": target,
-                "required_gamma": round(suggested, 4) if suggested is not None else None,
+                "required_tau_h": round(suggested, 4) if suggested is not None else None,
                 "feasible": suggested is not None,
-                "note": ("The aging ramp saturates at tau, so no weight can certify a wait "
-                         "at or beyond tau. Raise tau to at least the target.")
+                "note": ("The target is shorter than the time needed to clear the bins "
+                         "already overdue, so no promotion threshold can meet it. "
+                         "Shorten the dispatch cycle or add capacity.")
                 if suggested is None else None,
             }
 
@@ -298,8 +307,12 @@ class EquityAPIView(APIView):
             "parameters": {"gamma": gamma, "tau_h": tau, "kappa": kappa,
                            "cycle_h": cycle},
             "formula": "P_eff = (1 - gamma) * P + gamma * min(1, (w / tau)^kappa)",
-            "bound_formula": "w_max = tau * [ (1-gamma)/gamma + (cycle/tau)^kappa ]^(1/kappa)",
-            "gamma_sweep": sweep,
+            "bound_formula": "w_max <= tau + cycle * ceil(overdue_backlog / cleared_per_cycle)",
+            "bound_source": ("the overdue tier, not the equity weight: any bin reaching tau "
+                             "enters a strictly higher tier ordered by wait, longest first. "
+                             "gamma tunes average fairness inside the normal tier and does "
+                             "not carry the guarantee"),
+            "overdue_backlog_sweep": sweep,
             "recommendation": recommendation,
             "hazard_tier": {
                 "threshold": CORE_AGING.DEFAULT_HAZARD_THRESHOLD,

@@ -52,6 +52,7 @@ def plan_violations(plan, travel, tol: float = TOLERANCE_MIN) -> List[str]:
         vehicle = route.vehicle
         clock = 0.0
         load = 0.0
+        volume = 0.0
         position = vehicle.depot_index
         trip = 0
 
@@ -62,16 +63,19 @@ def plan_violations(plan, travel, tol: float = TOLERANCE_MIN) -> List[str]:
                 bad.append(f"vehicle {vehicle.vehicle_id} stream licensing: "
                            f"{task.stream!r} not in {vehicle.accepts_streams}")
 
-            # Capacity binds on compacted mass, which is what the constraint in
-            # `evaluate_route` uses -- checking raw mass here would disagree with
-            # the planner for reasons that are not bugs.
-            effective = task.load_kg / max(vehicle.compaction_ratio, 1e-9)
+            # Two limits, derived here from the raw task rather than read back
+            # from the planner.  Mass is conserved under compaction; volume is
+            # what compaction reduces.
+            added_mass = float(task.load_kg)
+            added_volume = (task.loose_volume_m3
+                            / max(vehicle.compaction_ratio, 1e-9))
 
             if stop.trip_index != trip:
                 # A tipping trip: back to the depot, empty, then out again.
                 clock += travel.minutes(position, vehicle.depot_index)
                 clock += vehicle.tipping_minutes
                 load = 0.0
+                volume = 0.0
                 position = vehicle.depot_index
                 trip = stop.trip_index
 
@@ -84,10 +88,15 @@ def plan_violations(plan, travel, tol: float = TOLERANCE_MIN) -> List[str]:
             # Arriving early means waiting for the window to open.
             clock = max(arrival, task.window_start_min) + task.service_minutes
 
-            load += effective
+            load += added_mass
+            volume += added_volume
             if load > vehicle.capacity_kg + TOLERANCE_KG:
-                bad.append(f"vehicle {vehicle.vehicle_id} node {task.node_id} capacity: "
+                bad.append(f"vehicle {vehicle.vehicle_id} node {task.node_id} mass: "
                            f"{load:.1f} kg > {vehicle.capacity_kg:.1f} kg")
+            body = float(vehicle.body_volume_m3)
+            if body > 0.0 and volume > body + TOLERANCE_KG:
+                bad.append(f"vehicle {vehicle.vehicle_id} node {task.node_id} volume: "
+                           f"{volume:.2f} m3 > {body:.2f} m3")
 
             position = task.index
 

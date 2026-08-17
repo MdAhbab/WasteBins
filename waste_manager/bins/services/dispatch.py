@@ -46,6 +46,11 @@ logger = logging.getLogger(__name__)
 
 _PROVIDER_CACHE: Dict[str, CORE_TRAFFIC.TrafficProvider] = {}
 
+# Nominal hours between dispatch runs.  Used only to report the equity wait
+# bound, which is stated per cycle: a bin promoted to the overdue tier waits at
+# most tau plus the time needed to clear the bins already overdue ahead of it.
+DISPATCH_CYCLE_H = 12.0
+
 
 def json_safe(value):
     """
@@ -118,6 +123,7 @@ def vehicle_specs(vehicles: Sequence[Vehicle], depot_index: int = 0
             name=v.name,
             depot_index=depot_index,
             capacity_kg=float(v.capacity_kg),
+            body_volume_m3=float(getattr(v, "body_volume_m3", 0.0) or 0.0),
             shift_minutes=float(v.shift_minutes),
             shift_start_minute=int(v.shift_start_minute),
             avg_speed_kmh=float(v.avg_speed_kmh),
@@ -278,7 +284,7 @@ def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Dep
         fills[node.id] = float(entry.get("fill") or 0.0)
         prizes[node.id] = float(tp.score if tp else entry["priority"])
         hazards[node.id] = bool(tp.tier == 0 if tp else False)
-        tiers[node.id] = int(tp.tier if tp else 1)
+        tiers[node.id] = int(tp.tier if tp else CORE_AGING.TIER_NORMAL)
         model = entry.get("model") or {}
         # Plan against the pessimistic P10 bound rather than the median: at the
         # median, half of all overflow deadlines would be a coin flip.  A bin is
@@ -384,8 +390,15 @@ def generate_plan(user=None, algorithm: str = "proposed",
             "gamma": gamma_used,
             "tau_h": tau_used,
             "kappa": CORE_AGING.DEFAULT_KAPPA,
+            # The bound comes from the overdue tier, not from gamma.  It assumes
+            # the fleet clears overdue bins at least as fast as they are
+            # promoted; `equity_report` reports the observed overdue count so
+            # that assumption is visible rather than implied.
             "worst_case_wait_bound_h": json_safe(CORE_AGING.worst_case_wait_bound(
-                gamma_used, tau_used, CORE_AGING.DEFAULT_KAPPA)),
+                tau_h=tau_used, cycle_h=DISPATCH_CYCLE_H)),
+            "bound_assumes": (
+                f"one dispatch cycle of {DISPATCH_CYCLE_H:.0f} h and that the fleet "
+                f"clears overdue bins as fast as they are promoted"),
         },
         "objective_weights": asdict(weights),
         "model_version": models_registry.get_model_version(),
@@ -486,13 +499,20 @@ def equity_report(days: int = 30) -> Dict:
     report = CORE_AGING.equity_report(waits)
     gamma = float(settings.ROUTING_AGING_GAMMA)
     tau = float(settings.ROUTING_AGING_TAU_H)
-    bound = CORE_AGING.worst_case_wait_bound(gamma, tau, CORE_AGING.DEFAULT_KAPPA)
+    overdue = [w for w in waits if w >= tau]
+    bound = CORE_AGING.worst_case_wait_bound(
+        tau_h=tau, cycle_h=DISPATCH_CYCLE_H,
+        max_overdue=max(1, len(overdue)), served_overdue_per_cycle=1)
     report.update({
         "window_days": int(days),
         "gamma": gamma,
         "tau_h": tau,
         "kappa": CORE_AGING.DEFAULT_KAPPA,
+        "overdue_now": len(overdue),
         "guaranteed_bound_h": json_safe(bound),
+        "bound_basis": (
+            "tau plus one cycle per outstanding overdue bin, assuming the fleet "
+            "clears at least one overdue bin per cycle"),
         "bound_is_finite": math.isfinite(bound),
         "bound_respected": (report["worst_wait_h"] <= bound) if waits else None,
     })

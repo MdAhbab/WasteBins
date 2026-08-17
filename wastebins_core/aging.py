@@ -29,40 +29,60 @@ the convex combination
 Because the combination is convex, :math:`P^{\\mathrm{eff}} \\in [0,1]`: the
 aging term cannot inflate scores out of range, which an additive term does.
 
-Worst-case wait bound
----------------------
-Assume a dispatch cycle of length :math:`\\Delta` hours in which the planner
-serves the highest-scoring feasible bins, and that any bin served in the
-previous cycle has :math:`w \\le \\Delta`.  A never-served bin *i* (worst case
-:math:`P_i = 0`) outranks the strongest competitor (worst case :math:`P_j = 1`,
-just served) as soon as
+Why the soft term alone cannot guarantee anything
+-------------------------------------------------
+An earlier version of this module derived a closed-form wait bound from the soft
+term alone.  It assumed that a starved bin competes against a bin that was *just
+served*, so the competitor's wait is at most one cycle :math:`\\Delta`, and asked
+when :math:`\\gamma\\, a(w_i) > (1-\\gamma) + \\gamma\\, a(\\Delta)`.  That
+assumption fails exactly when equity matters.  In a fleet with more bins than it
+can reach, the competitors are themselves deferred, so :math:`a(w_j)` is large
+rather than :math:`a(\\Delta)`, and the required inequality becomes
+:math:`\\gamma\\,(a(w_i) - a(w_j)) > 1-\\gamma`.  Since :math:`a` saturates at
+:math:`\\tau`, the difference tends to zero and no :math:`\\gamma < 1` satisfies
+it.  A second gap is simpler: outranking one competitor is not the same as being
+served, because the number served per cycle is limited by capacity and shift
+time.
+
+Measured on a scarce fleet over 40 cycles, that bound was violated in 5 of 192
+observations at :math:`\\gamma = 0.55` and 188 of 192 at
+:math:`\\gamma = 0.85`, with the realised worst wait growing as the claimed bound
+tightened.  The formula has been removed rather than restated.
+
+Hard deadline tier, and the bound it does support
+-------------------------------------------------
+The guarantee now comes from the dispatch order, not from an inequality.  Three
+lexicographic tiers are used, and a lower tier always outranks a higher one:
+
+* **tier 0, hazard.** Hazard probability at or above ``hazard_threshold``.
+* **tier 1, overdue.** Wait at or above :math:`\\tau`, ordered by wait, longest
+  first.  The ordering score is :math:`w/(\\tau + w)`, which is strictly
+  increasing in :math:`w` and therefore never ties.  This is the property the
+  saturating soft term lacks.
+* **tier 2, normal.** Ordered by the soft effective priority above.
+
+Let :math:`m` be the largest number of bins that are overdue at the same time,
+and :math:`c` the number of overdue bins the fleet clears per cycle.  A bin is
+promoted at :math:`w = \\tau` and, being ordered behind at most :math:`m` older
+overdue bins, is served within :math:`\\lceil m/c \\rceil` cycles.  Hence
 
 .. math::
 
-    \\gamma\\, a(w_i) > (1-\\gamma) + \\gamma\\, a(\\Delta),
+    w^{\\max} \\le \\tau + \\Delta \\left\\lceil m/c \\right\\rceil ,
+    \\qquad c \\ge 1 .
 
-which gives the finite guarantee
+Two conditions are stated rather than assumed.  The fleet must clear overdue
+bins at least as fast as they are promoted (:math:`c \\ge r` for promotion rate
+:math:`r`), otherwise the overdue set grows without limit and no bound exists.
+And waits are observed in units of :math:`\\Delta`, so the attainable bound is
+the next multiple of :math:`\\Delta` at or above the expression.
+:func:`worst_case_wait_bound` returns ``inf`` when :math:`c \\le 0`.
 
-.. math::
-
-    w_i^{\\max} = \\tau\\left[\\frac{1-\\gamma}{\\gamma} +
-                  \\left(\\frac{\\Delta}{\\tau}\\right)^{\\kappa}\\right]^{1/\\kappa}
-    \\qquad\\text{provided}\\qquad
-    \\frac{1-\\gamma}{\\gamma} + (\\Delta/\\tau)^{\\kappa} < 1 .
-
-The proviso requires :math:`\\gamma > 1/2` in the limit of a short cycle; below
-that the aging term improves equity empirically but carries no hard guarantee,
-and :func:`worst_case_wait_bound` reports ``inf`` rather than pretending
-otherwise.
-
-Zero-cost hazard response
--------------------------
-Requiring a large :math:`\\gamma` would ordinarily delay hazardous bins.  That is
-avoided with a **lexicographic tier**: bins whose hazard probability exceeds
-``hazard_threshold`` are placed in tier 0 and always outrank tier 1, so the
-aging weight is free to be tuned for equity *within* the non-hazard tier without
-touching hazard response.  :func:`effective_priorities` returns the tier
-alongside the score, and the routing layer sorts by ``(tier, -score)``.
+The practical consequence is that :math:`\\tau` is now the tuning knob the
+operator sets directly: state the service-level objective in hours and
+:func:`tau_for_target_wait` returns the :math:`\\tau` that meets it.  The equity
+weight :math:`\\gamma` no longer carries the guarantee, and is free to be tuned
+for average fairness within the normal tier.
 """
 from __future__ import annotations
 
@@ -74,6 +94,13 @@ DEFAULT_GAMMA = 0.55
 DEFAULT_TAU_H = 48.0
 DEFAULT_KAPPA = 2.0
 DEFAULT_HAZARD_THRESHOLD = 0.60
+
+# Lexicographic dispatch tiers.  Lower outranks higher, and the routing layer
+# sorts by (tier, -score) throughout, so these values are load-bearing: tier 0
+# is tested directly as "is this a hazard" in vrp.py and metaheuristics.py.
+TIER_HAZARD = 0
+TIER_OVERDUE = 1
+TIER_NORMAL = 2
 
 
 def aging_boost(wait_hours: float, tau_h: float = DEFAULT_TAU_H,
@@ -95,73 +122,84 @@ def effective_priority(priority: float, wait_hours: float,
     return float((1.0 - g) * p + g * aging_boost(wait_hours, tau_h, kappa))
 
 
-def worst_case_wait_bound(gamma: float = DEFAULT_GAMMA,
-                          tau_h: float = DEFAULT_TAU_H,
-                          kappa: float = DEFAULT_KAPPA,
-                          cycle_h: float = 12.0) -> float:
+def overdue_score(wait_hours: float, tau_h: float = DEFAULT_TAU_H) -> float:
     """
-    Guaranteed upper bound on the wait of the least urgent bin, in hours.
+    Ordering score inside the overdue tier: :math:`w/(\\tau + w)`.
 
-    Returns ``inf`` when the parameters admit no hard guarantee, which is the
-    honest answer for small ``gamma`` rather than a number that does not hold.
+    Strictly increasing in the wait and never saturating, so the longest-waiting
+    overdue bin always ranks first and two overdue bins never tie.  The
+    saturating soft ramp cannot do this: past :math:`\\tau` every bin scores the
+    same and the order falls back to intrinsic priority, which is precisely how a
+    quiet bin gets starved.
     """
-    g = max(0.0, min(1.0, float(gamma)))
-    if g <= 0.0:
+    w = max(0.0, float(wait_hours))
+    tau = max(1e-9, float(tau_h))
+    return float(w / (tau + w))
+
+
+def worst_case_wait_bound(tau_h: float = DEFAULT_TAU_H,
+                          cycle_h: float = 12.0,
+                          max_overdue: int = 1,
+                          served_overdue_per_cycle: int = 1) -> float:
+    """
+    Upper bound on any bin's wait, in hours, from the overdue tier.
+
+    ``max_overdue`` is the largest number of bins overdue at one time, and
+    ``served_overdue_per_cycle`` how many of them the fleet clears per cycle.  A
+    bin is promoted at :math:`\\tau` and sits behind at most ``max_overdue``
+    older overdue bins, so it is served within ``ceil(m/c)`` cycles:
+
+        bound = tau_h + cycle_h * ceil(max_overdue / served_overdue_per_cycle)
+
+    Returns ``inf`` when the fleet clears no overdue bins, because then the
+    overdue set grows without limit and there is no bound to report.
+
+    This replaces a closed-form expression in ``gamma`` that did not hold; see
+    the module docstring for the measurements that retired it.  The guarantee is
+    conditional on the fleet keeping pace with promotions, which is a capacity
+    statement about the deployment and not a property of the formula.
+    """
+    c = int(served_overdue_per_cycle)
+    if c <= 0:
         return math.inf
-    k = max(1e-6, float(kappa))
-    slack = (1.0 - g) / g + (max(0.0, float(cycle_h)) / float(tau_h)) ** k
-    if slack >= 1.0:
-        return math.inf
-    return float(tau_h * (slack ** (1.0 / k)))
+    m = max(0, int(max_overdue))
+    cycles = math.ceil(m / c) if m > 0 else 0
+    return float(max(0.0, float(tau_h)) + max(0.0, float(cycle_h)) * cycles)
 
 
-def gamma_for_target_wait(target_wait_h: float, tau_h: float = DEFAULT_TAU_H,
-                          kappa: float = DEFAULT_KAPPA,
-                          cycle_h: float = 12.0) -> Optional[float]:
+def tau_for_target_wait(target_wait_h: float, cycle_h: float = 12.0,
+                        max_overdue: int = 1,
+                        served_overdue_per_cycle: int = 1) -> Optional[float]:
     """
-    Smallest ``gamma`` whose guaranteed bound meets ``target_wait_h``.
+    The promotion threshold that meets a stated service-level objective.
 
-    This is the tuning knob the reviewer asked for: state the service-level
-    objective in hours and read off the equity weight that certifies it.
-
-    Because :math:`a(\\cdot)` saturates at :math:`w = \\tau`, no value of
-    ``gamma`` can certify a wait at or beyond ``tau``.  Set ``tau_h`` to the
-    service-level target itself (or higher) and the function returns a usable
-    weight; otherwise it returns ``None`` rather than a value whose bound is
-    actually infinite.
+    Inverts :func:`worst_case_wait_bound`.  State the longest acceptable wait in
+    hours and this returns the :math:`\\tau` to configure, or ``None`` when the
+    objective is shorter than the clearing time the cycle already implies: no
+    dispatch policy can beat its own cycle.
     """
-    tau = float(tau_h)
+    c = int(served_overdue_per_cycle)
+    if c <= 0:
+        return None
     target = float(target_wait_h)
-    k = max(1e-6, float(kappa))
-
     cycle = max(0.0, float(cycle_h))
-    if not (0.0 < target < tau):
+    m = max(0, int(max_overdue))
+    clearing = cycle * (math.ceil(m / c) if m > 0 else 0)
+    tau = target - clearing
+    if tau <= 0.0:
         return None
-    if target <= cycle:
-        # No dispatch policy can beat its own cycle length.
-        return None
-    ratio = (target / tau) ** k - (cycle / tau) ** k
-    if ratio <= 0.0:
-        return None
-    # ratio = (1 - g) / g  =>  g = 1 / (1 + ratio)
-    g = 1.0 / (1.0 + ratio)
-    if not (0.0 < g < 1.0):
-        return None
-    # Guard against floating-point drift at the feasibility boundary.
-    for candidate in (g, min(0.999, g + 1e-6), min(0.999, g + 1e-4)):
-        if worst_case_wait_bound(candidate, tau, k, cycle_h) <= target + 1e-9:
-            return float(candidate)
-    return None
+    return float(tau)
 
 
 @dataclass
 class TieredPriority:
     node_id: int
-    tier: int              # 0 = hazard override, 1 = normal
-    score: float           # effective priority after aging
+    tier: int              # 0 = hazard, 1 = overdue, 2 = normal
+    score: float           # ordering score within the tier
     base_priority: float
     wait_hours: float
     hazard_prob: float = 0.0
+    overdue: bool = False
 
     def sort_key(self):
         return (self.tier, -self.score)
@@ -175,19 +213,41 @@ def effective_priorities(priorities: Mapping[int, float],
                          kappa: float = DEFAULT_KAPPA,
                          hazard_threshold: float = DEFAULT_HAZARD_THRESHOLD
                          ) -> Dict[int, TieredPriority]:
-    """Apply aging to a whole fleet and assign the lexicographic hazard tier."""
+    """
+    Apply aging to a whole fleet and assign the lexicographic tier.
+
+    Hazard first, then any bin whose wait has reached ``tau_h``, then the rest.
+    Overdue bins are scored by wait rather than by the soft term, so the tier is
+    ordered longest-wait-first and cannot tie.  That ordering is what makes the
+    bound in :func:`worst_case_wait_bound` true; without it, bins past
+    ``tau_h`` all share the same saturated aging boost and the quietest one can be
+    passed over indefinitely.
+    """
     hazard_probs = hazard_probs or {}
     out: Dict[int, TieredPriority] = {}
     for node_id, base in priorities.items():
         wait = float(wait_hours.get(node_id, 0.0))
         hazard = float(hazard_probs.get(node_id, 0.0))
+        is_overdue = wait >= float(tau_h)
+
+        if hazard >= hazard_threshold:
+            tier = TIER_HAZARD
+            score = effective_priority(base, wait, gamma, tau_h, kappa)
+        elif is_overdue:
+            tier = TIER_OVERDUE
+            score = overdue_score(wait, tau_h)
+        else:
+            tier = TIER_NORMAL
+            score = effective_priority(base, wait, gamma, tau_h, kappa)
+
         out[node_id] = TieredPriority(
             node_id=node_id,
-            tier=0 if hazard >= hazard_threshold else 1,
-            score=effective_priority(base, wait, gamma, tau_h, kappa),
+            tier=tier,
+            score=score,
             base_priority=float(base),
             wait_hours=wait,
             hazard_prob=hazard,
+            overdue=is_overdue,
         )
     return out
 
