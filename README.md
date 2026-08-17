@@ -127,6 +127,27 @@ cd experiments && python eval_sensor_health.py
 | `exp_continual.py` | `continual.json` | Prequential error under seven drift scenarios; do-no-harm check; serving latency |
 | `exp_realdata.py` | `realdata.json` | Validation against public device telemetry |
 
+`exp_realdata.py` is the one script needing data that is not in the repository —
+CSVs are gitignored, since a code repo is the wrong place to redistribute a
+dataset. Fetch it first:
+
+```bash
+kaggle datasets download -d garystafford/environmental-sensor-data-132k -p experiments/realdata --unzip
+```
+
+That is "Environmental Sensor Telemetry Data" (Gary Stafford, CC0): three
+physically separate ESP8266 nodes reporting CO, LPG, smoke, temperature,
+humidity, light and motion at roughly one-second cadence over 8 days in July
+2020 — 405,184 raw rows. The script also accepts `iot_telemetry_data.csv` in the
+repository's parent directory, or a path as its first argument.
+
+No public dataset carries bin *fill* level alongside gas, temperature and
+humidity, so no real dataset can validate the whole pipeline end to end. What
+this one contributes is the genuine noise, drift, dropout and device-to-device
+heterogeneity of low-cost hardware on exactly the hazard modalities the system
+depends on. Read the two findings in
+[Limitations](#limitations) before citing it — they are not favourable.
+
 ---
 
 ## Architecture
@@ -318,6 +339,25 @@ Stated plainly, because each one bounds a claim above.
 public device telemetry. The simulator encodes real mechanisms — temperature-
 dependent decomposition, diurnal and weekly demand, congestion — but it is not
 a municipality, and no claim here should be read as a field result.
+
+**On real telemetry, the non-linear model does not earn its place.** In the
+within-device hold-out, a plain logistic regression on the same features reaches
+AUC 0.9862 against 0.9019 for the calibrated gradient boosting, and the latter's
+Brier skill score over the base rate is only 0.049. The gradient boosting's
+advantage in simulation comes from fill *dynamics* — accumulation rate,
+acceleration, dwell — which no public dataset provides, so this comparison tests
+the hazard modalities only. Stated as measured: on this data the simpler model
+wins, and the reported baseline exists precisely so that is visible.
+
+**Transfer to an unseen device is unreliable.** Leave-one-device-out is the
+honest analogue of commissioning a newly installed bin, and it does not hold up:
+mean AUC 0.7571 across the three devices, but the worst is **0.4550 — below
+chance** — with a Brier score of 0.3943 on another. The three nodes sit in
+physically different environments, so a model fitted on two of them does not
+describe the third. The operational reading is that a new node needs its own
+calibration period before its predictions carry weight, which is what the trust
+and reliability layer is for; the wrong reading would be that the model
+generalises across sites.
 
 **Censored regression.** The regressor fits a squared loss against labels
 right-censored at 24 h, which treats a censored label as observed and biases
