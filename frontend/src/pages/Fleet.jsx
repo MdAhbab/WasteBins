@@ -45,7 +45,11 @@ export default function Fleet() {
   const [algorithm, setAlgorithm] = useState('proposed')
   const [gamma, setGamma] = useState(0.55)
   const [tauH, setTauH] = useState(48)
-  const [budget, setBudget] = useState(4)
+  // Matches FLEET_PLAN_BUDGET_S on the server.  Measured on the live 20-bin
+  // instance, the objective plateaus at 1.5 s and 5 s buys nothing, so a larger
+  // default only costs the operator time.  The slider still goes to 15 s for
+  // bigger networks, where the plateau sits further out.
+  const [budget, setBudget] = useState(2)
   const [useTraffic, setUseTraffic] = useState(true)
 
   useEffect(() => {
@@ -54,7 +58,10 @@ export default function Fleet() {
       .then(([cfg, latest]) => {
         if (!alive) return
         setConfig(cfg.data)
-        if (latest.data?.plan) setPlan(normaliseStored(latest.data.plan))
+        // The fleet config is the only place a stored plan's vehicle capacity can
+        // come from, so it has to be threaded in rather than looked up later.
+        if (latest.data?.plan)
+          setPlan(normaliseStored(latest.data.plan, cfg.data?.vehicles))
       })
       .catch(() => alive && setError('Could not load the fleet configuration.'))
       .finally(() => alive && setLoading(false))
@@ -85,7 +92,9 @@ export default function Fleet() {
     try {
       const available = Object.entries(config?.solvers || {})
         .filter(([, ok]) => ok).map(([name]) => name)
-      const res = await comparePlanners({ algorithms: available, time_budget_s: 2 })
+      // Per-solver budget: the page waits for this multiplied by the number of
+      // installed solvers, which is five here.
+      const res = await comparePlanners({ algorithms: available, time_budget_s: 1 })
       setComparison(res.data)
     } catch {
       toast('Comparison failed.', 'error')
@@ -360,12 +369,16 @@ function RouteBlock({ route, index }) {
 }
 
 /** Reshape a stored plan (flat stops) into the grouped shape the UI renders. */
-function normaliseStored(stored) {
+function normaliseStored(stored, vehicles) {
   const byVehicle = new Map()
   for (const stop of stored.stops || []) {
     if (!byVehicle.has(stop.vehicle)) byVehicle.set(stop.vehicle, [])
     byVehicle.get(stop.vehicle).push(stop)
   }
+  // Stored stop rows carry the running load but not the vehicle that carried it,
+  // so capacity has to be recovered from the fleet config.  Without it the load
+  // bar rendered "39/— kg" and had no scale at all.
+  const byId = new Map((vehicles || []).map((v) => [v.id, v]))
   return {
     plan_id: stored.id,
     algorithm: stored.algorithm,
@@ -376,13 +389,13 @@ function normaliseStored(stored) {
     unserved: [],
     routes: [...byVehicle.entries()].map(([vehicleId, stops]) => ({
       vehicle_id: vehicleId,
-      vehicle_name: `Vehicle ${vehicleId}`,
+      vehicle_name: byId.get(vehicleId)?.name || `Vehicle ${vehicleId}`,
       trips: 1,
       distance_km: stops.reduce((s, x) => s + (x.leg_distance_m || 0), 0) / 1000,
       co2_kg: stops.reduce((s, x) => s + (x.leg_co2_kg || 0), 0),
       duration_min: stops.length ? stops[stops.length - 1].departure_min : 0,
       load_kg: stops.length ? stops[stops.length - 1].load_after_kg : 0,
-      capacity_kg: null,
+      capacity_kg: byId.get(vehicleId)?.capacity_kg ?? null,
       stops: stops
         .slice()
         .sort((a, b) => a.sequence - b.sequence)

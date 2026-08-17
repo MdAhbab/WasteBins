@@ -17,8 +17,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from bins.models import (BinGroup, Depot, Node, Notification, SensorReading,
-                         ServiceEvent, UserSetting, Vehicle)
+from bins.models import (BinGroup, Depot, Node, Notification, SensorHealth,
+                         SensorReading, ServiceEvent, UserSetting, Vehicle)
 from bins.services import audit, dispatch
 
 BASE_BINS = [
@@ -142,9 +142,52 @@ class Command(BaseCommand):
         start = now - timedelta(minutes=steps * interval_min)
 
         SensorReading.objects.filter(node__in=nodes).delete()
+        # Health rows summarise readings, so they are stale the moment the
+        # readings are replaced.  Leaving them behind meant the dashboard reported
+        # trust derived from data that no longer existed -- and because the health
+        # endpoint serves stored rows rather than recomputing on every poll (so a
+        # page refresh is not a fleet-wide reassessment), the stale figures were
+        # indistinguishable from live ones and survived a full reseed unchanged.
+        SensorHealth.objects.filter(node__in=nodes).delete()
+
+        # ---- weather is shared across the network ---------------------------
+        # Ambient temperature and rain are properties of the city, not of a bin.
+        # Drawing them per bin (as this did) meant it rained on one bin and not on
+        # the one 300 m away, and the ambient temperature differed between bins at
+        # the same instant -- physically impossible, and it removed the shared
+        # structure that makes fault detection hard: a lone +22-point humidity
+        # jump is exactly what a fleet-relative detector should flag, so the
+        # simulator was manufacturing anomalies and then being surprised by them.
+        # Measured effect: 6 of 80 channels on the seeded network were flagged
+        # degraded or suspect despite no fault ever being injected.
+        #
+        # Rain also persists: a shower that appears and vanishes independently
+        # every 30 minutes is not weather.  A two-state chain gives showers a
+        # realistic duration and, being shared, produces the genuinely correlated
+        # fleet-wide humidity excursions that `faults.weather_correlated` models.
+        ambient_series = np.empty(steps, dtype=float)
+        rain_series = np.zeros(steps, dtype=float)
+        raining = False
+        for step in range(steps):
+            stamp = start + timedelta(minutes=step * interval_min)
+            hour = stamp.hour + stamp.minute / 60.0
+            ambient_series[step] = (
+                28.0
+                + 4.0 * math.sin(2 * math.pi * (stamp.timetuple().tm_yday - 120) / 365.0)
+                + 5.0 * math.sin(2 * math.pi * (hour - 9) / 24.0)
+                + float(rng.normal(0, 1.2))
+            )
+            # ~4% of steps wet in the long run, in showers rather than flickers.
+            raining = (rng.random() < 0.70) if raining else (rng.random() < 0.018)
+            rain_series[step] = 1.0 if raining else 0.0
 
         batch, total = [], 0
         for node in nodes:
+            # A persistent microclimate offset is legitimate heterogeneity -- sun
+            # versus shade, an enclosed yard versus an open kerb -- and unlike
+            # per-step independent noise it is a stable bias the detectors can
+            # learn as normal for that bin rather than read as an excursion.
+            microclimate = float(rng.normal(0, 0.6))
             organic = {"organic": 0.85, "general": 0.55,
                        "recyclable": 0.20, "hazardous": 0.40}[node.waste_stream]
             arrival = float(rng.uniform(0.008, 0.030)) * dt_h
@@ -170,10 +213,8 @@ class Command(BaseCommand):
                 if step in bursts:
                     fill = min(1.3, fill + float(rng.uniform(0.15, 0.45)))
 
-                ambient = (28.0 + 4.0 * math.sin(2 * math.pi * (stamp.timetuple().tm_yday - 120) / 365.0)
-                           + 5.0 * math.sin(2 * math.pi * (hour - 9) / 24.0)
-                           + float(rng.normal(0, 1.2)))
-                rain = 1.0 if rng.random() < 0.04 else 0.0
+                ambient = float(ambient_series[step]) + microclimate
+                rain = float(rain_series[step])
                 humidity = float(np.clip(62.0 - 0.8 * (ambient - 28.0) + 22.0 * rain
                                          + rng.normal(0, 4.0), 25.0, 100.0))
 

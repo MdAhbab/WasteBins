@@ -213,19 +213,20 @@ expanding-window inner cross-validation.
 
 | Metric | Pooled | Uncensored rows only |
 |---|---|---|
-| Time-to-overflow R² | 0.787 | **0.652** |
-| Time-to-overflow MAE | 2.05 h | **3.28 h** |
-| Mean-predictor baseline MAE | 6.37 h | — |
-| Inner CV R² | 0.763 ± 0.027 | — |
-| P10–P90 coverage | 0.831 (nominal 0.80) | mean width 5.14 h |
-| Hazard ROC AUC | 0.987 | avg precision 0.942 |
-| Hazard Brier | 0.024 (skill 0.787) | positive rate 0.131 |
+| Time-to-overflow R² | 0.801 | **0.680** |
+| Time-to-overflow MAE | 2.44 h | **3.20 h** |
+| Mean-predictor baseline MAE | 7.50 h | — |
+| Inner CV R² | 0.757 ± 0.067 | — |
+| P10–P90 coverage | 0.831 (nominal 0.80) | mean width 7.02 h |
+| Hazard ROC AUC | 0.982 | avg precision 0.918 |
+| Hazard Brier | 0.036 (skill 0.734) | — |
 
 **Read the second column.** `time_to_overflow` is right-censored at 24 h and
-**66.3% of test labels are the cap** — a constant. The pooled R² is therefore
+**59.9% of test labels are the cap** — a constant. The pooled R² is therefore
 largely a score for recognising "not today", which is easy. The uncensored-row
-figures are the honest measure of the forecasting task, and both are recorded in
-the artefact metadata so the pooled number cannot be quoted alone.
+figures (1,540 of 3,840 test rows) are the honest measure of the forecasting
+task, and both are recorded in the artefact metadata so the pooled number cannot
+be quoted alone.
 
 ### Sensor fault detection
 
@@ -371,6 +372,24 @@ capacity is a mass limit — compaction changes volume. Reported utilisation was
 corrected to match the constraint that actually binds, rather than redefining
 the constraint silently, but the underlying model is still wrong and it spans
 `vrp`, `scenario` and `dispatch`.
+
+**The measured false-positive rate is fixture-dependent.** The held-out 0.004 is
+measured on a fleet of bins that share one generative model. The seeded network
+does not: bins carry different waste streams, and gas generation scales with
+organic content (0.85 organic, 0.55 general, 0.20 recyclable). A recyclable bin
+therefore sits systematically below the fleet on gas, and the cross-sectional
+tests — which compare each bin against the fleet — read that stable offset as an
+anomaly. On the seeded 20-bin network, 7 of 80 channels are flagged with no fault
+injected anywhere, and the burden falls unevenly: 2 of 3 recyclable bins are
+flagged on gas (67%) against 2 of 11 general bins (18%).
+
+The cause is identified and the fix is stratification — compare a bin against
+peers on the same waste stream, or give the redundancy regression a per-stream
+intercept. It is not implemented, because minority streams here (3 recyclable, 2
+hazardous) fall below the fleet size at which cross-sectional tests are
+trustworthy at all, so doing it properly means deciding what those bins fall back
+to rather than just adding a column. Until then, treat 0.004 as the rate on a
+homogeneous fleet and ~0.09 as the rate on a stream-heterogeneous one.
 
 **Cross-sectional detection needs a fleet.** Peer and dispersion tests are
 disabled below ten nodes, and the single-node drift test abstains entirely,
