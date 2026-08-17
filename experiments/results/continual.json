@@ -1,0 +1,146 @@
+{
+  "protocol": {
+    "evaluation": "prequential (test-then-train); every sample predicted before it is learned from",
+    "n_features": 31,
+    "n_train": 1500,
+    "n_stream": 3000,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "base_model": "HistGradientBoostingRegressor, frozen at training time",
+    "online_model": "linear residual corrector, bounded SGD with ADWIN2 + scale-aware Page-Hinkley drift detection and reservoir replay",
+    "activation_rule": "the corrector only affects predictions while its running prequential error beats the frozen model by a margin"
+  },
+  "scenarios": {
+    "stationary": {
+      "prequential_mae_base": 0.7671,
+      "prequential_mae_continual": 0.7671,
+      "improvement_pct": 0.0,
+      "improvement_pct_std": 0.0,
+      "mean_drift_detections": 12.6,
+      "seeds_flagging_retrain": 0,
+      "n_seeds": 5,
+      "per_seed_improvement_pct": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "abrupt_small": {
+      "prequential_mae_base": 1.1915,
+      "prequential_mae_continual": 0.9073,
+      "improvement_pct": 23.866,
+      "improvement_pct_std": 0.875,
+      "mean_drift_detections": 13.2,
+      "seeds_flagging_retrain": 5,
+      "n_seeds": 5,
+      "per_seed_improvement_pct": [
+        23.161,
+        23.406,
+        23.518,
+        23.658,
+        25.586
+      ]
+    },
+    "abrupt_large": {
+      "prequential_mae_base": 3.3971,
+      "prequential_mae_continual": 1.1184,
+      "improvement_pct": 67.094,
+      "improvement_pct_std": 2.074,
+      "mean_drift_detections": 12.8,
+      "seeds_flagging_retrain": 5,
+      "n_seeds": 5,
+      "per_seed_improvement_pct": [
+        64.963,
+        69.121,
+        64.322,
+        67.816,
+        69.25
+      ]
+    },
+    "gradual": {
+      "prequential_mae_base": 2.6272,
+      "prequential_mae_continual": 1.0651,
+      "improvement_pct": 59.46,
+      "improvement_pct_std": 0.561,
+      "mean_drift_detections": 19.6,
+      "seeds_flagging_retrain": 5,
+      "n_seeds": 5,
+      "per_seed_improvement_pct": [
+        58.443,
+        60.087,
+        59.509,
+        59.426,
+        59.834
+      ]
+    },
+    "seasonal": {
+      "prequential_mae_base": 2.0518,
+      "prequential_mae_continual": 1.4636,
+      "improvement_pct": 28.666,
+      "improvement_pct_std": 1.063,
+      "mean_drift_detections": 20.0,
+      "seeds_flagging_retrain": 5,
+      "n_seeds": 5,
+      "per_seed_improvement_pct": [
+        27.92,
+        28.53,
+        27.17,
+        29.872,
+        29.84
+      ]
+    },
+    "transient": {
+      "prequential_mae_base": 1.856,
+      "prequential_mae_continual": 1.0505,
+      "improvement_pct": 43.401,
+      "improvement_pct_std": 0.936,
+      "mean_drift_detections": 14.0,
+      "seeds_flagging_retrain": 5,
+      "n_seeds": 5,
+      "per_seed_improvement_pct": [
+        44.958,
+        43.42,
+        42.346,
+        42.546,
+        43.736
+      ]
+    },
+    "recurring": {
+      "prequential_mae_base": 1.9055,
+      "prequential_mae_continual": 1.1658,
+      "improvement_pct": 38.828,
+      "improvement_pct_std": 1.238,
+      "mean_drift_detections": 18.2,
+      "seeds_flagging_retrain": 5,
+      "n_seeds": 5,
+      "per_seed_improvement_pct": [
+        37.034,
+        39.931,
+        39.691,
+        37.631,
+        39.854
+      ]
+    }
+  },
+  "latency": {
+    "per_corrected_prediction_us": 6.37,
+    "bounded_update_ms": 7.683,
+    "samples_in_update": 256,
+    "budget_ms": 40.0,
+    "budget_samples": 256,
+    "within_budget": true,
+    "note": "Batch training never runs on the request path. This is the entire online cost the deployed service pays."
+  },
+  "do_no_harm": {
+    "stationary_improvement_pct": 0.0,
+    "passes": true,
+    "criterion": "|improvement| < 1% on a stationary stream"
+  }
+}

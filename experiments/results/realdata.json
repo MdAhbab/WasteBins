@@ -1,33 +1,137 @@
 {
-  "dataset": "iot_telemetry_data.csv",
-  "n_records": 34569,
-  "groups": 3,
-  "resample": "1min",
-  "horizon_steps": 30,
-  "hazard_pctl": 95,
-  "hazard_rate_test": 0.026464208242950107,
-  "calibrated_hgb": {
-    "roc_auc": 0.8231,
-    "avg_precision": 0.2328,
-    "brier": 0.0252
+  "dataset": {
+    "name": "Environmental Sensor Telemetry Data (Gary Stafford, Kaggle, CC0)",
+    "url": "https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k",
+    "file": "iot_telemetry_data.csv",
+    "raw_rows": 405184,
+    "devices": 3,
+    "device_ids": [
+      "00:0f:00:70:91:0a",
+      "1c:bf:ce:15:ec:4d",
+      "b8:27:eb:bf:9d:51"
+    ],
+    "collection_start": "2020-07-12T00:01:34.385974646",
+    "collection_end": "2020-07-20T00:03:37.264312506",
+    "duration_days": 8.0,
+    "median_sampling_interval_s": 1.548,
+    "per_device": {
+      "00:0f:00:70:91:0a": {
+        "rows": 111815,
+        "first": "2020-07-12T00:01:34.735567570",
+        "last": "2020-07-20T00:03:36.979521513"
+      },
+      "1c:bf:ce:15:ec:4d": {
+        "rows": 105918,
+        "first": "2020-07-12T00:01:39.589145899",
+        "last": "2020-07-20T00:03:36.167959213"
+      },
+      "b8:27:eb:bf:9d:51": {
+        "rows": 187451,
+        "first": "2020-07-12T00:01:34.385974646",
+        "last": "2020-07-20T00:03:37.264312506"
+      }
+    },
+    "channels_used": {
+      "gas": "smoke (hazard modality)",
+      "temp": "temp",
+      "humidity": "humidity"
+    },
+    "channels_available_unused": [
+      "co",
+      "lpg",
+      "light",
+      "motion"
+    ]
   },
-  "baseline_current_gas": {
-    "roc_auc": 0.6428
+  "protocol": {
+    "resample": "1min",
+    "rolling_window": 10,
+    "horizon_steps": 30,
+    "hazard_percentile": 95,
+    "features": [
+      "gas",
+      "mean_gas",
+      "std_gas",
+      "trend_gas",
+      "ewma_gas",
+      "temp",
+      "mean_temp",
+      "std_temp",
+      "trend_temp",
+      "ewma_temp",
+      "humidity",
+      "mean_humidity",
+      "std_humidity",
+      "trend_humidity",
+      "ewma_humidity",
+      "hour_sin",
+      "hour_cos",
+      "dow_sin",
+      "dow_cos"
+    ],
+    "validation": "temporal hold-out within each device (80/20), plus leave-one-device-out transfer",
+    "scope": "validates forward hazard prediction from noisy real telemetry, not bin-fill forecasting: no public dataset carries fill level alongside gas, temperature and humidity"
   },
-  "features": [
-    "temp",
-    "mean_temp",
-    "std_temp",
-    "trend_temp",
-    "humidity",
-    "mean_humidity",
-    "std_humidity",
-    "trend_humidity",
-    "gas",
-    "mean_gas",
-    "std_gas",
-    "trend_gas",
-    "hour",
-    "dow"
-  ]
+  "within_device": {
+    "n_train": 27582,
+    "n_test": 6897,
+    "hazard_rate_train": 0.0793,
+    "hazard_rate_test": 0.0265,
+    "calibrated_gradient_boosting": {
+      "roc_auc": 0.90189,
+      "average_precision": 0.22033,
+      "brier": 0.02456,
+      "positive_rate": 0.02653,
+      "brier_skill_score": 0.04914
+    },
+    "logistic_regression": {
+      "roc_auc": 0.9862,
+      "average_precision": 0.87268,
+      "brier": 0.01262,
+      "positive_rate": 0.02653,
+      "brier_skill_score": 0.51141
+    },
+    "persistence_baseline": {
+      "roc_auc": 0.6428,
+      "description": "current gas reading used directly as a score"
+    },
+    "comparison_metric": "ROC AUC and Brier score for forward gas-hazard within 30 minutes, against a per-device 95th percentile threshold"
+  },
+  "leave_one_device_out": {
+    "per_held_out_device": {
+      "00:0f:00:70:91:0a": {
+        "n_train": 22986,
+        "n_test": 11493,
+        "hazard_rate_test": 0.0555,
+        "roc_auc": 0.9601,
+        "average_precision": 0.83586,
+        "brier": 0.03235,
+        "positive_rate": 0.05551,
+        "brier_skill_score": 0.38299
+      },
+      "1c:bf:ce:15:ec:4d": {
+        "n_train": 22986,
+        "n_test": 11493,
+        "hazard_rate_test": 0.0927,
+        "roc_auc": 0.45499,
+        "average_precision": 0.14001,
+        "brier": 0.09118,
+        "positive_rate": 0.09267,
+        "brier_skill_score": -0.08447
+      },
+      "b8:27:eb:bf:9d:51": {
+        "n_train": 22986,
+        "n_test": 11493,
+        "hazard_rate_test": 0.058,
+        "roc_auc": 0.85616,
+        "average_precision": 0.21439,
+        "brier": 0.39434,
+        "positive_rate": 0.05804,
+        "brier_skill_score": -6.21346
+      }
+    },
+    "mean_roc_auc": 0.7571,
+    "min_roc_auc": 0.455,
+    "interpretation": "transfer to a device never seen in training, the analogue of commissioning a newly installed bin"
+  }
 }

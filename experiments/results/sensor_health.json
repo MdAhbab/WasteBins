@@ -15,6 +15,47 @@
       2,
       3
     ],
+    "holdout_clean_seeds": [
+      100,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116,
+      117,
+      118,
+      119,
+      120,
+      121,
+      122,
+      123
+    ],
+    "holdout_fault_seeds": [
+      200,
+      201,
+      202,
+      203,
+      204,
+      205,
+      206,
+      207,
+      208,
+      209,
+      210,
+      211
+    ],
+    "which_figures_to_cite": "the holdout blocks; the tuning-seed figures are reported only to expose the gap between them",
     "evaluation": "sequential sliding window with trust carried forward, matching how the service runs",
     "detected_when": "channel status is not 'ok'"
   },
@@ -32,7 +73,40 @@
       0.0
     ],
     "false_positive_rate_mean": 0.0,
-    "false_positive_rate_max": 0.0
+    "false_positive_rate_max": 0.0,
+    "holdout": {
+      "seeds": [
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123
+      ],
+      "n_seeds": 24,
+      "false_positive_rate_mean": 0.0036,
+      "false_positive_rate_max": 0.025,
+      "seeds_with_any_false_positive": 5,
+      "note": "never used for any tuning decision; this is the figure to cite"
+    }
   },
   "detection": {
     "dropout": {
@@ -103,6 +177,77 @@
       "precision": 0.9542,
       "f1": 0.9608,
       "false_positive_rate": 0.0029
+    }
+  },
+  "detection_holdout": {
+    "dropout": {
+      "recall": 1.0,
+      "precision": 0.9042,
+      "f1": 0.9434,
+      "false_positive_rate": 0.0054,
+      "description": "Independent packet loss; the sample is missing (NaN), not zero."
+    },
+    "zero_stuck": {
+      "recall": 1.0,
+      "precision": 0.9583,
+      "f1": 0.9762,
+      "false_positive_rate": 0.0022,
+      "description": "Hard zero from an ADC or supply failure (the only mode evaluated originally)."
+    },
+    "stuck_at": {
+      "recall": 1.0,
+      "precision": 0.9097,
+      "f1": 0.9476,
+      "false_positive_rate": 0.0043,
+      "description": "Frozen register repeating the last valid value."
+    },
+    "drift": {
+      "recall": 1.0,
+      "precision": 0.9458,
+      "f1": 0.9673,
+      "false_positive_rate": 0.0032,
+      "description": "Unbounded additive ramp from electro-chemical sensor ageing."
+    },
+    "calibration": {
+      "recall": 1.0,
+      "precision": 0.9583,
+      "f1": 0.9762,
+      "false_positive_rate": 0.0022,
+      "description": "Gain and offset error following a bad re-calibration."
+    },
+    "noise_burst": {
+      "recall": 1.0,
+      "precision": 0.8833,
+      "f1": 0.9315,
+      "false_positive_rate": 0.0065,
+      "description": "Variance inflation from electromagnetic interference."
+    },
+    "bursty_loss": {
+      "recall": 0.8194,
+      "precision": 0.9514,
+      "f1": 0.8492,
+      "false_positive_rate": 0.0022,
+      "description": "Gilbert-Elliott two-state channel; loss is autocorrelated, not i.i.d."
+    },
+    "weather_correlated": {
+      "recall": 1.0,
+      "precision": 0.8375,
+      "f1": 0.9018,
+      "false_positive_rate": 0.0097,
+      "description": "Rain/condensation knocks out many nearby nodes simultaneously."
+    },
+    "poisoning": {
+      "recall": 1.0,
+      "precision": 0.9375,
+      "f1": 0.9643,
+      "false_positive_rate": 0.0032,
+      "description": "Adversarial amplify/suppress within a stealth budget to divert or starve service."
+    },
+    "_mean": {
+      "recall": 0.9799,
+      "precision": 0.9207,
+      "f1": 0.9397,
+      "false_positive_rate": 0.0043
     }
   },
   "renormalisation_priority_error": {

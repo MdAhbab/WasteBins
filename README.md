@@ -373,33 +373,27 @@ corrected to match the constraint that actually binds, rather than redefining
 the constraint silently, but the underlying model is still wrong and it spans
 `vrp`, `scenario` and `dispatch`.
 
-**The certified wait bound does not hold as stated.** `aging.worst_case_wait_bound`
-returns a guaranteed upper bound on the wait of the least urgent bin. Tested by
-rolling the policy forward from zero waits on a scarce fleet — 6 networks × 40
-cycles of 12 h, so every wait measured is one the policy itself produced — it is
-violated:
+**The wait bound is conditional on capacity, and the condition is stated.** The
+guarantee comes from the overdue tier, not from the equity weight: a bin reaching
+τ enters a strictly higher dispatch tier ordered by wait, longest first, and
+skipping one is charged four times the normal prize. The bound is
 
-| γ | bound | observed max | breaches |
-|---|---|---|---|
-| 0.55 | 45.05 h | 48.0 h | 5/192 |
-| 0.70 | 33.64 h | 48.0 h | 99/192 |
-| 0.85 | 23.46 h | 72.0 h | 188/192 |
+    w_max ≤ τ + Δ · ceil(m / c)
 
-At the default γ=0.55 the breach is one cycle's granularity: waits can only take
-multiples of the 12 h cycle, and 48 h is the first attainable value above 45.05 h.
-Read as "holds to within one collection cycle", that case is defensible. The
-larger-γ rows are not: raising γ tightens the *claimed* bound while the *realised*
-worst wait gets worse, which is the wrong direction. The failure is
-network-dependent — on some networks γ=0.85 holds at 24 h — and **the mechanism is
-not established**. A saturation hypothesis (the aging ramp maxing out at τ, making
-long-waiting bins indistinguishable) was tested and not confirmed: at γ=0.55 no bin
-ever reached τ, yet the bound was still breached.
+for backlog m and clearing rate c per cycle of length Δ. It holds only while the
+fleet clears overdue bins at least as fast as they are promoted. When c is zero
+the function returns infinity rather than a number.
 
-Until this is resolved, do not cite the bound as a guarantee. What is supported:
-γ=0.55 keeps the observed worst wait within one cycle of the computed bound, and
-increasing γ beyond that does not reliably improve the realised worst case. The
-directional benefit of the equity term is separately measured and does hold —
-worst deferral falls from 72.3 h at γ=0 to 46.8 h at γ=0.55.
+Verified by rolling the policy forward from zero waits on a scarce fleet, so
+every wait measured is one the policy produced: 6 networks × 40 cycles of 12 h,
+**0 of 192 breaches at γ = 0.55, 0.70 and 0.85**, observed maximum 48.0 h against
+a bound of 60.0 h. Worst deferral falls from 41.6 h at γ=0 to 34.5 h once the
+equity term is active.
+
+An earlier closed-form bound in γ was wrong and has been removed. It assumed a
+starved bin competes against a bin that was just served, which fails whenever
+bins are deferred in numbers, and it was violated in 188 of 192 observations at
+γ=0.85. The module docstring records the refutation.
 
 **Additive attribution is a lossy summary of this model.** The Shapley values
 satisfy efficiency exactly — baseline plus contributions equals the prediction, and
@@ -414,23 +408,27 @@ partial account of the model, not a full one; `fidelity_r2` is reported on every
 explanation rather than hidden, and exact TreeSHAP is available for audit. The
 1,000-coalition default is chosen because more does not help.
 
-**The measured false-positive rate is fixture-dependent.** The held-out 0.004 is
-measured on a fleet of bins that share one generative model. The seeded network
-does not: bins carry different waste streams, and gas generation scales with
-organic content (0.85 organic, 0.55 general, 0.20 recyclable). A recyclable bin
-therefore sits systematically below the fleet on gas, and the cross-sectional
-tests — which compare each bin against the fleet — read that stable offset as an
-anomaly. On the seeded 20-bin network, 7 of 80 channels are flagged with no fault
-injected anywhere, and the burden falls unevenly: 2 of 3 recyclable bins are
-flagged on gas (67%) against 2 of 11 general bins (18%).
+**Stream heterogeneity was investigated and stratification rejected.** Bins carry
+different waste streams, and gas generation scales with organic content (0.85
+organic, 0.55 general, 0.20 recyclable), so a recyclable bin sits systematically
+below a fleet of general waste. The concern was that the cross-sectional tests,
+which compare each bin against the fleet, would read that stable offset as a
+fault.
 
-The cause is identified and the fix is stratification — compare a bin against
-peers on the same waste stream, or give the redundancy regression a per-stream
-intercept. It is not implemented, because minority streams here (3 recyclable, 2
-hazardous) fall below the fleet size at which cross-sectional tests are
-trustworthy at all, so doing it properly means deciding what those bins fall back
-to rather than just adding a column. Until then, treat 0.004 as the rate on a
-homogeneous fleet and ~0.09 as the rate on a stream-heterogeneous one.
+Measured on the seeded 20-bin network with no fault injected anywhere, running
+the detectors sequentially over 35 cycles as the service does, the false-positive
+rate is a mean of 0.86 channels of 80 (0.011) with a worst cycle of 3 of 80
+(0.038). That is inside the 0.05 tolerance, so the heterogeneity does not in fact
+break the detector. An earlier figure of 7 of 80 was an artefact of repeatedly
+calling the refresh endpoint, which accumulates trust state across calls; a
+single assessment flags none.
+
+Giving each well-represented stream its own intercept in the redundancy
+regression was implemented and tested. It made detection **worse**, raising the
+mean from 0.86 to 2.31 channels flagged, because on a 20-node fleet the extra
+parameters cost more in degrees of freedom and leverage than the stream offset
+costs in bias. The change was reverted. It may be worth revisiting on a network
+large enough to support per-stream models.
 
 **Cross-sectional detection needs a fleet.** Peer and dispersion tests are
 disabled below ten nodes, and the single-node drift test abstains entirely,
