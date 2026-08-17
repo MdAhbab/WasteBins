@@ -1,4 +1,7 @@
-from django.test import TestCase, SimpleTestCase
+import tempfile
+from pathlib import Path
+
+from django.test import TestCase, SimpleTestCase, override_settings
 from bins.utils.dijkstra import (
     compute_route, two_opt_order, or_opt_order, orienteering_route,
     apply_aging, _coord_map, _order_distance,
@@ -49,7 +52,50 @@ class RoutingRefinementTests(SimpleTestCase):
 
 
 class ForwardModelIntegrationTests(TestCase):
-    """End-to-end: seed telemetry -> train forward model -> risk-aware priority."""
+    """
+    End-to-end: seed telemetry -> train forward model -> risk-aware priority.
+
+    The model store is redirected to a temporary directory for the duration of
+    this class.  ``train_forward`` writes real artefact files, and Django's
+    ``TestCase`` isolates the database but *not* the filesystem -- so without
+    this, running the suite silently overwrites the deployed model with one
+    trained on the three-bin fixture below.  That is not a hypothetical: it
+    happened, and it replaced a 20-bin model with a constant predictor whose
+    training labels were 100% censored (R^2 -0.17, every feature importance
+    exactly zero) while leaving the API happily serving it.
+
+    Every path in the store is overridden, not just the forward bundle, because
+    the continual-learner state is keyed to the bundle it corrects; leaving it
+    pointed at the real file would pair production state with a fixture model.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._store = tempfile.TemporaryDirectory()
+        store = Path(cls._store.name)
+        cls._store_override = override_settings(
+            MODEL_STORE_DIR=store,
+            MODEL_FILENAME=store / "rf_cost_model.joblib",
+            MODEL_META_FILENAME=store / "rf_cost_model_meta.json",
+            FORWARD_MODEL_FILENAME=store / "forward_bundle.joblib",
+            FORWARD_MODEL_META_FILENAME=store / "forward_bundle_meta.json",
+            CONTINUAL_MODEL_FILENAME=store / "continual_state.joblib",
+            CONTINUAL_META_FILENAME=store / "continual_state_meta.json",
+        )
+        cls._store_override.enable()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._store_override.disable()
+        cls._store.cleanup()
+        super().tearDownClass()
+
+    def test_model_store_is_isolated_from_production(self):
+        """Guard the guard: if this fails, the override above has stopped working."""
+        from django.conf import settings
+        self.assertEqual(Path(settings.FORWARD_MODEL_FILENAME).parent,
+                         Path(self._store.name))
 
     def _seed(self):
         import math
