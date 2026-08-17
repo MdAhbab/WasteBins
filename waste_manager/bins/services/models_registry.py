@@ -290,14 +290,22 @@ def explain_prediction(feature_row: Dict[str, float], head: str = "tto",
         learner = get_continual_learner(len(columns))
         use_corrector = learner.active and \
             getattr(settings, "ML_SERVING", {}).get("CONTINUAL_ENABLED", True)
+        cap = float(bundle.get("tto_cap_h", CORE_FEATURES.TTO_CAP_H))
 
+        # The clip is part of the served function, not a display step: `predict_batch`
+        # applies it before the operator ever sees a number.  Explaining the
+        # unclipped regressor instead produced attributions that summed to 24.52 h
+        # for a bin the dashboard was reporting as 24.0 h -- an explanation of a
+        # decision nobody was shown.  Clipping here keeps Shapley efficiency
+        # intact (both f(x) and the background baseline pass through the same
+        # function) and makes the attributions decompose the served value.
         def predict(matrix):
             matrix = np.atleast_2d(matrix)
             base = np.asarray(model.predict(matrix), dtype=float)
-            if not use_corrector:
-                return base
-            return np.array([learner.predict(matrix[i], base[i])
-                             for i in range(matrix.shape[0])], dtype=float)
+            if use_corrector:
+                base = np.array([learner.predict(matrix[i], base[i])
+                                 for i in range(matrix.shape[0])], dtype=float)
+            return np.clip(base, 0.0, cap)
 
         target, units = "time to overflow", "h"
 
@@ -311,6 +319,24 @@ def explain_prediction(feature_row: Dict[str, float], head: str = "tto",
     payload["head"] = head
     payload["total_ms"] = round((time.perf_counter() - started) * 1000.0, 2)
     payload["model_version"] = load_forward_meta().get("version", "unknown")
+
+    if head != "hazard" and bundle.get("regressor") is not None:
+        # Surface the censoring explicitly.  A bin sitting at the cap is not
+        # "24 hours from overflowing"; it is "not predicted to overflow inside the
+        # horizon the model was trained on", and those are different claims.  The
+        # raw output is reported so the saturation is visible rather than implied.
+        cap = float(bundle.get("tto_cap_h", CORE_FEATURES.TTO_CAP_H))
+        raw = float(np.asarray(bundle["regressor"].predict(
+            np.atleast_2d(x)), dtype=float)[0])
+        payload["cap_h"] = round(cap, 3)
+        payload["raw_model_output_h"] = round(raw, 3)
+        payload["saturated_at_cap"] = bool(raw >= cap)
+        if raw >= cap:
+            payload["censoring_note"] = (
+                f"The model's unclipped output is {raw:.2f} h, beyond the {cap:.0f} h "
+                f"training horizon, so the served value is capped. Read this as "
+                f"'no overflow expected within {cap:.0f} h', not as a timing estimate."
+            )
     return payload
 
 
