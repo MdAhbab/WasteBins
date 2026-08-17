@@ -46,7 +46,19 @@ N_STEPS = 140
 WINDOW = 20
 STRIDE = 4
 VICTIMS = (0, 3, 7)
+
+# Seeds the detector thresholds were developed against.  Anything measured on
+# these is a fitting score, not a generalisation score, and must not be the
+# number the manuscript quotes.
 SEEDS = (0, 1, 2, 3)
+
+# Seeds held out from every tuning decision.  Kept in the harness rather than in
+# a throwaway script precisely so the held-out figures are reproducible from the
+# repository: a detector ensemble with this many thresholds is exactly the kind
+# of thing that quietly overfits its development fixtures, and a claim that it
+# has not done so is worth nothing unless a reader can re-run it.
+HOLDOUT_CLEAN_SEEDS = tuple(range(100, 124))     # 24 unseen clean fleets
+HOLDOUT_FAULT_SEEDS = tuple(range(200, 212))     # 12 unseen fault instances
 
 
 def clean_fleet(n_nodes: int = N_NODES, n: int = N_STEPS, seed: int = 0) -> Dict:
@@ -118,26 +130,46 @@ def inject_mode(fleet: Dict, mode: str, channel: str = "gas", seed: int = 11):
     return corrupted, truth
 
 
-def specificity_study() -> Dict:
-    """False-positive rate on clean fleets -- the operator's tolerance test."""
+def _clean_rates(seeds) -> List[float]:
     rates = []
-    for seed in SEEDS:
+    for seed in seeds:
         fleet = clean_fleet(seed=seed)
         truth = {i: {c: False for c in fleet[i]} for i in fleet}
         metrics = H.detection_metrics(sequential_assess(fleet), truth)
         rates.append(metrics["false_positive_rate"])
+    return rates
+
+
+def specificity_study() -> Dict:
+    """
+    False-positive rate on clean fleets -- the operator's tolerance test.
+
+    Reported on the tuning seeds and, separately, on seeds never used for tuning.
+    The held-out figure is the one to quote; the tuned figure is included only so
+    the gap between them is visible, since that gap is the overfitting measure.
+    """
+    tuned = _clean_rates(SEEDS)
+    held = _clean_rates(HOLDOUT_CLEAN_SEEDS)
     return {
         "seeds": list(SEEDS),
-        "false_positive_rate_per_seed": [round(r, 4) for r in rates],
-        "false_positive_rate_mean": round(float(np.mean(rates)), 4),
-        "false_positive_rate_max": round(float(np.max(rates)), 4),
+        "false_positive_rate_per_seed": [round(r, 4) for r in tuned],
+        "false_positive_rate_mean": round(float(np.mean(tuned)), 4),
+        "false_positive_rate_max": round(float(np.max(tuned)), 4),
+        "holdout": {
+            "seeds": list(HOLDOUT_CLEAN_SEEDS),
+            "n_seeds": len(HOLDOUT_CLEAN_SEEDS),
+            "false_positive_rate_mean": round(float(np.mean(held)), 4),
+            "false_positive_rate_max": round(float(np.max(held)), 4),
+            "seeds_with_any_false_positive": int(sum(1 for r in held if r > 0)),
+            "note": "never used for any tuning decision; this is the figure to cite",
+        },
     }
 
 
-def detection_study() -> Dict:
+def detection_study(seeds=SEEDS) -> Dict:
     """Per-mode detection, averaged over seeds."""
     per_mode: Dict[str, List[Dict]] = {mode: [] for mode in F.FAULT_MODES}
-    for seed in SEEDS:
+    for seed in seeds:
         fleet = clean_fleet(seed=seed)
         for mode in F.FAULT_MODES:
             corrupted, truth = inject_mode(fleet, mode, seed=11 + seed * 7)
@@ -234,6 +266,13 @@ def main() -> None:
           f"(max {specificity['false_positive_rate_max']:.3f} over "
           f"{len(SEEDS)} seeds)")
 
+    print(f"Held-out false-positive rate: "
+          f"{specificity['holdout']['false_positive_rate_mean']:.4f} "
+          f"(max {specificity['holdout']['false_positive_rate_max']:.4f} over "
+          f"{specificity['holdout']['n_seeds']} unseen seeds, "
+          f"{specificity['holdout']['seeds_with_any_false_positive']} with any) "
+          f"<- cite this one")
+
     detection = detection_study()
     print(f"\n{'fault mode':<22}{'recall':>9}{'precision':>11}{'F1':>8}{'FPR':>8}")
     print("-" * 58)
@@ -245,6 +284,15 @@ def main() -> None:
     print("-" * 58)
     print(f"{'MEAN':<22}{mean['recall']:>9.2f}{mean['precision']:>11.2f}"
           f"{mean['f1']:>8.2f}{mean['false_positive_rate']:>8.3f}")
+
+    detection_holdout = detection_study(HOLDOUT_FAULT_SEEDS)
+    hm = detection_holdout["_mean"]
+    print(f"{'MEAN (held-out)':<22}{hm['recall']:>9.2f}{hm['precision']:>11.2f}"
+          f"{hm['f1']:>8.2f}{hm['false_positive_rate']:>8.3f}   <- cite this row")
+    weakest = min((m for m in F.FAULT_MODES),
+                  key=lambda m: detection_holdout[m]["recall"])
+    print(f"  weakest held-out mode: {weakest} "
+          f"(recall {detection_holdout[weakest]['recall']:.2f})")
 
     renorm = renormalisation_study()
     print(f"\nPriority error under corruption (lower is better)")
@@ -263,12 +311,17 @@ def main() -> None:
         "protocol": {
             "n_nodes": N_NODES, "n_steps": N_STEPS, "window": WINDOW,
             "stride": STRIDE, "victims": list(VICTIMS), "seeds": list(SEEDS),
+            "holdout_clean_seeds": list(HOLDOUT_CLEAN_SEEDS),
+            "holdout_fault_seeds": list(HOLDOUT_FAULT_SEEDS),
+            "which_figures_to_cite": "the holdout blocks; the tuning-seed figures "
+                                     "are reported only to expose the gap between them",
             "evaluation": "sequential sliding window with trust carried forward, "
                           "matching how the service runs",
             "detected_when": "channel status is not 'ok'",
         },
         "specificity": specificity,
         "detection": detection,
+        "detection_holdout": detection_holdout,
         "renormalisation_priority_error": renorm,
         "thresholds": {
             "drift_z": H.DRIFT_Z_THRESHOLD,

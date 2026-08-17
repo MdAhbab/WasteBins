@@ -149,6 +149,180 @@ class ForwardModelIntegrationTests(TestCase):
             self.assertGreaterEqual(v, 0.0)
             self.assertLessEqual(v, 1.0)
 
+class FleetFeasibilityTests(SimpleTestCase):
+    """
+    Every plan the solvers produce must be feasible, checked independently.
+
+    `wastebins_core.validate.plan_violations` re-derives the clock, load and
+    windows from the raw travel matrix rather than reusing `evaluate_route`, so a
+    bug in the planner's own accounting cannot make its output look legal.  No
+    database is needed: instances are generated, which also means the adversarial
+    cases can be far nastier than anything the seeded network contains.
+    """
+
+    N_SEEDS = 6
+
+    def _instance(self, seed, n_bins=18, n_veh=3, cluster=False):
+        import numpy as np
+        from wastebins_core import validate as V
+        rng = np.random.default_rng(seed)
+        matrix, tasks, vehicles = V.random_instance(
+            rng, n_bins=n_bins, n_veh=n_veh, cluster=cluster)
+        return V.build_instance(matrix, tasks, vehicles)
+
+    def test_validator_detects_a_planted_violation(self):
+        """
+        Guard the guard.  A checker that always returned "feasible" would make
+        every other test in this class pass without testing anything, so prove it
+        can fail before trusting it when it passes.
+        """
+        from wastebins_core import validate as V, vrp
+        travel, tasks, vehicles = self._instance(0)
+        plan = vrp.solve(tasks, vehicles, travel, vrp.ObjectiveWeights(),
+                         improve=False, time_budget_s=1.0)
+        self.assertTrue(any(r.stops for r in plan.routes),
+                        "instance produced an empty plan; nothing to corrupt")
+        self.assertEqual(V.plan_violations(plan, travel), [])
+
+        for route in plan.routes:                      # make capacity impossible
+            route.vehicle.capacity_kg = 1.0
+        planted = V.plan_violations(plan, travel)
+        self.assertTrue(any("capacity" in v for v in planted),
+                        f"validator missed a planted capacity breach: {planted}")
+
+    def test_plans_are_feasible_across_seeds(self):
+        from wastebins_core import validate as V, vrp
+        weights = vrp.ObjectiveWeights()
+        for seed in range(self.N_SEEDS):
+            for cluster in (False, True):
+                travel, tasks, vehicles = self._instance(seed, cluster=cluster)
+                plan = vrp.solve(tasks, vehicles, travel, weights,
+                                 improve=True, time_budget_s=1.0)
+                found = V.plan_violations(plan, travel)
+                self.assertEqual(found, [],
+                                 f"seed {seed} cluster={cluster}: {found}")
+
+    def test_every_installed_solver_is_feasible(self):
+        from wastebins_core import metaheuristics as META, validate as V, vrp
+        travel, tasks, vehicles = self._instance(3)
+        weights = vrp.ObjectiveWeights()
+        for name, installed in META.available_solvers().items():
+            if not installed:
+                continue
+            plan = META.solve_with(name, tasks, vehicles, travel, weights,
+                                   time_budget_s=1.0)
+            if plan is None:
+                continue
+            found = V.plan_violations(plan, travel)
+            self.assertEqual(found, [], f"solver {name}: {found}")
+
+    def test_adversarial_instances_are_feasible(self):
+        """Tight windows, a bin no vehicle can lift, and a near-useless licence."""
+        import numpy as np
+        from wastebins_core import validate as V, vrp
+        weights = vrp.ObjectiveWeights()
+        for seed in range(4):
+            rng = np.random.default_rng(500 + seed)
+            matrix, tasks, vehicles = V.random_instance(
+                rng, n_bins=18, n_veh=3, cluster=bool(seed % 2))
+            for task in tasks[:3]:
+                task["window_end_min"] = 90.0          # barely reachable
+            tasks[4]["load_kg"] = 1e6                  # exceeds every capacity
+            vehicles[0]["accepts_streams"] = ("hazardous",)
+            travel, tk, vh = V.build_instance(matrix, tasks, vehicles)
+            plan = vrp.solve(tk, vh, travel, weights, improve=True, time_budget_s=1.0)
+            found = V.plan_violations(plan, travel)
+            self.assertEqual(found, [], f"adversarial seed {seed}: {found}")
+
+    def test_time_budget_is_an_upper_bound(self):
+        """
+        The budget is a contract: an interactive request depends on it holding.
+        Generous slack, because this asserts the bound is respected, not that the
+        machine is fast.
+        """
+        import time
+        from wastebins_core import vrp
+        travel, tasks, vehicles = self._instance(7, n_bins=30, n_veh=4)
+        budget = 1.0
+        started = time.perf_counter()
+        vrp.solve(tasks, vehicles, travel, vrp.ObjectiveWeights(),
+                  improve=True, time_budget_s=budget)
+        elapsed = time.perf_counter() - started
+        self.assertLess(elapsed, budget * 4 + 2.0,
+                        f"solve took {elapsed:.2f}s against a {budget}s budget")
+
+    def test_oversized_bin_is_left_unserved_not_dropped_silently(self):
+        """A bin no vehicle can carry must appear in `unserved`, not vanish."""
+        import numpy as np
+        from wastebins_core import validate as V, vrp
+        rng = np.random.default_rng(11)
+        matrix, tasks, vehicles = V.random_instance(rng, n_bins=12, n_veh=2)
+        tasks[2]["load_kg"] = 1e6
+        oversized = tasks[2]["node_id"]
+        travel, tk, vh = V.build_instance(matrix, tasks, vehicles)
+        plan = vrp.solve(tk, vh, travel, vrp.ObjectiveWeights(),
+                         improve=True, time_budget_s=1.0)
+        served = {s.task.node_id for r in plan.routes for s in r.stops}
+        unserved = {t.node_id for t in plan.unserved}
+        self.assertNotIn(oversized, served)
+        self.assertIn(oversized, served | unserved,
+                      "the oversized bin disappeared from the plan entirely")
+
+
+class SensorHealthRegressionTests(SimpleTestCase):
+    """
+    The cross-sectional detectors must not fire on a healthy fleet, and the two
+    fleet-size thresholds must stay ordered.
+    """
+
+    def test_redundancy_activates_no_later_than_peers(self):
+        """
+        Redundancy suppresses the raw peer test on any channel it can model.  If
+        peers activated at a smaller fleet than redundancy, there would be a band
+        where the weaker test runs unopposed -- which measured a false-positive
+        rate of 0.09-0.11, worse than running no fleet test at all.
+        """
+        from wastebins_core import health as H
+        self.assertLessEqual(H.MIN_FLEET_FOR_REDUNDANCY, H.MIN_FLEET_FOR_PEERS)
+
+    def test_clean_fleet_produces_no_alarms(self):
+        import numpy as np
+        from wastebins_core import health as H
+
+        def clean_fleet(n_nodes, n, seed):
+            rng = np.random.default_rng(seed)
+            t = np.arange(n)
+            ambient = 28 + 5 * np.sin(2 * np.pi * (t - 9) / 48)
+            humidity = 62 - 0.8 * (ambient - 28)
+            fleet = {}
+            for i in range(n_nodes):
+                rate = rng.uniform(0.004, 0.02)
+                fill = np.clip(rng.uniform(0, 0.6) + rate * t, 0, 1.25)
+                for k in sorted(rng.choice(np.arange(20, n - 10), size=2, replace=False)):
+                    fill[k:] = np.clip(rng.uniform(0, 0.05) + rate * (t[k:] - t[k]), 0, 1.25)
+                gas = np.clip(0.35 * fill + rng.normal(0, 0.02, n), 0, 1)
+                fleet[i] = {"waste": fill + rng.normal(0, 0.02, n), "gas": gas,
+                            "temp": ambient + 6 * gas + rng.normal(0, 0.4, n),
+                            "humidity": np.clip(humidity + rng.normal(0, 2, n), 0, 100)}
+            return fleet
+
+        # Both regimes: below the peer threshold (within-node only) and above it.
+        for n_nodes in (8, 20):
+            for seed in (0, 1):
+                fleet = clean_fleet(n_nodes, 80, seed)
+                state, final = {}, {}
+                for end in range(20, 81, 4):
+                    snapshot = {i: {c: v[end - 20:end] for c, v in ch.items()}
+                                for i, ch in fleet.items()}
+                    final = H.assess_fleet(snapshot, previous_trust=state)
+                    state = H.carry_state(final)
+                truth = {i: {c: False for c in fleet[i]} for i in fleet}
+                fpr = H.detection_metrics(final, truth)["false_positive_rate"]
+                self.assertLessEqual(
+                    fpr, 0.05,
+                    f"{n_nodes} nodes, seed {seed}: false-positive rate {fpr:.3f}")
+
+
 class DijkstraTests(TestCase):
     def test_small_graph(self):
         graph = {

@@ -159,10 +159,19 @@
   },
   "thresholds": {
     "drift_z": 3.2,
+    "drift_self_z": 6.0,
     "peer_z": 4.0,
+    "dispersion_z": 3.2,
+    "redundancy_z": 3.5,
+    "redundancy_min_r2": 0.55,
+    "spike_z": 5.0,
+    "min_fleet_for_peers": 12,
     "trust_suspect": 0.75,
     "trust_degraded": 0.45,
     "trust_failed": 0.15,
-    "anomaly_deadband": 0.15
+    "anomaly_deadband": 0.15,
+    "unconfirmed_floor": 0.3,
+    "reliability_recovery": 0.0625,
+    "reliability_suspect": 0.55
   }
 }

@@ -123,12 +123,42 @@ DRIFT_SELF_Z_THRESHOLD = 6.0
 REDUNDANCY_MIN_R2 = 0.55
 # Minimum fleet size before the cross-sectional tests mean anything.  A MAD
 # estimated from a handful of peers is so noisy that the z-scores built on it are
-# close to meaningless: sweeping fleet size on clean fixtures, six to eight nodes
-# produced a *worse* false-positive rate (0.08-0.18) than running no fleet test
-# at all, and the rate only settles once there are ~9 peers to compare against.
-# Below this the node falls back to the deterministic detectors, which need no
-# reference population.
-MIN_FLEET_FOR_PEERS = 10
+# close to meaningless, so below this a node falls back to the within-node
+# detectors, which need no reference population.
+#
+# The threshold matters more than it looks, because the failure is not gradual:
+# switching the fleet tests on while the peer MAD is still under-determined is
+# worse than leaving them off.  Sweeping clean fixtures, 8 seeds per size:
+#
+#     nodes   clean FPR   seeds w/ FP   precision
+#         8      0.0000          0/8         0.94
+#         9      0.0000          0/8         0.94
+#        10      0.0906          6/8         0.49
+#        11      0.1079          8/8         0.42
+#        12      0.0182          4/8         0.82
+#        14      0.0089          2/8         0.81
+#        20      0.0016          1/8         0.93
+#
+# There is a distinct instability band at 10-11 nodes -- at 11 every seed
+# produced false alarms and precision fell to 0.42 -- which is precisely where a
+# threshold of 10 used to place the switch-over.  12 is the first size whose
+# false-positive rate is inside the 0.05 tolerance, so that is where it goes.
+# Recall below the threshold is 0.77 against 0.94+ above it: a real cost, but a
+# quiet loss of sensitivity is a fair trade for not crying wolf on a healthy
+# small network, and the operator can see which regime a fleet is in.
+MIN_FLEET_FOR_PEERS = 12
+
+# The redundancy model has its own, lower, minimum -- and it must stay lower.
+# On a channel it can model, redundancy strictly dominates the raw peer
+# comparison and switches it off (see `_redundancy_scores`).  If peers were to
+# activate at a smaller fleet than redundancy, there would be a window where the
+# weaker test runs with nothing to suppress it: raising a single shared constant
+# to 12 did exactly that, moving the instability band to 10-11 -> 12-13 (FPR
+# 0.047 and 0.055, 7 of 8 seeds) instead of removing it.  A fitted model needs
+# only enough complete rows for the trimmed regression, which is a weaker
+# requirement than a trustworthy MAD, so the two thresholds are not the same
+# number and must not share one.
+MIN_FLEET_FOR_REDUNDANCY = 10
 
 # Resolution below which two consecutive samples count as identical.
 # Keyed by canonical channel name; look these up through `_resolution` /
@@ -823,7 +853,7 @@ def _redundancy_scores(levels: Dict[str, np.ndarray], channels: Sequence[str]
     usable = [c for c in channels if c in levels and np.isfinite(levels[c]).sum() >= 8]
     n_nodes = len(next(iter(levels.values()))) if levels else 0
     out = {c: np.zeros(n_nodes) for c in channels}
-    if len(usable) < 3 or n_nodes < MIN_FLEET_FOR_PEERS:
+    if len(usable) < 3 or n_nodes < MIN_FLEET_FOR_REDUNDANCY:
         return out, set()
 
     raw: Dict[str, np.ndarray] = {}
@@ -833,7 +863,7 @@ def _redundancy_scores(levels: Dict[str, np.ndarray], channels: Sequence[str]
         complete = np.ones(n_nodes, dtype=bool)
         for col in columns + [levels[target]]:
             complete &= np.isfinite(col)
-        if complete.sum() < MIN_FLEET_FOR_PEERS + 2:
+        if complete.sum() < MIN_FLEET_FOR_REDUNDANCY + 2:
             continue
         X = np.column_stack(columns + [np.ones(n_nodes)])
         Xc, yc = X[complete], levels[target][complete]
