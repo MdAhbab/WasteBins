@@ -1,8 +1,31 @@
+# ---- Web service ----------------------------------------------------------
 Django==4.2
-pymysql
+djangorestframework==3.15.2
+django-cors-headers==4.3.1
+
+# ---- Numerics and modelling -----------------------------------------------
 numpy>=2.1.0
 pandas>=2.2.3
 scikit-learn>=1.5.2
 joblib==1.4.2
-djangorestframework==3.15.2
-django-cors-headers==4.3.1
+
+# ---- Database drivers -----------------------------------------------------
+# SQLite is the default and needs nothing.  Install the driver that matches
+# DB_ENGINE only if you switch away from it.
+pymysql                       # DB_ENGINE=mysql
+# psycopg[binary]>=3.1        # DB_ENGINE=postgres
+
+# ---- Reproducing the published results ------------------------------------
+# The service runs without these; the experiment suite does not.  Each one
+# backs a specific claim, so omitting them silently drops that comparison
+# rather than failing loudly:
+#   ortools     -> the OR-Tools guided-local-search routing baseline
+#   shap        -> exact TreeSHAP, used to validate the KernelSHAP explainer
+#   scipy       -> statistical tests in the significance analysis
+#   matplotlib  -> the manuscript figures
+# `wastebins_core.metaheuristics.available_solvers()` reports which solvers a
+# given install can actually run.
+ortools>=9.15
+shap>=0.48
+scipy>=1.14
+matplotlib>=3.9

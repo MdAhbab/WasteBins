@@ -1,748 +1,349 @@
-# Smart Waste Management System
+# Adaptive Priority-Weighted Dynamic Routing for IoT-Based Smart Waste Management
 
-A Django-based intelligent waste management system with AI-powered route optimization using Random Forest machine learning and priority-based Dijkstra's algorithm for efficient waste collection.
+Research prototype and reproduction package for the accompanying manuscript. The
+system ingests bin telemetry, judges whether that telemetry can be trusted,
+forecasts which bins will overflow, and plans a multi-vehicle collection route
+under real operating constraints — with every dispatch decision explainable and
+recorded in a tamper-evident log.
 
-**Project Type:** Microprocessors and Microelectronics Lab Prototype  
-**Last Updated:** April 21, 2026
+**Status:** research prototype. All results below are reproducible from this
+repository with the commands in [Reproducing the results](#reproducing-the-results).
+Data is simulated plus public device telemetry; there has been no field
+deployment. See [Limitations](#limitations), which is not a formality — read it
+before quoting any number.
 
 ---
 
-## 📋 Table of Contents
+## Contents
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [System Architecture](#system-architecture)
-- [Algorithms & Mathematics](#algorithms--mathematics)
-- [Technology Stack](#technology-stack)
-- [API Endpoints](#api-endpoints)
-- [Project Structure](#project-structure)
+- [What this is](#what-this-is)
+- [Reproducing the results](#reproducing-the-results)
+- [Architecture](#architecture)
+- [The core package](#the-core-package)
+- [Measured results](#measured-results)
+- [API surface](#api-surface)
+- [Management commands](#management-commands)
+- [Tests](#tests)
 - [Configuration](#configuration)
-- [Usage Guide](#usage-guide)
+- [Limitations](#limitations)
 
 ---
 
-## 🎯 Overview
+## What this is
 
-This system optimizes waste collection routes by combining real-time sensor data, Google Maps tracking, and artificial intelligence. It uses a **Random Forest Regressor** to predict bin priorities and a modified **traffic-aware Dijkstra's algorithm** with dynamic edge weights to compute optimal collection routes.
+Five capabilities, each implemented in a framework-independent module that both
+the web service and the experiment scripts import — so the code that produces
+the published numbers is the code that ships:
 
-### Core Innovation
+**Sensing under failure.** Nine fault modes (dropout, stuck register, drift,
+calibration error, noise burst, Gilbert–Elliott bursty loss, weather-correlated
+failure, stealth-bounded poisoning) with a detector ensemble that separates a
+genuine fault from legitimate signal change. Emptying a bin is a large, abrupt,
+entirely normal level change; a detector that reacts to change alone fails
+immediately. Detection feeds a per-channel trust weight that renormalises the
+priority calculation rather than letting a bad sensor read as an empty bin.
 
-The system implements a **priority-weighted routing algorithm** where high-priority bins appear "closer" in the graph through an inverse weight function:
+**Forecasting, not self-consistency.** A gradient-boosting model predicts hours
+until overflow and the probability of a hazard within six hours, from labels
+derived strictly from each bin's *future* trajectory. Quantile heads give a
+P10–P90 interval; the hazard head is isotonically calibrated on purged folds.
 
-```
-weight(u → v) = base_distance(u, v) * (1 + (traffic_density[v] * 3.0)) / (1 + α × (priority[v] × 10))
-```
+**Multi-vehicle routing under real constraints.** Prize-collecting CVRPTW:
+capacity with on-board compaction, depot return including mid-shift tipping,
+hard shift limits, per-bin service time windows, and waste-stream licensing per
+vehicle. Compared against genetic (Prins route-first-cluster-second), Max–Min
+Ant System, a risk-penalised graph heuristic, and OR-Tools guided local search —
+all scored on one shared objective.
 
-This ensures the shortest paths favor urgent bins while dynamically routing collectors away from high-traffic congestion.
+**Differentiated emissions.** A modal model rather than a flat factor: tractive
+power against rolling and aerodynamic resistance, a Positive Kinetic Energy
+term for stop-and-go, idle burn, and power-take-off compaction, with IPCC 2006
+diesel factors and Euro-class multipliers. Traffic enters through a Bureau of
+Public Roads volume-delay function.
 
----
-
-## ✨ Key Features
-
-### 1. Real-Time Sensor Monitoring
-- **Temperature** tracking (°C)
-- **Humidity** monitoring (%)
-- **Gas level** detection (odor/methane, 0.0-1.0)
-- **Waste level** measurement (fill percentage, 0.0-1.0)
-- **Traffic Density** tracking (0.0-1.0) to model real-world street congestion
-- Automatic timestamp updates for each node
-
-### 2. AI-Powered Priority Prediction
-- **Random Forest** machine learning model (100 decision trees)
-- Predicts bin urgency based on 15 features
-- Statistical trend analysis (means, standard deviations)
-- Temporal pattern recognition (hour, day of week)
-- Model validation: R² score ~0.93
-
-### 3. Smart Traffic-Aware Routing
-- **Modified Dijkstra's algorithm** with priority and traffic-density weights.
-- Routes favor high-priority bins and penalize congested traffic nodes.
-- Virtual source node for user GPS location.
-- Live **Google Maps Integration** displaying user location, route polylines, and dynamic bin statuses.
-- Real-time simulation centered around **Mirpur, Dhaka** landmarks.
-
-### 4. Multi-Criteria Priority System
-Calculates bin urgency using weighted factors:
-- **35%** - Waste level (most important)
-- **25%** - Gas level
-- **25%** - Distance from user
-- **10%** - Temperature deviation
-- **5%** - Humidity level
-
-### 5. User Management
-- Secure authentication system
-- User location tracking (GPS coordinates)
-- Customizable settings per user
-- Role-based access control
-
-### 6. Dashboard & Visualization
-- Premium **Sapphire Blue** flat UI (No-Glow aesthetics).
-- Live `@react-google-maps/api` map instance showing exact bin locations in Mirpur.
-- Priority scores visualization.
-- Interactive sidebars and system health monitoring.
+**Governance.** KernelSHAP attributions with an exact efficiency constraint
+(validated against TreeSHAP), a convex aging term with a *provable* worst-case
+wait bound, and a SHA-256 hash-chained ledger with Merkle inclusion proofs.
 
 ---
 
-## 🏗️ System Architecture
-
-### Data Flow
-
-```
-┌─────────────────┐
-│  IoT Sensors    │
-│  (Temperature,  │
-│   Humidity,     │
-│   Gas, Waste)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Feature Engineering            │
-│  • Statistical aggregation      │
-│  • Temporal features            │
-│  • Distance calculation         │
-└────────┬────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Priority Calculation           │
-│  Option A: Rule-Based (Weights) │
-│  Option B: Random Forest AI     │
-└────────┬────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Top-N Selection (1-5 bins)     │
-│  Sort by priority score         │
-└────────┬────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Graph Construction             │
-│  Dynamic edge weight =          │
-│  distance * (1 + traffic*3.0)   │
-│  / (1 + α × priority × 10)      │
-└────────┬────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Route Optimization             │
-│  Dijkstra + Greedy TSP          │
-└────────┬────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Optimal Collection Route       │
-│  Ordered bin sequence + cost    │
-└─────────────────────────────────┘
-```
-
----
-
-## 🧮 Algorithms & Mathematics
-
-### 1. Random Forest Regressor (Machine Learning)
-
-**Purpose:** Predict priority scores for waste bins
-
-**Configuration:**
-- 100 decision trees (`n_estimators=100`)
-- Maximum depth: 10
-- Library: scikit-learn
-
-**Input Features (15 total):**
-1. `distance_from_user` - GPS distance in meters
-2. `temperature` - Current temperature (°C)
-3. `humidity` - Current humidity (%)
-4. `gas_level` - Gas/odor level (0.0-1.0)
-5. `waste_level` - Fill level (0.0-1.0)
-6. `mean_temperature` - Average of last 10 readings
-7. `std_temperature` - Standard deviation of last 10 readings
-8. `mean_humidity` - Average of last 10 readings
-9. `std_humidity` - Standard deviation of last 10 readings
-10. `mean_gas` - Average of last 10 readings
-11. `std_gas` - Standard deviation of last 10 readings
-12. `mean_waste` - Average of last 10 readings
-13. `std_waste` - Standard deviation of last 10 readings
-14. `hour` - Hour of day (0-23)
-15. `day_of_week` - Day of week (0-6)
-
-**Output:** Priority score (0.0-1.0, higher = more urgent)
-
-**Training:**
-```bash
-python manage.py shell -c "from bins.utils.ai.train_model import train_from_db; train_from_db()"
-```
-
----
-
-### 2. Haversine Distance Formula
-
-**Purpose:** Calculate great-circle distance between GPS coordinates
-
-**Formula:**
-```
-Given points: (lat1, lon1), (lat2, lon2)
-
-R = 6,371,000 meters (Earth's radius)
-φ1 = radians(lat1), φ2 = radians(lat2)
-Δφ = radians(lat2 - lat1)
-Δλ = radians(lon2 - lon1)
-
-a = sin²(Δφ/2) + cos(φ1) × cos(φ2) × sin²(Δλ/2)
-c = 2 × arcsin(√a)
-distance = R × c
-```
-
-**Implementation:**
-```python
-def haversine_distance(lat1, lon1, lat2, lon2):
-    R = 6371000.0  # meters
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lon2 - lon1)
-    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
-    c = 2 * math.asin(math.sqrt(a))
-    return R * c
-```
-
----
-
-### 3. Priority Score Calculation (Weighted Multi-Criteria)
-
-**Purpose:** Calculate bin urgency using multiple weighted factors
-
-**Formula:**
-```
-Priority = w₁×D + w₂×W + w₃×G + w₄×T + w₅×H
-
-Where:
-  D = Distance Priority (closer = higher, 0.0-1.0)
-  W = Waste Level Priority (fuller = higher, 0.0-1.0)
-  G = Gas Level Priority (smellier = higher, 0.0-1.0)
-  T = Temperature Priority (deviation from 25°C)
-  H = Humidity Priority (>70% = higher)
-
-Weights:
-  w₁ = 0.25 (25% - Distance)
-  w₂ = 0.35 (35% - Waste Level) ← Most Important
-  w₃ = 0.25 (25% - Gas Level)
-  w₄ = 0.10 (10% - Temperature)
-  w₅ = 0.05 (5%  - Humidity)
-```
-
-**Component Calculations:**
-
-**Distance Priority:**
-```python
-distance_normalized = min(1.0, distance_m / 2000.0)  # Cap at 2km
-distance_priority = 1.0 - distance_normalized  # Closer = higher
-```
-
-**Waste Level Priority:**
-```python
-waste_priority = max(0.0, min(1.0, waste_level))  # Direct mapping
-```
-
-**Gas Level Priority:**
-```python
-gas_priority = max(0.0, min(1.0, gas_level))  # Direct mapping
-```
-
-**Temperature Priority:**
-```python
-temp_deviation = abs(temperature - 25.0) / 15.0  # Normalize ±15°C
-temp_priority = max(0.0, min(1.0, temp_deviation))
-```
-
-**Humidity Priority:**
-```python
-humidity_priority = max(0.0, min(1.0, (humidity - 50.0) / 50.0))
-```
-
----
-
-### 4. Dijkstra's Shortest Path Algorithm (Modified)
-
-**Purpose:** Find optimal routes considering both distance and priority
-
-**Classical Algorithm:**
-```
-1. Initialize all distances to infinity except source (0)
-2. Use min-heap priority queue
-3. While queue not empty:
-   a. Extract node u with minimum distance
-   b. For each neighbor v of u:
-      - Calculate new_distance = distance[u] + weight(u, v)
-      - If new_distance < distance[v]:
-        * Update distance[v]
-        * Update predecessor[v]
-        * Add v to priority queue
-4. Return distances and predecessors
-```
-
-**Complexity:**
-- **Time:** O((V + E) log V) with binary heap
-- **Space:** O(V)
-
-**Implementation Location:** `waste_manager/bins/utils/dijkstra.py`
-
----
-
-### 5. Dynamic Edge Weight Calculation (Key Innovation)
-
-**Purpose:** Make high-priority bins appear "closer" in the routing graph
-
-**Formula:**
-```
-weight(u → v) = base_distance(u, v) * (1 + (traffic_density[v] * 3.0)) / (1 + α × (priority[v] × 10))
-
-Where:
-  base_distance = Haversine distance in meters
-  traffic_density = Live traffic multiplier (0.0 to 1.0) pushing the collector away from jams.
-  priority[v] = Priority score of destination bin (0.0-1.0)
-  α = Alpha parameter (default 0.5, configurable)
-  × 10 = Normalization factor to amplify effect
-```
-
-**Weight Reduction Examples:**
-
-For base_distance = 1000m, α = 0.5:
-
-| Priority | Calculation | Final Weight | Reduction |
-|----------|-------------|--------------|-----------|
-| 0.0 | 1000 / (1 + 0.5×0×10) | 1000m | 0% |
-| 0.3 | 1000 / (1 + 0.5×3) | 400m | 60% |
-| 0.5 | 1000 / (1 + 0.5×5) | 286m | 71% |
-| 0.7 | 1000 / (1 + 0.5×7) | 222m | 78% |
-| 1.0 | 1000 / (1 + 0.5×10) | 167m | **83%** |
-
-**Impact:** High-priority bins receive up to 83% weight reduction, making them 6× more likely to be visited first.
-
----
-
-### 6. Greedy TSP Approximation (Route Construction)
-
-**Purpose:** Visit multiple bins in optimal order
-
-**Algorithm:**
-```
-1. Start from user location (virtual source node)
-2. Build graph with priority-weighted edges
-3. Run Dijkstra from current position
-4. Select nearest unvisited node (by weighted distance)
-5. Move to that node
-6. Repeat steps 3-5 until all nodes visited
-7. Return ordered route path
-```
-
-**Complexity:** O(N × (V + E) log V) where N = number of bins to visit
-
-**Quality:** Provides 2-approximation for metric TSP in practice
-
----
-
-### 7. Statistical Feature Engineering
-
-**Purpose:** Extract meaningful patterns from sensor data
-
-**Mean Calculation:**
-```python
-mean_value = np.mean([reading1, reading2, ..., reading10])
-```
-- Smooths noise in sensor data
-- Captures recent trends
-
-**Standard Deviation:**
-```python
-std_value = np.std([reading1, reading2, ..., reading10])
-```
-- Measures variability
-- Identifies unstable/erratic bins
-- Higher std = potential issues
-
----
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Django 4.2** - Web framework
-- **Python 3.13** - Programming language
-- **MySQL 8+** - Database
-
-### Machine Learning
-- **scikit-learn 1.5.1** - Random Forest model
-- **pandas 2.2.2** - Data manipulation
-- **numpy 1.26.4** - Numerical computations
-- **joblib 1.4.2** - Model persistence
-
-### Frontend
-- **React 18** (Vite)
-- **Google Maps API** (`@react-google-maps/api`)
-- **Lucide Icons**
-- **Vanilla CSS** (Premium Sapphire Blue theme)
-
-### Database Schema
-
-**Key Models:**
-- `Node` - Waste bin locations with GPS coordinates
-- `SensorReading` - Sensor data (temperature, humidity, gas, waste level)
-- `CollectionRoute` - Computed optimal routes
-- `AICost` - AI model predictions
-- `UserSetting` - User preferences and locations
-- `BinGroup` - Logical grouping of bins
-- `Notification` - System alerts
-
----
-
-## 🔌 API Endpoints
-
-### Sensor Data
-```
-POST /api/readings/submit/
-Content-Type: application/json
-
-{
-  "node_id": 1,
-  "temperature": 28.5,
-  "humidity": 65.0,
-  "gas_level": 0.45,
-  "waste_level": 0.78
-}
-
-Response: 201 Created
-{
-  "status": "ok",
-  "reading": {...}
-}
-```
-
-### Get Latest Readings
-```
-GET /api/readings/?limit=10
-
-Response: 200 OK
-{
-  "readings": [...]
-}
-```
-
-### Compute Optimal Route
-```
-POST /api/compute-route/
-Content-Type: application/json
-
-{
-  "user_lat": 23.7800,
-  "user_lng": 90.3000,
-  "top_n": 5,
-  "alpha": 0.5,
-  "group": "downtown"  // optional
-}
-
-Response: 200 OK
-{
-  "route": {
-    "path": [12, 7, 23, 15, 8],
-    "edges": [
-      {"u": "user_location", "v": 12, "w": 156.3},
-      {"u": 12, "v": 7, "w": 243.7}
-    ],
-    "priority_scores": {12: 0.87, 7: 0.82, ...},
-    "algorithm_version": "priority_based_v2"
-  },
-  "total_cost": 1234.5,
-  "selected_nodes": [12, 7, 23, 15, 8]
-}
-```
-
-### Train AI Model (Admin Only)
-```
-POST /api/train-model/
-
-Response: 200 OK
-{
-  "status": "trained",
-  "meta": {
-    "version": "rf_priority_100_42",
-    "n_samples": 45,
-    "validation_r2": 0.93,
-    "validation_mse": 0.0025
-  }
-}
-```
-
-### AI Predictions
-```
-POST /api/predict-cost/
-
-Response: 200 OK
-{
-  "predictions": [
-    {
-      "node_id": 1,
-      "predicted_cost": 0.87,
-      "model_version": "rf_priority_100_42"
-    }
-  ]
-}
-```
-
-### Update User Location
-```
-POST /api/update-location/
-Content-Type: application/json
-
-{
-  "latitude": 23.7800,
-  "longitude": 90.3000,
-  "location_name": "Office"
-}
-
-Response: 200 OK
-{
-  "success": true,
-  "message": "Location updated successfully"
-}
-```
-
-### Get Notifications
-```
-GET /api/notifications/
-
-Response: 200 OK
-{
-  "notifications": [
-    {
-      "id": 1,
-      "message": "High priority bin detected",
-      "level": "warning",
-      "is_read": false,
-      "created_at": "2025-10-14T10:30:00Z"
-    }
-  ]
-}
-```
-
----
-
-## 📁 Project Structure
-
-```
-Wastebins/
-├── README.md                          # This file
-├── SETUP.md                           # Installation guide
-├── waste_manager/                     # Django project root
-│   ├── manage.py                      # Django CLI
-│   ├── requirements.txt               # Python dependencies
-│   ├── waste_manager/                 # Project settings
-│   │   ├── settings.py               # Main configuration
-│   │   ├── urls.py                   # URL routing
-│   │   └── wsgi.py                   # WSGI config
-│   ├── bins/                         # Main application
-│   │   ├── models.py                 # Database models
-│   │   ├── views.py                  # Views & API endpoints
-│   │   ├── urls.py                   # App URL patterns
-│   │   ├── forms.py                  # User forms
-│   │   ├── admin.py                  # Admin interface
-│   │   ├── serializers.py            # Data serialization
-│   │   ├── utils/                    # Algorithm implementations
-│   │   │   ├── dijkstra.py          # Modified Dijkstra algorithm
-│   │   │   ├── priority_calculator.py # Priority scoring
-│   │   │   └── ai/
-│   │   │       ├── train_model.py   # Random Forest training
-│   │   │       └── model_store.py   # Model persistence
-│   │   ├── management/               # Custom Django commands
-│   │   │   └── commands/
-│   │   │       ├── load_sample_data.py
-│   │   │       └── check_system.py
-│   │   ├── migrations/               # Database migrations
-│   │   ├── templates/                # HTML templates
-│   │   │   └── bins/
-│   │   │       ├── base.html
-│   │   │       ├── auth/            # Login/signup pages
-│   │   │       └── bins/            # Dashboard pages
-│   │   └── static/                   # CSS/JS assets
-│   │       └── bins/
-│   │           ├── css/
-│   │           └── js/
-│   ├── fixtures/                     # Sample data
-│   │   ├── sample_nodes.json
-│   │   ├── sample_readings.json
-│   │   └── sample_ai_costs.json
-│   └── model_store/                  # Trained ML models
-│       ├── rf_cost_model.joblib
-│       └── rf_cost_model_meta.json
-└── venv/                             # Virtual environment (not in git)
-```
-
----
-
-## ⚙️ Configuration
-
-### Database Settings (`settings.py`)
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'waste_manager_db',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
-}
-```
-
-### Routing Parameters
-
-```python
-# Default alpha for priority influence (0.0-1.0)
-ROUTING_ALPHA = 0.5
-
-# Model storage directory
-MODEL_STORE_DIR = BASE_DIR / 'model_store'
-MODEL_FILENAME = MODEL_STORE_DIR / 'rf_cost_model.joblib'
-MODEL_META_FILENAME = MODEL_STORE_DIR / 'rf_cost_model_meta.json'
-```
-
-### Priority Weights (Customizable)
-
-Edit `bins/utils/priority_calculator.py`:
-
-```python
-def __init__(self, 
-             distance_weight: float = 0.25,
-             waste_weight: float = 0.35,
-             gas_weight: float = 0.25,
-             temperature_weight: float = 0.10,
-             humidity_weight: float = 0.05,
-             max_distance_m: float = 2000.0):
-```
-
----
-
-## 📖 Usage Guide
-
-### 1. Zero-Config Launch (Recommended)
-
-To launch the full system (Backend, Frontend, and Dummy Sensor Data) in a single command, run the setup orchestrator from the project root:
+## Reproducing the results
+
+Python 3.11+ and Node 20+. Neither the database nor the trained model is in
+version control, so both are built from scratch below — this is the whole
+reproduction path, not a quickstart.
 
 ```bash
-python run_setup.py
+pip install -r waste_manager/requirements.txt
 ```
-This handles dependencies, virtual environments, migrations, and process scaling automatically.
-
-### 2. Access Dashboard
-```
-http://localhost:5173/login
-```
-*(The React Vite dev-server runs on port 5173 globally).*
-
-### 2. Submit Sensor Data
-
-**Using Postman:**
-```
-POST http://localhost:8000/api/readings/submit/
-Headers: Content-Type: application/json
-Body:
-{
-  "node_id": 1,
-  "temperature": 28.5,
-  "humidity": 65.0,
-  "gas_level": 0.45,
-  "waste_level": 0.78,
-  "traffic_density": 0.8
-}
-```
-
-### 3. Compute Route from Your Location
-
-**Dashboard:** Click "Compute Route" and allow location access
-
-**API:**
-```bash
-curl -X POST http://localhost:8000/api/compute-route/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_lat": 23.7800,
-    "user_lng": 90.3000,
-    "top_n": 5,
-    "alpha": 0.5
-  }'
-```
-
-### 4. Train AI Model
 
 ```bash
-python manage.py shell
->>> from bins.utils.ai.train_model import train_from_db
->>> result = train_from_db()
->>> print(f"Model trained with R² = {result['validation_metrics']['r2']:.3f}")
+cd waste_manager && python manage.py migrate
 ```
 
-### 5. Launch Mirpur Live Simulation
+Generate the simulated network — 20 bins, 20,160 readings, with Arrhenius
+temperature-dependent decomposition, diurnal and weekly demand, Poisson dumping
+bursts, and scheduled collections:
 
 ```bash
-python send_dummy_data.py --username admin --password yourpassword
+python manage.py seed_demo
 ```
-*(This starts broadcasting traffic_density and bin levels directly to the local server, shifting coordinates to the Mirpur operational area).*
 
-### 6. System Health Check
+Train the forward model (roughly one minute; writes to `model_store/`):
 
 ```bash
-python manage.py check_system
+python manage.py train_forward
 ```
 
-Verifies database connectivity, model existence, and data integrity.
+Run the service:
+
+```bash
+python manage.py runserver
+```
+
+Then the frontend, in a second terminal:
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+The dashboard is at `http://localhost:5173`. The map panel needs a Google Maps
+browser key in `frontend/.env.local` as `VITE_GOOGLE_MAPS_API_KEY`; every other
+page works without one, and the map panel says so rather than hanging.
+
+### The experiment suite
+
+Each script writes a JSON file to `experiments/results/`, which is the source of
+truth for the manuscript's tables:
+
+```bash
+cd experiments && python eval_sensor_health.py
+```
+
+| Script | Produces | Answers |
+|---|---|---|
+| `eval_sensor_health.py` | `sensor_health.json` | Detection across all nine fault modes; false-positive rate on a clean fleet; priority error under each trust policy |
+| `exp_fleet.py` | `routing.json` | All five solvers on one objective; constraint-violation audit |
+| `exp_continual.py` | `continual.json` | Prequential error under seven drift scenarios; do-no-harm check; serving latency |
+| `exp_realdata.py` | `realdata.json` | Validation against public device telemetry |
 
 ---
 
-## 📊 Performance Characteristics
+## Architecture
 
-### Computational Complexity
+```
+wastebins_core/            framework-independent; imports no Django
+  geo.py                   haversine, distance matrices, projections
+  traffic.py               BPR volume-delay, corridors, incidents, live adapter
+  emissions.py             modal fuel/CO2: tractive power, PKE, idle, PTO
+  faults.py                nine-mode fault taxonomy and injectors
+  health.py                detector ensemble, trust and reliability state
+  priority.py              three trust policies for priority under failure
+  aging.py                 convex aging with a provable wait bound; equity
+  vrp.py                   prize-collecting CVRPTW: construct, evaluate, improve
+  metaheuristics.py        GA, MMAS ant colony, risk graph, OR-Tools
+  scenario.py              problem construction; static-sweep baseline
+  features.py             31 features shared by training and serving
+  hpo.py                   search spaces, purged splits, bake-off
+  continual.py             bounded residual corrector, ADWIN2, Page-Hinkley
+  xai.py                   KernelSHAP with exact efficiency, TreeSHAP, permutation
+  ledger.py                hash chain, Merkle roots and inclusion proofs
+  stats.py                 BCa bootstrap, Wilcoxon, Cliff's delta, Holm
 
-| Operation | Complexity | Notes |
-|-----------|------------|-------|
-| Haversine Distance | O(1) | Simple trigonometry |
-| Priority Calculation | O(1) | Weighted sum |
-| Random Forest Prediction | O(T×D×log(N)) | T=100 trees, D=10 depth |
-| Dijkstra's Algorithm | O((V+E) log V) | V nodes, E edges |
-| Route Optimization | O(N×(V+E) log V) | N iterations |
-| Top-N Selection | O(V log V) | Sorting nodes |
+waste_manager/             Django service
+  bins/services/           telemetry, dispatch, models_registry, audit
+  bins/api_platform.py     the v1 platform API
+  bins/utils/ai/           training entry points
 
-### Scalability
+frontend/                  React 19 + Vite 8
+experiments/               reproduction scripts and committed results
+```
 
-- **Small Scale (< 50 bins):** All operations near-instantaneous
-- **Medium Scale (50-500 bins):** Route optimization < 1 second
-- **Large Scale (500+ bins):** Consider geographical clustering
-
----
-
-## 🎓 Academic Context
-
-This project demonstrates:
-
-1. **Machine Learning:** Supervised learning with Random Forest
-2. **Graph Theory:** Modified shortest path algorithms
-3. **Computational Geometry:** Haversine distance on spherical surfaces
-4. **Multi-Criteria Optimization:** Weighted decision making
-5. **Statistical Analysis:** Trend detection and feature engineering
-6. **Real-Time Systems:** IoT sensor data processing
-7. **Full-Stack Development:** Django web application
-
-**Suitable for:**
-- Microprocessors & Microelectronics lab projects
-- IoT system design courses
-- Machine learning applications
-- Algorithm optimization studies
+The rule that `wastebins_core` imports no Django is what closes the usual gap
+where the paper measures one implementation and the prototype ships another.
 
 ---
 
-## 📄 License & 👥 Contributors
+## The core package
 
-This project is developed by Ahbab and team for educational and research purposes as part of a Microprocessors and Microelectronics laboratory prototype.
+| Concern | Module | Notes |
+|---|---|---|
+| Travel time under congestion | `traffic.py` | BPR calibrated for saturated urban arterials; falls back to the synthetic provider when a live feed is unreachable |
+| Fuel and CO₂ | `emissions.py` | Duty-cycle sensitive; `sanity_reference_factor` pins the model inside the published 1.5–3 mpg refuse-truck range |
+| Fault injection | `faults.py` | `describe_taxonomy()` documents every mode; magnitudes are in each channel's own units |
+| Detection and trust | `health.py` | Fleet-relative residuals; analytical redundancy predicts each channel from the others; reliability (data quality) is kept separate from trust (maintenance state) |
+| Priority under failure | `priority.py` | `zero_fill` (naive), `renormalise`, `trust_weighted` |
+| Fairness | `aging.py` | `worst_case_wait_bound` returns `inf` honestly when no guarantee exists rather than a misleading finite number |
+| Routing | `vrp.py` | One `skip_cost` definition shared by construction and scoring, so the planner optimises the objective it is judged by |
+| Continual learning | `continual.py` | Frozen base plus a bounded linear corrector, gated so it only affects predictions while it is measurably helping |
 
-**For setup instructions, see [SETUP.md](SETUP.md)**
+---
 
+## Measured results
+
+Regenerate everything with the commands above. The two blocks below were
+verified in the current tree; the routing figures are the committed contents of
+`experiments/results/routing.json`.
+
+### Forecasting (20 bins, 19,200 rows: 14,420 train / 3,840 test)
+
+Temporal hold-out with a 24 h purge gap matching the label horizon, and purged
+expanding-window inner cross-validation.
+
+| Metric | Pooled | Uncensored rows only |
+|---|---|---|
+| Time-to-overflow R² | 0.787 | **0.652** |
+| Time-to-overflow MAE | 2.05 h | **3.28 h** |
+| Mean-predictor baseline MAE | 6.37 h | — |
+| Inner CV R² | 0.763 ± 0.027 | — |
+| P10–P90 coverage | 0.831 (nominal 0.80) | mean width 5.14 h |
+| Hazard ROC AUC | 0.987 | avg precision 0.942 |
+| Hazard Brier | 0.024 (skill 0.787) | positive rate 0.131 |
+
+**Read the second column.** `time_to_overflow` is right-censored at 24 h and
+**66.3% of test labels are the cap** — a constant. The pooled R² is therefore
+largely a score for recognising "not today", which is easy. The uncensored-row
+figures are the honest measure of the forecasting task, and both are recorded in
+the artefact metadata so the pooled number cannot be quoted alone.
+
+### Sensor fault detection
+
+| | Tuned seeds | Held-out (24 clean + 12 fault, unseen) |
+|---|---|---|
+| Clean-fleet false-positive rate | 0.000 | **0.004** (max 0.025) |
+| Mean recall | 0.98 | **0.98** |
+| Mean precision | 0.95 | **0.92** |
+
+Quote the held-out column. Recall is 1.00 on eight of nine modes; bursty loss is
+the weakest at 0.82, which is expected — a burst that lands mid-window leaves
+less evidence than a persistent bias.
+
+### Routing
+
+Five solvers on one shared objective, lower is better: **proposed 279** < ant
+colony 323 < genetic 324 < risk-penalised graph 346 < OR-Tools 421. Ant colony
+and genetic are within one unit and should not be read as ordered. Zero
+constraint violations (capacity, shift, time window, stream licensing,
+double-service) on the live instance across all five solvers and on twelve
+adversarial instances, checked by an independent re-simulation that does not
+reuse the planner's own evaluator.
+
+---
+
+## API surface
+
+Session-authenticated. `/api/v1/` is the current surface; the unversioned
+`/api/` routes are retained for the original prototype's endpoints.
+
+**Operations** — `nodes/`, `nodes/ensure/`, `nodes/<id>/history/`,
+`readings/submit/`, `dashboard/`, `notifications/`
+
+**Fleet** — `fleet/config/`, `fleet/vehicles/<id>/`, `fleet/plan/`,
+`fleet/plans/`, `fleet/compare/`, `fleet/service/`, `fleet/equity/`
+
+**Sensing** — `sensors/health/`, `sensors/faults/`, `sensors/inject/`
+
+**Models** — `models/status/`, `models/continual/reset/`, `explain/<id>/`
+
+**Sustainability** — `emissions/`, `traffic/`
+
+**Assurance** — `audit/`, `audit/verify/`
+
+`sensors/inject/` labels every row it writes, and its `DELETE` removes only
+labelled synthetic rows — it cannot take the seeded network with it.
+
+---
+
+## Management commands
+
+Run from `waste_manager/`.
+
+| Command | Purpose |
+|---|---|
+| `seed_demo` | Build the simulated network and telemetry history |
+| `train_forward` | Train the forward bundle; `--quick` for a small search budget |
+| `verify_ledger` | Recompute the hash chain and report the first divergence |
+| `check_system` | Database connectivity, model presence, data integrity |
+| `load_sample_data` | Minimal fixture for the original prototype |
+
+Training is deliberately an offline command. The request path performs only
+bounded incremental updates — capped samples and milliseconds per update, set by
+`ML_CONTINUAL_MAX_SAMPLES` and `ML_CONTINUAL_MAX_MS` — so using the application
+never triggers a training workload.
+
+---
+
+## Tests
+
+```bash
+cd waste_manager && python manage.py test
+```
+
+Coverage is thin relative to the codebase and should be read as a smoke test,
+not a safety net. `ForwardModelIntegrationTests` redirects the entire model
+store to a temporary directory: it calls the real trainer, and Django isolates
+the database but not the filesystem, so without that redirection running the
+suite overwrites the deployed model with one trained on its own three-bin
+fixture. `test_model_store_is_isolated_from_production` fails loudly if that
+redirection ever breaks.
+
+---
+
+## Configuration
+
+Copy `.env.example` to `.env` in the repository root. Every value is optional;
+the defaults boot on SQLite with no configuration.
+
+| Group | Keys |
+|---|---|
+| Django | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_TIME_ZONE` |
+| Database | `DB_ENGINE` (`sqlite`\|`mysql`\|`postgres`), `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` |
+| ML serving | `ML_CONTINUAL_ENABLED`, `ML_CONTINUAL_MAX_SAMPLES`, `ML_CONTINUAL_MAX_MS`, `ML_ALLOW_INLINE_TRAINING` |
+| Fleet | `FLEET_CAPACITY_KG`, `FLEET_SHIFT_MINUTES`, `FLEET_SERVICE_MINUTES`, `FLEET_AVG_SPEED_KMH`, `FLEET_DEPOT_LAT`, `FLEET_DEPOT_LNG` |
+| Traffic | `TRAFFIC_PROVIDER` (`synthetic`\|`live`), `TRAFFIC_API_URL`, `TRAFFIC_API_KEY` |
+| Audit | `AUDIT_LEDGER_ENABLED`, `AUDIT_BLOCK_SIZE`, `AUDIT_HMAC_KEY` |
+
+The frontend reads `VITE_GOOGLE_MAPS_API_KEY` from `frontend/.env.local`. Vite
+inlines any `VITE_`-prefixed variable into the client bundle, so that key is
+public by construction: restrict it by HTTP referrer and to the Maps JavaScript
+API in the Google Cloud console rather than treating it as a secret.
+
+---
+
+## Limitations
+
+Stated plainly, because each one bounds a claim above.
+
+**No field deployment.** Results come from simulation plus validation against
+public device telemetry. The simulator encodes real mechanisms — temperature-
+dependent decomposition, diurnal and weekly demand, congestion — but it is not
+a municipality, and no claim here should be read as a field result.
+
+**Censored regression.** The regressor fits a squared loss against labels
+right-censored at 24 h, which treats a censored label as observed and biases
+long-horizon predictions downward. The honest metrics are reported on the
+uncensored subset; a survival objective (AFT or Cox) with a concordance metric
+is the correct fix and is not implemented.
+
+**Compaction is applied to mass, not volume.** `effective_load = load_kg /
+compaction_ratio` reduces mass by compacting, which is dimensionally wrong when
+capacity is a mass limit — compaction changes volume. Reported utilisation was
+corrected to match the constraint that actually binds, rather than redefining
+the constraint silently, but the underlying model is still wrong and it spans
+`vrp`, `scenario` and `dispatch`.
+
+**Cross-sectional detection needs a fleet.** Peer and dispersion tests are
+disabled below ten nodes, and the single-node drift test abstains entirely,
+because one node cannot separate sensor drift from a change in the weather. On
+small networks detection falls back to the within-node tests and recall drops.
+
+**Route planning uses its full search budget.** Plan generation runs for its
+configured budget (seconds, not milliseconds) rather than returning as fast as
+possible. It is bounded and never exceeds the budget, but it is user-visible.
+
+---
+
+## Citation and contributors
+
+Md Ahbab Hamid Khan, Ahnaf Atique, Khandokar Md. Rahat Hossain. Please cite the
+accompanying manuscript; this repository is its reproduction package.
