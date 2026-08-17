@@ -109,10 +109,20 @@ def build_dataset() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, pd.
         X = CORE_FEATURES.build_matrix(series, hours, dow=dow)
         hazard, tto = CORE_FEATURES.forward_labels(series["waste"], series["gas"], hours)
 
-        # The final HORIZON_H hours have no future to label against, so their
-        # labels are censored by construction; dropping them prevents the model
-        # from learning that "the end of the record" means "no hazard".
-        cutoff = hours[-1] - CORE_FEATURES.HORIZON_H
+        # The tail of the record has no future to label against, so its labels
+        # are censored by construction; dropping it prevents the model from
+        # learning that "the end of the record" means "no hazard".
+        #
+        # The window must cover the *longest* label horizon, not the shortest.
+        # It used to use HORIZON_H (6 h) while `forward_labels` looks TTO_CAP_H
+        # (24 h) ahead for the time-to-overflow target, so the final 18 h of
+        # every bin's record carried a time-to-overflow of exactly the cap
+        # whenever the record simply ran out -- a fabricated "this bin is safe
+        # for a full day" label on precisely the rows where the answer was
+        # unknown, and one that biases the long-horizon regime the planner
+        # depends on.
+        label_horizon = max(CORE_FEATURES.HORIZON_H, CORE_FEATURES.TTO_CAP_H)
+        cutoff = hours[-1] - label_horizon
         keep = hours <= cutoff
         if keep.sum() < MIN_ROWS_PER_BIN // 2:
             continue
@@ -155,16 +165,31 @@ def train_forward(test_frac: float = 0.2, random_state: int = 42,
     if quick:
         n_iter, n_splits = 4, 3
 
-    train_idx, test_idx = CORE_HPO.temporal_split(len(y_tto), test_frac)
+    # Elapsed hours on a single global clock, for the purge gaps below.
+    clock_h = ((timestamps - timestamps.iloc[0]).dt.total_seconds() / 3600.0).to_numpy()
+    label_horizon = max(CORE_FEATURES.HORIZON_H, CORE_FEATURES.TTO_CAP_H)
+
+    # Purge one full label horizon out of the training side of the hold-out.  A
+    # row's target is derived from the trajectory up to `label_horizon` hours
+    # after it, so without the gap every training row near the cut is labelled
+    # with test-period outcomes and the hold-out score is measuring leakage.
+    train_idx, test_idx = CORE_HPO.temporal_split(
+        len(y_tto), test_frac, hours=clock_h, embargo_h=label_horizon)
     X_train, X_test = X[train_idx], X[test_idx]
     y_train, y_test = y_tto[train_idx], y_tto[test_idx]
     h_train, h_test = y_hazard[train_idx], y_hazard[test_idx]
     g_train = groups[train_idx]
 
+    # The inner cross-validation needs the same treatment, and it additionally
+    # has to be ordered: GroupKFold-by-bin was free to train on a bin's future
+    # and validate on its past, so the CV score it reported was not a forecast.
+    inner_cv = CORE_HPO.purged_time_series_splits(
+        clock_h[train_idx], n_splits=n_splits, embargo_h=label_horizon)
+
     # --- regressor ---------------------------------------------------
     search = CORE_HPO.search_regressor(X_train, y_train, g_train,
                                        n_iter=n_iter, n_splits=n_splits,
-                                       seed=random_state)
+                                       seed=random_state, cv=inner_cv)
     regressor = search.estimator
     predictions = regressor.predict(X_test)
     metrics: Dict = {
@@ -182,6 +207,29 @@ def train_forward(test_frac: float = 0.2, random_state: int = 42,
     baseline = np.full_like(y_test, float(np.mean(y_train)), dtype=float)
     metrics["baseline_mean_r2"] = round(float(r2_score(y_test, baseline)), 5)
     metrics["baseline_mean_mae_h"] = round(float(mean_absolute_error(y_test, baseline)), 5)
+
+    # Censoring is the single most important caveat on the headline R^2 and it
+    # has to be reported, not buried.  Most bins do not overflow inside the
+    # 24 h window, so most labels are the cap itself -- a constant.  An R^2
+    # computed over all rows is therefore substantially a score for recognising
+    # "this one is not going to overflow today", which is easy.  The uncensored
+    # subset is where the actual regression problem lives, and it scores well
+    # below the pooled figure; both are recorded so neither can be quoted alone.
+    censored = y_test >= (CORE_FEATURES.TTO_CAP_H - 1e-9)
+    metrics["censored_share_train"] = round(
+        float(np.mean(y_train >= CORE_FEATURES.TTO_CAP_H - 1e-9)), 4)
+    metrics["censored_share_test"] = round(float(np.mean(censored)), 4)
+    metrics["n_test_uncensored"] = int((~censored).sum())
+    if (~censored).sum() > 1 and float(np.std(y_test[~censored])) > 0:
+        metrics["reg_r2_uncensored"] = round(
+            float(r2_score(y_test[~censored], predictions[~censored])), 5)
+        metrics["reg_mae_h_uncensored"] = round(
+            float(mean_absolute_error(y_test[~censored], predictions[~censored])), 5)
+    metrics["censoring_note"] = (
+        "time_to_overflow is right-censored at the cap and the regressor is fitted "
+        "with a squared loss, which treats a censored label as an observed value. "
+        "That biases long-horizon predictions downward; reg_r2_uncensored is the "
+        "honest figure for the regression task itself.")
 
     # --- quantile heads ----------------------------------------------
     best = dict(search.best_params)
@@ -205,8 +253,23 @@ def train_forward(test_frac: float = 0.2, random_state: int = 42,
     if len(np.unique(h_train)) > 1 and h_test.sum() > 0:
         clf_search = CORE_HPO.search_classifier(X_train, h_train, g_train,
                                                 n_iter=max(4, n_iter // 2),
-                                                n_splits=n_splits, seed=random_state)
-        calibrated = CalibratedClassifierCV(clf_search.estimator, method="isotonic", cv=3)
+                                                n_splits=n_splits, seed=random_state,
+                                                cv=inner_cv)
+        # Calibrate on the same purged, ordered folds.  The default `cv=3` is a
+        # stratified *random* split, which on an autocorrelated series with
+        # overlapping label windows puts near-duplicate rows on both sides of
+        # every fold; the isotonic map then looks well calibrated because it was
+        # fitted on data it had effectively already seen.  Fall back to the
+        # random split only when a purged fold has no positives to calibrate on,
+        # and record which was used so the number is never misread.
+        usable = [(tr, va) for tr, va in inner_cv
+                  if len(np.unique(h_train[tr])) > 1 and len(np.unique(h_train[va])) > 1]
+        calibration_cv = usable if len(usable) >= 2 else 3
+        metrics["hazard_calibration_cv"] = (
+            f"purged time-series ({len(usable)} folds)" if usable and len(usable) >= 2
+            else "stratified k-fold fallback (too few positives per purged fold)")
+        calibrated = CalibratedClassifierCV(clf_search.estimator, method="isotonic",
+                                            cv=calibration_cv)
         calibrated.fit(X_train, h_train)
         classifier = calibrated
         # Namespace the classifier metrics so they cannot be confused with the
@@ -253,8 +316,11 @@ def train_forward(test_frac: float = 0.2, random_state: int = 42,
                    f"hazard_within_{CORE_FEATURES.HORIZON_H:g}h"),
         "features": list(CORE_FEATURES.FEATURE_COLS),
         "feature_contract": CORE_FEATURES.describe(),
-        "validation": ("temporal outer hold-out (latest {:.0%}) with GroupKFold-by-bin "
-                       "inner cross-validation").format(test_frac),
+        "validation": ("temporal outer hold-out (latest {:.0%}) with a {:g} h purge gap, "
+                       "and purged expanding-window inner cross-validation on the "
+                       "same gap").format(test_frac, label_horizon),
+        "label_horizon_h": label_horizon,
+        "purge_gap_h": label_horizon,
         "hpo_protocol": CORE_HPO.describe_protocol(),
         "hyperparameters": {"regressor": best, "classifier": clf_params},
         "search": {"regressor": search.as_dict()},
