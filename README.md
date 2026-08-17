@@ -373,6 +373,34 @@ corrected to match the constraint that actually binds, rather than redefining
 the constraint silently, but the underlying model is still wrong and it spans
 `vrp`, `scenario` and `dispatch`.
 
+**The certified wait bound does not hold as stated.** `aging.worst_case_wait_bound`
+returns a guaranteed upper bound on the wait of the least urgent bin. Tested by
+rolling the policy forward from zero waits on a scarce fleet — 6 networks × 40
+cycles of 12 h, so every wait measured is one the policy itself produced — it is
+violated:
+
+| γ | bound | observed max | breaches |
+|---|---|---|---|
+| 0.55 | 45.05 h | 48.0 h | 5/192 |
+| 0.70 | 33.64 h | 48.0 h | 99/192 |
+| 0.85 | 23.46 h | 72.0 h | 188/192 |
+
+At the default γ=0.55 the breach is one cycle's granularity: waits can only take
+multiples of the 12 h cycle, and 48 h is the first attainable value above 45.05 h.
+Read as "holds to within one collection cycle", that case is defensible. The
+larger-γ rows are not: raising γ tightens the *claimed* bound while the *realised*
+worst wait gets worse, which is the wrong direction. The failure is
+network-dependent — on some networks γ=0.85 holds at 24 h — and **the mechanism is
+not established**. A saturation hypothesis (the aging ramp maxing out at τ, making
+long-waiting bins indistinguishable) was tested and not confirmed: at γ=0.55 no bin
+ever reached τ, yet the bound was still breached.
+
+Until this is resolved, do not cite the bound as a guarantee. What is supported:
+γ=0.55 keeps the observed worst wait within one cycle of the computed bound, and
+increasing γ beyond that does not reliably improve the realised worst case. The
+directional benefit of the equity term is separately measured and does hold —
+worst deferral falls from 72.3 h at γ=0 to 46.8 h at γ=0.55.
+
 **Additive attribution is a lossy summary of this model.** The Shapley values
 satisfy efficiency exactly — baseline plus contributions equals the prediction, and
 the dashboard shows both numbers so it can be checked — but the *fidelity* of the
