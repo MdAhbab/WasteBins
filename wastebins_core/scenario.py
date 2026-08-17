@@ -176,7 +176,7 @@ def static_sweep_plan(tasks: Sequence[vrp.BinTask], vehicles: Sequence[vrp.Vehic
         routes=routes,
         unserved=unserved,
         objective=vrp.plan_objective(routes, unserved, weights),
-        metrics=vrp.summarise(routes, unserved, tasks),
+        metrics=vrp.summarise(routes, unserved, tasks, weights),
         algorithm="static_sweep",
     )
 
@@ -208,7 +208,7 @@ def threshold_plan(tasks: Sequence[vrp.BinTask], vehicles: Sequence[vrp.VehicleS
     plan = vrp.solve(selected, vehicles, travel, weights, improve=True,
                      algorithm=f"threshold_{fill_threshold:g}")
     plan.unserved = list(plan.unserved) + skipped
-    plan.metrics = vrp.summarise(plan.routes, plan.unserved, tasks)
-    plan.objective = vrp.plan_objective(plan.routes, plan.unserved,
-                                        weights or vrp.ObjectiveWeights())
+    weights = weights or vrp.ObjectiveWeights()
+    plan.metrics = vrp.summarise(plan.routes, plan.unserved, tasks, weights)
+    plan.objective = vrp.plan_objective(plan.routes, plan.unserved, weights)
     return plan

@@ -33,23 +33,33 @@ Algorithm
 ---------
 Construction uses a **regret-2 insertion** heuristic driven by prize density,
 which handles time windows far better than nearest-neighbour.  Improvement uses
-a deterministic local search over four neighbourhoods -- intra-route 2-opt and
-Or-opt, inter-route relocate and swap -- each move accepted only if it is
-feasible *and* improves the objective.  Everything is deterministic given the
-inputs, so results are reproducible without a seed.
+a deterministic local search over six neighbourhoods -- intra-route 2-opt and
+Or-opt, inter-route relocate and swap, and reinsert/eject to move bins in and
+out of service -- each move accepted only if it is feasible *and* improves the
+objective.  Everything is deterministic given the inputs, so results are
+reproducible without a seed.
 
 Objective
 ---------
     minimise   travel_cost + unserved_penalty
     where      travel_cost      = w_dist * km + w_co2 * kg_CO2 + w_time * hours
-               unserved_penalty = lambda_prize * sum(prize of skipped bins)
+                                  + missed_overflow_penalty * (bins served late)
+               unserved_penalty = sum over skipped bins of `skip_cost`
 
 ``lambda_prize`` converts urgency into the same currency as distance, and the
 sensitivity of every reported result to it is swept in the experiments.
+
+Every decision about whether a bin is worth serving -- in construction, in local
+search and in the final score -- goes through :func:`skip_cost`.  Keeping a
+second, subtly different copy of that rule inside the constructor is exactly the
+kind of drift that makes a planner optimise something other than what is
+reported: the copy omitted the overflow term, so construction systematically
+abandoned bins that the objective said were worth 80 units to save.
 """
 from __future__ import annotations
 
 import math
+import random
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -57,6 +67,23 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from . import emissions as EM
+
+
+def _finite(value: float, default: float = 0.0) -> float:
+    """
+    Coerce a non-finite input to a usable number.
+
+    A NaN prize or load propagates silently through every comparison in this
+    module -- ``nan > capacity`` is ``False``, so a NaN load passes the capacity
+    check and produces a route that is infeasible in reality -- and then leaks
+    into the JSON the API serves, where ``NaN`` is not even valid.  Bad inputs
+    are neutralised at the boundary instead.
+    """
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return default
+    return v if math.isfinite(v) else default
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +134,12 @@ class ObjectiveWeights:
     lambda_prize: float = 45.0      # cost charged per unit of unserved prize
     hazard_multiplier: float = 6.0  # extra penalty for skipping a hazard bin
     missed_overflow_penalty: float = 80.0
+    # A deadline beyond this horizon is not this shift's problem.  Without the
+    # bound, a bin predicted to overflow in a fortnight attracts exactly the same
+    # penalty as one overflowing this afternoon, which is both wrong and
+    # inconsistent with `route_cost`, where a served bin is only ever charged for
+    # being *actually* late.
+    overflow_horizon_h: float = 24.0
 
 
 @dataclass
@@ -129,8 +162,20 @@ class VehicleRoute:
     distance_m: float = 0.0
     co2_kg: float = 0.0
     duration_min: float = 0.0
-    load_kg: float = 0.0
+    load_kg: float = 0.0            # raw mass collected, before compaction
     trips: int = 1
+
+    @property
+    def payload_kg(self) -> float:
+        """
+        Mass that actually occupies the body, i.e. what ``capacity_kg`` bounds.
+
+        ``load_kg`` is the raw mass lifted out of the bins; the body only ever
+        holds it compacted.  Reporting utilisation against the raw figure
+        overstates it by exactly the compaction ratio -- it produced a "250%
+        utilised" reading for a route that filled its body precisely three times.
+        """
+        return self.load_kg / max(self.vehicle.compaction_ratio, 1e-6)
 
     @property
     def node_ids(self) -> List[int]:
@@ -237,7 +282,9 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
         if not vehicle.accepts(task.stream):
             return None
 
-        effective_load = task.load_kg / max(vehicle.compaction_ratio, 1e-6)
+        # A non-finite load would pass every comparison below (``nan > x`` is
+        # False), so the route would look feasible while overflowing the body.
+        effective_load = _finite(task.load_kg) / max(vehicle.compaction_ratio, 1e-6)
         if effective_load > vehicle.capacity_kg + 1e-9:
             return None                     # a single bin exceeds the body
 
@@ -309,7 +356,7 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
             return None
 
     route.duration_min = clock
-    route.load_kg = sum(s.task.load_kg for s in route.stops)
+    route.load_kg = sum(_finite(s.task.load_kg) for s in route.stops)
     return route
 
 
@@ -336,17 +383,37 @@ def route_cost(route: VehicleRoute, weights: ObjectiveWeights) -> float:
             + weights.missed_overflow_penalty * late)
 
 
+def skip_cost(task: BinTask, weights: ObjectiveWeights) -> float:
+    """
+    Cost of leaving one bin unserved.
+
+    This is *the* definition, and everything that reasons about skipping must go
+    through it.  The construction heuristic used to carry its own copy that
+    omitted the overflow term, so a bin predicted to overflow was valued at
+    ``lambda * prize`` while the objective the plan is scored against charged
+    ``lambda * prize + missed_overflow_penalty``.  With the default weights that
+    is an 80-unit blind spot aimed squarely at the bins the system exists to
+    catch: any bin whose insertion cost fell in the gap was dropped during
+    construction and only recovered if the local search happened to have budget
+    left over to reinsert it.
+    """
+    penalty = weights.lambda_prize * max(0.0, _finite(task.prize))
+    if task.hazard or task.tier == 0:
+        penalty *= weights.hazard_multiplier
+    if _overflows_within_horizon(task, weights):
+        penalty += weights.missed_overflow_penalty
+    return penalty
+
+
+def _overflows_within_horizon(task: BinTask, weights: ObjectiveWeights) -> bool:
+    """Whether skipping this bin means an overflow this planning horizon."""
+    tto = task.time_to_overflow_h
+    return math.isfinite(tto) and tto <= weights.overflow_horizon_h
+
+
 def unserved_cost(tasks: Sequence[BinTask], weights: ObjectiveWeights) -> float:
     """Prize forgone by skipping bins, plus the overflows that skipping causes."""
-    total = 0.0
-    for t in tasks:
-        penalty = weights.lambda_prize * max(0.0, t.prize)
-        if t.hazard or t.tier == 0:
-            penalty *= weights.hazard_multiplier
-        if math.isfinite(t.time_to_overflow_h):
-            penalty += weights.missed_overflow_penalty
-        total += penalty
-    return total
+    return float(sum(skip_cost(t, weights) for t in tasks))
 
 
 def plan_objective(routes: Sequence[VehicleRoute], unserved: Sequence[BinTask],
@@ -415,15 +482,15 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
             second = options[1][0] if len(options) > 1 else best_delta + weights.lambda_prize
             regret = second - best_delta
 
-            # Skipping costs lambda * prize; only insert when that is worth paying.
-            skip_cost = weights.lambda_prize * task.prize
-            if task.hazard or task.tier == 0:
-                skip_cost *= weights.hazard_multiplier
-            if best_delta > skip_cost:
+            # Only insert when serving is cheaper than the penalty for skipping.
+            # This must be the *same* quantity the objective charges, so it comes
+            # from `skip_cost` rather than being recomputed here.
+            forgone = skip_cost(task, weights)
+            if best_delta > forgone:
                 continue
 
             # Prefer hazard tier, then high regret, then high prize.
-            key = (task.tier, -(regret + skip_cost - best_delta))
+            key = (task.tier, -(regret + forgone - best_delta))
             if best_choice is None or key < best_choice[0]:
                 best_choice = (key, task, vid, pos, best_delta)
 
@@ -442,8 +509,70 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
 # ---------------------------------------------------------------------------
 # Local search
 # ---------------------------------------------------------------------------
-def _route_or_none(order: List[BinTask], vehicle: VehicleSpec, travel: TravelModel):
-    return evaluate_route(order, vehicle, travel) if order else VehicleRoute(vehicle=vehicle)
+def _bulk_insertion(vehicle_id: int, vehicle: VehicleSpec, order: List[BinTask],
+                    pool: Sequence[BinTask], travel: TravelModel,
+                    weights: ObjectiveWeights, base_cost: float,
+                    deadline: float
+                    ) -> Optional[Tuple[float, List[BinTask], List[BinTask]]]:
+    """
+    Greedily insert as many pooled bins into one vehicle as pays off *in total*.
+
+    Bins are added by cheapest insertion, one at a time, but the acceptance test
+    is applied to the running total rather than to each bin: after `k` additions
+    the score is ``(route cost now - route cost before) - (skip cost of all k)``.
+    The prefix minimising that total is returned.
+
+    This is the whole point.  The marginal cost of the first bin onto an empty
+    vehicle carries the entire fixed cost of opening a route, so it is dominated
+    by its own prize and gets rejected; every subsequent bin in the same cluster
+    would then have been nearly free.  A greedy test that never looks past the
+    first bin cannot see that, and the result is stranded clusters next to idle
+    trucks.
+
+    Returns ``(total_delta, new_order, tasks_taken)`` or ``None`` when nothing
+    can be inserted.  The caller still applies the usual strict-improvement test.
+    """
+    candidates = [t for t in pool if vehicle.accepts(t.stream)]
+    if not candidates:
+        return None
+
+    current = list(order)
+    remaining = list(candidates)
+    taken: List[BinTask] = []
+    forgone = 0.0
+    best: Optional[Tuple[float, List[BinTask], List[BinTask]]] = None
+
+    while remaining:
+        if time.perf_counter() > deadline:
+            break
+        evaluated = evaluate_route(current, vehicle, travel) if current else None
+        current_cost = route_cost(evaluated, weights) if evaluated is not None else 0.0
+
+        choice: Optional[Tuple[float, int, BinTask]] = None
+        for task in remaining:
+            found = _best_insertion(task, current, vehicle, travel, weights,
+                                    current_cost)
+            if found is None:
+                continue
+            if choice is None or found[0] < choice[0]:
+                choice = (found[0], found[1], task)
+        if choice is None:
+            break
+
+        _, position, task = choice
+        current = current[:position] + [task] + current[position:]
+        taken.append(task)
+        remaining = [t for t in remaining if t is not task]
+        forgone += skip_cost(task, weights)
+
+        evaluated = evaluate_route(current, vehicle, travel)
+        if evaluated is None:                  # should not happen; stay safe
+            break
+        total_delta = route_cost(evaluated, weights) - base_cost - forgone
+        if best is None or total_delta < best[0]:
+            best = (total_delta, list(current), list(taken))
+
+    return best
 
 
 def local_search(orders: Dict[int, List[BinTask]], vehicles: Sequence[VehicleSpec],
@@ -458,6 +587,14 @@ def local_search(orders: Dict[int, List[BinTask]], vehicles: Sequence[VehicleSpe
     ``inter_relocate``  move one bin to another vehicle.
     ``inter_swap``      exchange two bins between vehicles.
     ``reinsert``        try to bring a currently-skipped bin into service.
+    ``eject``           drop a bin whose prize no longer pays for its detour.
+
+    ``eject`` is the mirror of ``reinsert`` and the neighbourhood is incomplete
+    without it: this is a *prize-collecting* problem, so the set of served bins
+    is a decision variable in both directions.  A bin that was worth inserting
+    into the route the constructor built can easily stop being worth it once
+    relocations and swaps have reshaped that route around it, and with only the
+    inserting move available the search had no way to undo the commitment.
 
     Only feasible, strictly improving moves are accepted, so the objective is
     monotone non-increasing and the procedure always terminates.
@@ -589,22 +726,81 @@ def local_search(orders: Dict[int, List[BinTask]], vehicles: Sequence[VehicleSpe
                         if try_move({a: sa, b: sb}):
                             improved = True
 
-        # --- bring a skipped bin back into service ----------------------
-        for task in list(unserved):
-            placed = False
-            for vid in vids:
-                if not by_id[vid].accepts(task.stream):
-                    continue
-                remaining = [t for t in unserved if t is not task]
-                for j in range(len(orders[vid]) + 1):
-                    if time.perf_counter() > deadline:
-                        return orders, unserved
-                    trial = orders[vid][:j] + [task] + orders[vid][j:]
-                    if try_move({vid: trial}, new_unserved=remaining):
-                        improved = placed = True
-                        break
-                if placed:
-                    break
+        # --- close a route: redistribute one vehicle's whole workload ----
+        # The exact mirror of the bulk reinsertion below, and needed for the
+        # same reason.  Emptying a vehicle is only worth it once *all* of its
+        # bins have moved elsewhere; every intermediate state still pays for an
+        # open route, so a search that relocates one bin at a time is stopped by
+        # a barrier it can never cross, and a plan that opened a second truck
+        # can never collapse back onto one.  Costing the whole redistribution as
+        # a single move removes the barrier.
+        for a in vids:
+            if not orders[a]:
+                continue
+            if time.perf_counter() > deadline:
+                return orders, unserved
+            trial = {vid: list(orders[vid]) for vid in vids}
+            leftovers: List[BinTask] = []
+            for task in orders[a]:
+                best_spot = None
+                for b in vids:
+                    if b == a or not by_id[b].accepts(task.stream):
+                        continue
+                    base = vehicle_cost(b, trial[b])
+                    if base is None:
+                        continue
+                    found = _best_insertion(task, trial[b], by_id[b], travel,
+                                            weights, base)
+                    if found is not None and (best_spot is None
+                                              or found[0] < best_spot[0]):
+                        best_spot = (found[0], found[1], b)
+                if best_spot is None:
+                    leftovers.append(task)
+                else:
+                    _, position, b = best_spot
+                    trial[b] = trial[b][:position] + [task] + trial[b][position:]
+            trial[a] = []
+            changes = {vid: order for vid, order in trial.items()
+                       if len(order) != len(orders[vid])
+                       or any(x is not y for x, y in zip(order, orders[vid]))}
+            if changes and try_move(changes, new_unserved=unserved + leftovers):
+                improved = True
+
+        # --- bring skipped bins back into service, in bulk ---------------
+        # Deliberately *not* one bin at a time.  Serving a distant bin alone
+        # means opening a route for it -- depot out, depot back, a tipping stop
+        # -- which almost never pays for a single prize, so a one-bin-at-a-time
+        # test rejects every candidate and an idle vehicle stays idle no matter
+        # how many bins are stranded.  Measured on a ten-bin instance with three
+        # trucks: four bins abandoned at 42.75 penalty each while two vehicles
+        # sat unused, because the *first* bin onto an empty truck cost 47.  The
+        # same four bins together cost 55 for all of them.  Costing the batch
+        # cumulatively, and keeping the prefix that minimises the total, is what
+        # lets the search discover that a second route is worth opening.
+        for vid in vids:
+            if time.perf_counter() > deadline:
+                return orders, unserved
+            batch = _bulk_insertion(vid, by_id[vid], orders[vid], unserved,
+                                    travel, weights, costs[vid], deadline)
+            if batch is None:
+                continue
+            _, new_order, taken = batch
+            remaining = [t for t in unserved if not any(t is x for x in taken)]
+            if try_move({vid: new_order}, new_unserved=remaining):
+                improved = True
+
+        # --- drop a bin that no longer pays for itself -------------------
+        for vid in vids:
+            i = 0
+            while i < len(orders[vid]):
+                if time.perf_counter() > deadline:
+                    return orders, unserved
+                task = orders[vid][i]
+                trimmed = orders[vid][:i] + orders[vid][i + 1:]
+                if try_move({vid: trimmed}, new_unserved=unserved + [task]):
+                    improved = True
+                else:
+                    i += 1
 
         if not improved:
             break
@@ -615,20 +811,131 @@ def local_search(orders: Dict[int, List[BinTask]], vehicles: Sequence[VehicleSpe
 # ---------------------------------------------------------------------------
 # Top-level solver
 # ---------------------------------------------------------------------------
+#: Fixed so that "deterministic given the inputs" stays true.  The ruin step
+#: needs to make arbitrary choices; making them pseudo-random from a constant
+#: seed keeps the search unbiased without making the published numbers depend on
+#: an unrecorded seed.
+RUIN_SEED = 20240517
+#: Consecutive non-improving ruin-and-recreate rounds before giving up.
+RUIN_PATIENCE = 30
+#: Share of the served bins torn out per round, cycled across rounds.
+RUIN_FRACTIONS = (0.15, 0.25, 0.40, 0.25)
+
+
+def _objective_now(orders: Dict[int, List[BinTask]], unserved: Sequence[BinTask],
+                   by_id: Dict[int, VehicleSpec], travel: TravelModel,
+                   weights: ObjectiveWeights) -> float:
+    total = 0.0
+    for vid, order in orders.items():
+        if not order:
+            continue
+        evaluated = evaluate_route(order, by_id[vid], travel)
+        if evaluated is None:
+            return math.inf
+        total += route_cost(evaluated, weights)
+    return total + unserved_cost(unserved, weights)
+
+
 def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
           travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
           improve: bool = True, time_budget_s: float = 6.0,
           algorithm: str = "regret2_ls") -> FleetPlan:
-    """Construct, then improve, then report a fully evaluated fleet plan."""
+    """
+    Construct, then improve, then report a fully evaluated fleet plan.
+
+    Improvement is a descent to a local optimum followed by bounded
+    ruin-and-recreate: a slice of the served bins is torn out and the descent is
+    run again, keeping the incumbent only when it improves.  A single descent
+    from a single construction is fragile in a way that matters here -- changing
+    the constructor's skip rule, which is unambiguously more correct, moved the
+    live instance into a *worse* basin, because the starting point determines
+    which local optimum is reachable and nothing else does.  Restarting keeps
+    the best solution seen, so the reported number can never be worse than the
+    plain descent, and it uses time the planner already had (a descent converges
+    in ~50 ms against a 5 s budget).
+    """
     weights = weights or ObjectiveWeights()
     started = time.perf_counter()
+    deadline = started + max(0.1, time_budget_s)
+    by_id = {v.vehicle_id: v for v in vehicles}
 
     orders, unserved = construct_regret2(tasks, vehicles, travel, weights)
     if improve:
-        orders, unserved = local_search(orders, vehicles, travel, weights,
-                                        unserved, time_budget_s=time_budget_s)
+        def descend(current_orders, current_unserved):
+            remaining = deadline - time.perf_counter()
+            return local_search(current_orders, vehicles, travel, weights,
+                                current_unserved,
+                                time_budget_s=max(0.05, remaining))
 
-    by_id = {v.vehicle_id: v for v in vehicles}
+        orders, unserved = descend(orders, unserved)
+        best_orders = {vid: list(order) for vid, order in orders.items()}
+        best_unserved = list(unserved)
+        best_objective = _objective_now(best_orders, best_unserved, by_id,
+                                        travel, weights)
+
+        rng = random.Random(RUIN_SEED)
+        served_total = sum(len(order) for order in best_orders.values())
+        # Give up once restarts stop paying, rather than burning the whole
+        # budget every time.  A plan request is an interactive action; spending
+        # five seconds to confirm a solution found in fifty milliseconds is a
+        # latency cost with no benefit.
+        stale = 0
+        iteration = 0
+        # A descent is not cheap at fleet scale (~0.8 s for 24 bins), so a round
+        # started near the deadline is abandoned half-finished and its budget is
+        # simply wasted.  Requiring room for a full round -- estimated from the
+        # rounds already timed -- is what keeps `time_budget_s` an honest bound
+        # rather than a target the solver always spends in full.
+        round_cost = time.perf_counter() - started
+        while (served_total > 1 and stale < RUIN_PATIENCE
+               and time.perf_counter() + round_cost < deadline):
+            iteration += 1
+            round_started = time.perf_counter()
+            trial_orders = {vid: list(order) for vid, order in best_orders.items()}
+            trial_unserved = list(best_unserved)
+
+            pool = [(vid, task) for vid, order in trial_orders.items() for task in order]
+            # The ruin size is cycled rather than fixed: a small tear intensifies
+            # around the incumbent, a large one is the only way out of a deep
+            # basin, and neither alone does both jobs.
+            fraction = RUIN_FRACTIONS[iteration % len(RUIN_FRACTIONS)]
+            k = max(1, min(len(pool) - 1, int(round(fraction * len(pool)))))
+
+            if iteration % 2 == 0:
+                victims = rng.sample(pool, k)
+            else:
+                # Related ("Shaw") removal: tear out a geographic neighbourhood
+                # rather than a scatter.  Removing bins at random leaves the
+                # route's shape essentially intact, so the repair puts almost
+                # everything back where it was; removing a contiguous cluster
+                # lets the repair rebuild that part of the plan from scratch,
+                # which is what actually escapes a local optimum in a routing
+                # problem.
+                anchor = pool[rng.randrange(len(pool))]
+                victims = sorted(
+                    pool, key=lambda vt: travel.distance(anchor[1].index,
+                                                         vt[1].index))[:k]
+
+            for vid, task in victims:
+                trial_orders[vid] = [t for t in trial_orders[vid] if t is not task]
+                trial_unserved.append(task)
+
+            trial_orders, trial_unserved = descend(trial_orders, trial_unserved)
+            trial_objective = _objective_now(trial_orders, trial_unserved, by_id,
+                                             travel, weights)
+            if trial_objective < best_objective - 1e-9:
+                best_orders = {vid: list(o) for vid, o in trial_orders.items()}
+                best_unserved = list(trial_unserved)
+                best_objective = trial_objective
+                served_total = sum(len(o) for o in best_orders.values())
+                stale = 0
+            else:
+                stale += 1
+            # Track the worst round seen, so the guard above is conservative.
+            round_cost = max(round_cost, time.perf_counter() - round_started)
+
+        orders, unserved = best_orders, best_unserved
+
     routes: List[VehicleRoute] = []
     for vid, order in orders.items():
         if not order:
@@ -655,7 +962,7 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
         routes=routes,
         unserved=unserved,
         objective=objective,
-        metrics=summarise(routes, unserved, tasks),
+        metrics=summarise(routes, unserved, tasks, weights),
         compute_ms=(time.perf_counter() - started) * 1000.0,
         algorithm=algorithm,
     )
@@ -666,8 +973,10 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
 # Reporting
 # ---------------------------------------------------------------------------
 def summarise(routes: Sequence[VehicleRoute], unserved: Sequence[BinTask],
-              all_tasks: Sequence[BinTask]) -> Dict:
+              all_tasks: Sequence[BinTask],
+              weights: Optional[ObjectiveWeights] = None) -> Dict:
     """Service, sustainability and equity metrics for a completed plan."""
+    weights = weights or ObjectiveWeights()
     total_km = sum(r.distance_m for r in routes) / 1000.0
     total_co2 = sum(r.co2_kg for r in routes)
     total_min = sum(r.duration_min for r in routes)
@@ -682,9 +991,13 @@ def summarise(routes: Sequence[VehicleRoute], unserved: Sequence[BinTask],
         if math.isfinite(s.task.time_to_overflow_h) and \
                 (s.start_service_min / 60.0) > s.task.time_to_overflow_h:
             missed += 1
-    # A skipped bin that would overflow inside the horizon is also a miss.
+    # A skipped bin that would overflow inside the horizon is also a miss.  The
+    # horizon test matters: counting every finite deadline made a bin due to
+    # overflow next week indistinguishable from one due this afternoon, and it
+    # disagreed with the objective, which only ever charges a served bin for
+    # being genuinely late.
     for t in unserved:
-        if math.isfinite(t.time_to_overflow_h):
+        if _overflows_within_horizon(t, weights):
             missed += 1
 
     total_prize = sum(max(0.0, t.prize) for t in all_tasks)
@@ -699,6 +1012,7 @@ def summarise(routes: Sequence[VehicleRoute], unserved: Sequence[BinTask],
         "co2_kg_per_km": round(total_co2 / total_km, 4) if total_km > 1e-9 else 0.0,
         "duration_min": round(total_min, 2),
         "load_kg": round(sum(r.load_kg for r in routes), 1),
+        "payload_kg": round(sum(r.payload_kg for r in routes), 1),
         "trips": sum(r.trips for r in routes),
         "hazard_total": len(hazard_tasks),
         "hazard_served": len(hazard_served),
@@ -709,42 +1023,57 @@ def summarise(routes: Sequence[VehicleRoute], unserved: Sequence[BinTask],
         "missed_overflow": missed,
         "prize_collected_pct": round(100.0 * collected / total_prize, 2)
         if total_prize > 1e-9 else 100.0,
+        # Measured against the constraint that actually binds: compacted payload
+        # versus body capacity, summed over trips because each trip is a fresh
+        # body.  Using the raw lifted mass here reported 250% for a route that
+        # filled its body exactly three times.
         "capacity_utilisation_pct": round(
-            100.0 * sum(r.load_kg for r in routes)
+            100.0 * sum(r.payload_kg for r in routes)
             / max(1e-9, sum(r.vehicle.capacity_kg * r.trips for r in routes)), 2),
     }
 
 
 def plan_to_dict(plan: FleetPlan) -> Dict:
-    """JSON-serialisable representation for the API and the audit ledger."""
+    """
+    JSON-serialisable representation for the API and the audit ledger.
+
+    Every numeric field is forced finite on the way out.  ``json.dumps`` happily
+    emits bare ``NaN`` and ``Infinity`` tokens, which are not valid JSON: browsers
+    and the ledger's hash-chain verifier both choke on them, and a single
+    unmodelled bin was enough to produce one.
+    """
+    def num(value: float, digits: int) -> float:
+        return round(_finite(value), digits)
+
     return {
         "algorithm": plan.algorithm,
-        "objective": round(plan.objective, 4),
-        "compute_ms": round(plan.compute_ms, 2),
+        "objective": num(plan.objective, 4),
+        "compute_ms": num(plan.compute_ms, 2),
         "metrics": plan.metrics,
         "routes": [
             {
                 "vehicle_id": r.vehicle.vehicle_id,
                 "vehicle_name": r.vehicle.name,
                 "trips": r.trips,
-                "distance_km": round(r.distance_m / 1000.0, 3),
-                "co2_kg": round(r.co2_kg, 3),
-                "duration_min": round(r.duration_min, 2),
-                "load_kg": round(r.load_kg, 1),
+                "distance_km": num(r.distance_m / 1000.0, 3),
+                "co2_kg": num(r.co2_kg, 3),
+                "duration_min": num(r.duration_min, 2),
+                "load_kg": num(r.load_kg, 1),
+                "payload_kg": num(r.payload_kg, 1),
                 "capacity_kg": r.vehicle.capacity_kg,
                 "stops": [
                     {
                         "node_id": s.task.node_id,
                         "sequence": i,
                         "trip_index": s.trip_index,
-                        "arrival_min": round(s.arrival_min, 2),
-                        "start_service_min": round(s.start_service_min, 2),
-                        "departure_min": round(s.departure_min, 2),
-                        "wait_min": round(s.wait_min, 2),
-                        "leg_distance_m": round(s.leg_distance_m, 1),
-                        "leg_co2_kg": round(s.leg_co2_kg, 4),
-                        "load_after_kg": round(s.load_after_kg, 1),
-                        "prize": round(s.task.prize, 4),
+                        "arrival_min": num(s.arrival_min, 2),
+                        "start_service_min": num(s.start_service_min, 2),
+                        "departure_min": num(s.departure_min, 2),
+                        "wait_min": num(s.wait_min, 2),
+                        "leg_distance_m": num(s.leg_distance_m, 1),
+                        "leg_co2_kg": num(s.leg_co2_kg, 4),
+                        "load_after_kg": num(s.load_after_kg, 1),
+                        "prize": num(s.task.prize, 4),
                         "hazard": bool(s.task.hazard),
                     }
                     for i, s in enumerate(r.stops)
@@ -753,7 +1082,7 @@ def plan_to_dict(plan: FleetPlan) -> Dict:
             for r in plan.routes
         ],
         "unserved": [
-            {"node_id": t.node_id, "prize": round(t.prize, 4), "hazard": bool(t.hazard)}
+            {"node_id": t.node_id, "prize": num(t.prize, 4), "hazard": bool(t.hazard)}
             for t in plan.unserved
         ],
     }

@@ -123,7 +123,7 @@ def _finalise(orders: Dict[int, List[BinTask]], unserved: List[BinTask],
         routes=routes,
         unserved=leftovers,
         objective=vrp.plan_objective(routes, leftovers, weights),
-        metrics=vrp.summarise(routes, leftovers, all_tasks),
+        metrics=vrp.summarise(routes, leftovers, all_tasks, weights),
         compute_ms=compute_ms,
         algorithm=algorithm,
     )
