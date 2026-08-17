@@ -89,6 +89,45 @@ class LedgerTests(SimpleTestCase):
         swapped = entries[:2] + [entries[3], entries[2]] + entries[4:]
         self.assertFalse(LG.verify_chain(swapped).valid)
 
+    def test_entry_encoding_is_injective(self):
+        """
+        No field value may shift a field boundary.
+
+        The encoding was a "|".join, and its docstring claimed no combination of
+        values could be re-partitioned. It could: moving the separator between
+        two adjacent fields produced the same digest for a different record, so
+        an entry could be rewritten to carry a different payload hash and still
+        verify. Length-prefixing removes the class of attack, not just this case.
+        """
+        collide_a = LG.entry_digest(1, "P", "A|B", "C", "D")
+        collide_b = LG.entry_digest(1, "P", "A", "B|C", "D")
+        self.assertNotEqual(collide_a, collide_b)
+
+        # A separator anywhere must not merge or split fields.
+        for evil in ("|", "a|b", "|||", "5:x", "3:abc"):
+            first = LG.entry_digest(1, "prev", evil, "digest", "ts")
+            second = LG.entry_digest(1, "prev", "", evil + "digest", "ts")
+            self.assertNotEqual(first, second, f"collision via {evil!r}")
+
+    def test_actor_is_authenticated(self):
+        """
+        An audit trail whose "who" is unsigned records nothing worth auditing.
+
+        The actor was stored on the entry but left out of the digest, so two
+        entries differing only in actor hashed identically and rewriting the
+        actor on a stored entry passed every check.
+        """
+        import dataclasses
+        alice = LG.build_entry(1, "PLAN", {"x": 1}, LG.GENESIS_HASH,
+                               timestamp="2026-01-01T00:00:00", actor="alice")
+        bob = LG.build_entry(1, "PLAN", {"x": 1}, LG.GENESIS_HASH,
+                             timestamp="2026-01-01T00:00:00", actor="bob")
+        self.assertNotEqual(alice.entry_hash, bob.entry_hash)
+
+        forged = dataclasses.replace(alice, actor="mallory")
+        self.assertFalse(LG.verify_chain([forged]).valid,
+                         "a rewritten actor still verified")
+
     def test_signature_round_trip_and_rejection(self):
         digest = LG.sha256_hex("entry")
         signature = LG.sign(digest, "secret")

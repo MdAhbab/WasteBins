@@ -95,10 +95,19 @@ def _exceeds(mass_kg: float, volume_m3: float, vehicle: "VehicleSpec",
     A refuse body is bounded twice, and the two limits are not interchangeable.
     Mass is bounded by the axle rating, and compaction does not reduce it.
     Volume is bounded by the body, and compaction is exactly what reduces it.
-    Household waste is light and bulky, so volume normally binds first; a route
-    of dense material binds on mass instead.  Both are checked, and the volume
-    check is skipped when the instance carries no density information, so
-    mass-only problems still work.
+
+    Which one binds depends on density, and it is worth being exact rather than
+    repeating the usual claim that waste is light and bulky.  The two limits meet
+    at a density of ``capacity_kg / (body_volume_m3 * compaction_ratio)``.  For
+    the default 6000 kg body of 16 cubic metres at a compaction ratio of 2.5 that
+    crossover is 150 kg per cubic metre.  The densities configured here run from
+    180 to 260, all above it, so **mass binds first in this deployment**: the
+    rating is reached with about 10.9 of the 16 cubic metres filled.  Volume
+    binds only for lighter material, such as uncompacted dry recyclables.
+
+    Both are therefore checked, because a fleet sees both regimes and the wrong
+    one silently permits infeasible routes.  The volume check is skipped when the
+    instance carries no density information, so mass-only problems still work.
     """
     if _finite(mass_kg) > float(vehicle.capacity_kg) + tol:
         return True
@@ -157,10 +166,12 @@ class VehicleSpec:
     # Compaction reduces the *volume* the load occupies, which is why a refuse
     # body carries far more waste than its loose volume suggests.
     compaction_ratio: float = 2.5
-    # Usable body volume in cubic metres.  Household waste is light and bulky, so
-    # this is usually the constraint that binds first, not the mass limit.  Left
-    # at zero the volume constraint is not enforced, which keeps instances that
-    # carry no density information working as pure mass problems.
+    # Usable body volume in cubic metres.  Whether this or the mass limit binds
+    # first depends on density; see `_exceeds` for the crossover, which is
+    # 150 kg/m3 at the defaults and below every density configured here, so mass
+    # binds in this deployment.  Left at zero the volume constraint is not
+    # enforced, which keeps instances carrying no density information working as
+    # pure mass problems.
     body_volume_m3: float = 0.0
     tipping_minutes: float = 15.0   # time to discharge at the depot
     accepts_streams: Tuple[str, ...] = ()

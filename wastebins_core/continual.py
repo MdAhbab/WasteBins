@@ -66,9 +66,33 @@ class PageHinkley:
     know the error scale, and here that scale differs by orders of magnitude
     between the time-to-overflow head (hours) and the hazard head (probability),
     and changes again the moment the model is retrained.
+
+    Threshold calibration
+    ---------------------
+    The threshold governs the false-alarm rate *per excursion*, not per stream.
+    Over a long stream there are many excursions, so a value that looks safe for
+    one is not safe for a thousand samples.  At the original 8.0 the detector
+    fired on 198 of 200 stationary streams of 1000 samples, which is not a
+    detector.  Swept on stationary streams and on streams with a step change,
+    120 streams per point:
+
+        threshold   false alarms   detects d=1   detects d=3
+              8.0           0.99          1.00          1.00
+             15.0           0.33          1.00          1.00
+             25.0           0.00          1.00          1.00
+             40.0           0.00          1.00          1.00
+
+    25.0 removes the false alarms and costs no sensitivity at either shift size,
+    so that is the default.  ADWIN, which runs alongside, fired on 0 of 200 of
+    the same stationary streams and was never the problem.
+
+    The practical consequence of the old value was contained rather than
+    harmless: the corrector's activation gate meant the spurious alarms did not
+    degrade predictions, so the do-no-harm property held for a reason unrelated
+    to detection quality.  The alarms were still wrong.
     """
 
-    def __init__(self, delta_sigma: float = 0.15, threshold_sigma: float = 8.0,
+    def __init__(self, delta_sigma: float = 0.15, threshold_sigma: float = 25.0,
                  alpha: float = 0.9999, warmup: int = 40):
         self.delta_sigma = float(delta_sigma)
         self.threshold_sigma = float(threshold_sigma)

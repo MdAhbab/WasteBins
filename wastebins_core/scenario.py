@@ -106,10 +106,12 @@ def make_fleet(n_vehicles: int = 2,
     A homogeneous fleet; heterogeneous fleets are built directly.
 
     ``body_volume_m3`` defaults to 16 cubic metres, a common rear-loader body.
-    With a 2.5 compaction ratio that holds about 40 cubic metres of loose waste,
-    so at a household density near 220 kilograms per cubic metre the volume limit
-    and the 6000 kilogram mass limit bind at roughly the same point. Both
-    constraints are therefore live rather than one being decorative.
+    With a compaction ratio of 2.5 that holds about 40 cubic metres of loose
+    waste, which at 220 kilograms per cubic metre is 8800 kilograms. The mass
+    rating of 6000 kilograms is therefore reached first, using about 10.9 of the
+    16 cubic metres. Mass binds at these settings; volume binds below a density
+    of 150 kilograms per cubic metre. Both are enforced because a fleet meets
+    both regimes.
     """
     fleet = []
     for i in range(n_vehicles):

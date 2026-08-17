@@ -203,9 +203,10 @@ class Vehicle(models.Model):
     body_volume_m3 = models.FloatField(
         default=16.0,
         help_text=("Usable body volume in cubic metres. Compaction reduces the volume a load "
-                   "occupies, so this is the limit compaction acts on. Household waste is "
-                   "light and bulky, so volume usually binds before mass. Zero disables the "
-                   "volume constraint."),
+                   "occupies, so this is the limit compaction acts on. Whether volume or mass "
+                   "binds first depends on density: they meet at capacity_kg / (volume * "
+                   "compaction), which is 150 kg/m3 at the defaults, so mass binds for the "
+                   "densities configured here. Zero disables the volume constraint."),
     )
     shift_minutes = models.FloatField(default=480.0, help_text="Hard shift duration limit.")
     shift_start_minute = models.IntegerField(default=360, help_text="Shift start, minutes from midnight.")

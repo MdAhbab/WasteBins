@@ -96,19 +96,42 @@ def payload_digest(payload) -> str:
 
 
 def entry_digest(sequence: int, prev_hash: str, event_type: str,
-                 payload_sha256: str, timestamp: str) -> str:
+                 payload_sha256: str, timestamp: str, actor: str = "") -> str:
     """
-    Digest binding an entry to its position and its predecessor.
+    Digest binding an entry to its position, its predecessor and its author.
 
-    Field separators are explicit so that no combination of field values can be
-    re-partitioned into a different but identically-hashing record.
+    Every field is length-prefixed rather than separated by a delimiter, so the
+    encoding is injective: the decoder reads a length and then exactly that many
+    characters, and there is no byte an attacker can supply that shifts a field
+    boundary.
+
+    A delimiter alone is not enough, and this is not a theoretical point. The
+    previous version joined the fields with ``"|"`` and its docstring claimed no
+    combination of values could be re-partitioned. It could:
+
+        entry_digest(1, "P", "A|B", "C",   "D")
+        entry_digest(1, "P", "A",   "B|C", "D")
+
+    both produce ``1|P|A|B|C|D`` and therefore the same digest, so an entry whose
+    event type ends in a pipe can be rewritten into a different entry with a
+    different payload hash that verifies exactly as well.
+
+    ``actor`` is included. It was previously omitted, which left the one field an
+    audit trail exists to establish, who performed the action, unauthenticated:
+    two entries differing only in actor hashed identically, and rewriting the
+    actor on a stored entry passed every check the verifier performs.
     """
-    material = "|".join([
-        str(int(sequence)),
-        str(prev_hash),
-        str(event_type),
-        str(payload_sha256),
-        str(timestamp),
+    def field(value) -> str:
+        text = str(value)
+        return f"{len(text)}:{text}"
+
+    material = "".join([
+        field(int(sequence)),
+        field(prev_hash),
+        field(event_type),
+        field(payload_sha256),
+        field(timestamp),
+        field(actor),
     ])
     return sha256_hex(material)
 
@@ -232,7 +255,7 @@ def build_entry(sequence: int, event_type: str, payload: Dict, prev_hash: str,
     """Construct the next entry in a chain; pure, so it is trivially testable."""
     ts = timestamp or datetime.now(timezone.utc).isoformat()
     digest = payload_digest(payload)
-    e_hash = entry_digest(sequence, prev_hash, event_type, digest, ts)
+    e_hash = entry_digest(sequence, prev_hash, event_type, digest, ts, actor)
     return LedgerEntry(
         sequence=int(sequence),
         event_type=str(event_type),
@@ -313,7 +336,7 @@ def verify_chain(entries: Sequence[LedgerEntry], hmac_key: str = "",
 
         recomputed_entry = entry_digest(entry.sequence, entry.prev_hash,
                                         entry.event_type, entry.payload_sha256,
-                                        entry.timestamp)
+                                        entry.timestamp, entry.actor)
         if recomputed_entry != entry.entry_hash:
             fail(entry.sequence, "entry_hash_mismatch",
                  "entry hash does not match its own fields")

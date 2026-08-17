@@ -467,7 +467,7 @@ def sensitivity_study(snapshots: List[Dict], time_budget_s: float) -> Dict:
     gamma_rows = []
     for value in gammas:
         distance, hazard_response = [], []
-        worst_served, worst_deferred, served_share = [], [], []
+        worst_served, worst_deferred, served_share, overdue_now = [], [], [], []
         for snapshot in snapshots:
             travel = travel_for(snapshot, when)
             tasks = build_tasks(snapshot, gamma=value)
@@ -480,8 +480,18 @@ def sensitivity_study(snapshots: List[Dict], time_budget_s: float) -> Dict:
             worst_served.append(max([snapshot["waits"][n] for n in served] or [0.0]))
             worst_deferred.append(max([snapshot["waits"][n] for n in deferred] or [0.0]))
             served_share.append(len(served) / max(1, len(tasks)))
-        bound = AG.worst_case_wait_bound(value, AG.DEFAULT_TAU_H, AG.DEFAULT_KAPPA)
+            overdue_now.append(sum(1 for n in snapshot["node_ids"]
+                                   if snapshot["waits"][n] >= AG.DEFAULT_TAU_H))
+        # Keyword arguments, because this call silently produced nonsense when it
+        # was left positional through a signature change: gamma landed in tau_h
+        # and kappa in max_overdue, so the column read gamma + 96 for every row
+        # and that wrong number reached a published results file.
+        backlog = max(1, int(round(float(np.mean(overdue_now)))))
+        bound = AG.worst_case_wait_bound(
+            tau_h=AG.DEFAULT_TAU_H, cycle_h=12.0,
+            max_overdue=backlog, served_overdue_per_cycle=1)
         gamma_rows.append({
+            "overdue_backlog_mean": backlog,
             "gamma": value,
             "distance_km": round(float(np.mean(distance)), 3),
             "mean_hazard_response_h": round(float(np.mean(hazard_response)), 4),
