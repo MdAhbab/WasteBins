@@ -377,12 +377,29 @@ concordance index is also reported, at **0.908**: it scores only whether the mod
 orders pairs of bins correctly and excludes pairs whose earlier time is censored,
 so unlike R² it needs no uncensored label and is the ranking figure to quote.
 
-The deployed path still serves the single pooled model. Switching to the two-part
-form is the right fix and the measurement above justifies it, but it changes what
-the served number means and therefore the dispatch deadline logic and the operator
-display, so it is recorded as measured future work rather than done late.
-`scikit-survival` would give a proper accelerated-failure-time objective; it does
-not build in this environment because its `ecos` dependency needs a compiler.
+**A survival objective was tried and is worse.** The textbook remedy for
+censoring is an accelerated failure time model, which receives the interval
+`[t, ∞)` for a censored row rather than the point `t`. Run through XGBoost's
+`survival:aft` across three distributions and three scales (`experiments/exp_censoring.py`):
+
+| model | C-index | MAE (uncensored) | R² (uncensored) |
+|---|---|---|---|
+| pooled squared loss (served) | **0.8995** | 3.271 | 0.6466 |
+| conditional squared loss | 0.8681 | **2.393** | **0.7974** |
+| best AFT (normal, scale 0.5) | 0.8518 | 3.451 | 0.5530 |
+
+Every AFT variant ranked worse *and* timed worse. The likely reason, offered as a
+hypothesis: censoring here is administrative and Type I, with every record cut at
+the same known 24 h horizon because that is where the label stops being computed.
+Accelerated failure time models assume a parametric survival distribution and
+target censoring that varies between subjects, so the parametric assumption costs
+more than the correct censoring treatment gains.
+
+The deployed path therefore serves the pooled model, which ranks best, and
+ranking is what the planner consumes. The conditional model is reported as the
+unbiased timing estimator for rows where timing is defined. Switching the served
+path to the two-part form remains open, since it would change the meaning of the
+served number and with it the dispatch deadline logic and the operator display.
 
 **Compaction is applied to mass, not volume.** `effective_load = load_kg /
 compaction_ratio` reduces mass by compacting, which is dimensionally wrong when

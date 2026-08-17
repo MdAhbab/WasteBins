@@ -25,7 +25,11 @@ pymysql                       # DB_ENGINE=mysql
 #   matplotlib  -> the manuscript figures
 # `wastebins_core.metaheuristics.available_solvers()` reports which solvers a
 # given install can actually run.
+#   xgboost     -> the accelerated-failure-time comparison in exp_censoring.py,
+#                  which reports a negative result: the survival objective is
+#                  worse here than the squared loss it was meant to replace
 ortools>=9.15
 shap>=0.48
 scipy>=1.14
 matplotlib>=3.9
+xgboost>=3.0
