@@ -360,11 +360,29 @@ calibration period before its predictions carry weight, which is what the trust
 and reliability layer is for; the wrong reading would be that the model
 generalises across sites.
 
-**Censored regression.** The regressor fits a squared loss against labels
-right-censored at 24 h, which treats a censored label as observed and biases
-long-horizon predictions downward. The honest metrics are reported on the
-uncensored subset; a survival objective (AFT or Cox) with a concordance metric
-is the correct fix and is not implemented.
+**Censored regression, with the bias measured.** The served regressor fits a
+squared loss against labels right-censored at 24 h, which treats a censored label
+as an observed value and biases long-horizon predictions downward. The size of
+that bias is now measured rather than described. Fitting the same estimator on
+uncensored rows only, which is the second half of a two-part model where the
+classifier decides whether an overflow happens at all:
+
+| | pooled (served) | conditional |
+|---|---|---|
+| MAE on uncensored rows | 3.20 h | **2.23 h** |
+| R² on uncensored rows | 0.680 | **0.834** |
+
+So censoring costs about **0.97 h of mean absolute error** and 0.15 of R². A
+concordance index is also reported, at **0.908**: it scores only whether the model
+orders pairs of bins correctly and excludes pairs whose earlier time is censored,
+so unlike R² it needs no uncensored label and is the ranking figure to quote.
+
+The deployed path still serves the single pooled model. Switching to the two-part
+form is the right fix and the measurement above justifies it, but it changes what
+the served number means and therefore the dispatch deadline logic and the operator
+display, so it is recorded as measured future work rather than done late.
+`scikit-survival` would give a proper accelerated-failure-time objective; it does
+not build in this environment because its `ecos` dependency needs a compiler.
 
 **Compaction is applied to mass, not volume.** `effective_load = load_kg /
 compaction_ratio` reduces mass by compacting, which is dimensionally wrong when

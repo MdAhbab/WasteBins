@@ -74,6 +74,47 @@ def _readings_frame() -> pd.DataFrame:
     return frame
 
 
+def _concordance_index(times: np.ndarray, predictions: np.ndarray,
+                       event: np.ndarray) -> float:
+    """
+    Harrell's concordance index for right-censored times.
+
+    A pair of bins is comparable only when the one with the shorter time actually
+    reached its event. If the shorter time is censored, the true ordering is
+    unknown, because that bin might have overflowed at any point afterwards, so
+    the pair is excluded rather than guessed at. Ties in the prediction count as
+    half agreement.
+
+    Shorter predicted time must accompany shorter actual time, so the comparison
+    is on the prediction directly rather than on a risk score.
+
+    Returns 0.5 when no pair is comparable, which is the value carrying no
+    information, rather than raising.
+    """
+    t = np.asarray(times, dtype=float)
+    p = np.asarray(predictions, dtype=float)
+    e = np.asarray(event, dtype=bool)
+
+    order = np.argsort(t)
+    t, p, e = t[order], p[order], e[order]
+
+    comparable = 0
+    agree = 0.0
+    for i in range(len(t)):
+        if not e[i]:
+            continue                     # its true time is unknown
+        later = t > t[i]                 # strictly longer actual time
+        if not later.any():
+            continue
+        comparable += int(later.sum())
+        agree += float(np.sum(p[later] > p[i]))
+        agree += 0.5 * float(np.sum(p[later] == p[i]))
+
+    if comparable == 0:
+        return 0.5
+    return agree / comparable
+
+
 def build_dataset() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, pd.Series]:
     """
     Assemble the supervised dataset from stored telemetry.
@@ -230,6 +271,44 @@ def train_forward(test_frac: float = 0.2, random_state: int = 42,
         "with a squared loss, which treats a censored label as an observed value. "
         "That biases long-horizon predictions downward; reg_r2_uncensored is the "
         "honest figure for the regression task itself.")
+
+    # --- censoring-aware ranking and a conditional model ---------------
+    # Two additions, because R^2 and MAE both assume the label is observed.
+    #
+    # Harrell's concordance index asks only whether the model *orders* pairs of
+    # bins correctly, and it is defined for censored data: a pair is comparable
+    # when the earlier event is observed, so a pair of two censored bins is
+    # simply skipped rather than scored against a label neither of them has.
+    # This is the metric that survives censoring untouched.
+    metrics["reg_concordance"] = round(
+        _concordance_index(y_test, predictions,
+                           event=~censored), 5)
+    metrics["concordance_note"] = (
+        "Harrell's C-index over comparable pairs. 0.5 is random ordering, 1.0 is "
+        "perfect. Unlike R^2 it needs no uncensored label, so it is the ranking "
+        "figure to quote when most labels sit at the cap.")
+
+    # A model fitted only on bins that do overflow inside the window answers the
+    # question "when", without the censored rows dragging predictions down. It is
+    # the second half of a two-part model: the classifier decides whether an
+    # overflow happens at all, and this estimates the timing given that it does.
+    # Reported rather than served, so the paper can quote an unbiased timing
+    # figure while the deployed path stays a single model.
+    train_obs = y_train < CORE_FEATURES.TTO_CAP_H - 1e-9
+    if int(train_obs.sum()) >= 200 and int((~censored).sum()) > 1:
+        conditional = HistGradientBoostingRegressor(
+            **{**search.estimator.get_params(), "random_state": random_state})
+        conditional.fit(X_train[train_obs], y_train[train_obs])
+        cond_pred = conditional.predict(X_test[~censored])
+        metrics["conditional_n_train"] = int(train_obs.sum())
+        metrics["conditional_r2_uncensored"] = round(
+            float(r2_score(y_test[~censored], cond_pred)), 5)
+        metrics["conditional_mae_h_uncensored"] = round(
+            float(mean_absolute_error(y_test[~censored], cond_pred)), 5)
+        metrics["conditional_note"] = (
+            "Fitted on uncensored rows only, so no censored label pulls it "
+            "downward. Compare conditional_mae_h_uncensored against "
+            "reg_mae_h_uncensored to read the size of the censoring bias.")
 
     # --- quantile heads ----------------------------------------------
     best = dict(search.best_params)
