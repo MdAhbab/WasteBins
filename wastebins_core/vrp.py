@@ -554,7 +554,9 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     pending = list(tasks)
     unserved: List[BinTask] = []
 
-    # Hazard-tier bins are inserted first so they never lose a tie-break.
+    # Hazard-tier bins are inserted first so they never lose a tie-break.  Inside
+    # the overdue tier this is longest-wait-first, and the selection key below
+    # keeps that order rather than overriding it with regret.
     pending.sort(key=lambda t: (t.tier, -t.prize))
 
     base_costs = {v.vehicle_id: 0.0 for v in vehicles}
@@ -585,8 +587,26 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
             if best_delta > forgone:
                 continue
 
-            # Prefer hazard tier, then high regret, then high prize.
-            key = (task.tier, -(regret + forgone - best_delta))
+            # Tier first, then it depends on the tier.
+            #
+            # Inside the overdue tier the service order *is* the guarantee, so it
+            # is fixed by waiting time and regret only breaks ties.  `prize` for
+            # an overdue bin is `overdue_score(w) = w/(tau + w)`, which is
+            # strictly increasing in the wait, so ordering by descending prize is
+            # ordering longest-wait-first.  Without this the constructor selected
+            # by regret inside the tier, which let a bin promoted this cycle
+            # overtake one promoted earlier.  The queueing term of the wait bound
+            # assumes it cannot, so the proof was describing an order the code did
+            # not implement.
+            #
+            # Outside the overdue tier there is no ordering claim to keep, and
+            # regret is the right criterion: it picks the bin that will become
+            # most expensive if it is left for later.
+            if task.tier == TIER_OVERDUE:
+                key = (task.tier, -_finite(task.prize),
+                       -(regret + forgone - best_delta))
+            else:
+                key = (task.tier, 0.0, -(regret + forgone - best_delta))
             if best_choice is None or key < best_choice[0]:
                 best_choice = (key, task, vid, pos, best_delta)
 

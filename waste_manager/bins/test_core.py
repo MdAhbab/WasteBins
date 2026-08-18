@@ -743,3 +743,58 @@ class EquityGuaranteeTests(SimpleTestCase):
                                          {1: 0.0})
         self.assertEqual(tiered[1].tier, AG.TIER_NORMAL)
         self.assertEqual(tiered[1].pressure, 0.0)
+
+    def test_overdue_tier_is_served_longest_wait_first(self):
+        """
+        The queueing term of the bound assumes a bin cannot be overtaken.
+
+        The case has to be one where waiting time and cost genuinely disagree,
+        or it proves nothing.  The longest-waiting bin is put 20 km out and the
+        younger one 5 km out, with waits close enough (60 h against 49 h) that the
+        difference in skip penalty, 20.6 cost units, is smaller than the 82 units
+        of extra detour the older bin costs.  A planner choosing on cost alone
+        takes the near bin.
+
+        Before the ordering was enforced the constructor selected inside the tier
+        by regret and did exactly that, so a bin promoted earlier could be
+        overtaken and the proof described an order the code did not implement.
+        Removing the ordering from `construct_regret2` makes this test serve node
+        2 instead of node 1.
+        """
+        travel = VRP.TravelModel(
+            np.array([[0.0, 20000.0, 5000.0],
+                      [20000.0, 0.0, 18000.0],
+                      [5000.0, 18000.0, 0.0]]), default_speed_kmh=20.0)
+        # Long enough for the far bin alone, not for both.
+        vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0, shift_minutes=145.0)
+
+        def task(node_id, index, wait_h):
+            tiered = AG.effective_priorities({node_id: 0.30}, {node_id: wait_h},
+                                             {node_id: 0.0})
+            return SC.make_tasks(
+                [node_id], {node_id: 0.5}, {node_id: tiered[node_id].score},
+                index_of={node_id: index}, hazards={node_id: False},
+                tiers={node_id: tiered[node_id].tier},
+                overdue_pressures={node_id: tiered[node_id].pressure},
+                densities={node_id: 220.0}, capacities_l={node_id: 1100.0},
+            )[0]
+
+        older = task(1, 1, 60.0)      # waiting longer, 20 km out
+        younger = task(2, 2, 49.0)    # waiting less, 5 km out
+        self.assertEqual(older.tier, AG.TIER_OVERDUE)
+        self.assertEqual(younger.tier, AG.TIER_OVERDUE)
+        self.assertGreater(older.prize, younger.prize)
+
+        orders, _ = VRP.construct_regret2(
+            [younger, older], [vehicle], travel, self.WEIGHTS)
+        served = [t.node_id for order in orders.values() for t in order]
+        self.assertEqual(served, [1],
+                         "the longest-waiting overdue bin was overtaken by a "
+                         "younger one that happened to be cheaper to reach")
+
+    def test_ordering_score_is_strictly_increasing_in_wait(self):
+        """Lemma 1 of the proof, checked directly rather than assumed."""
+        scores = [AG.overdue_score(w, AG.DEFAULT_TAU_H)
+                  for w in (48, 49, 60, 96, 240, 1000)]
+        self.assertEqual(scores, sorted(scores))
+        self.assertEqual(len(set(scores)), len(scores), "two waits tied")

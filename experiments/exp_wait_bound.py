@@ -44,6 +44,14 @@ CYCLE_H = 12.0
 MAX_WAIT_H = 4800.0          # 400 cycles, far past any predicted collection
 SPEED_KMH = 20.0
 
+# Waits used to show that the retired pricing saturates.  A million hours is not
+# a realistic wait; it is the point of the demonstration.  Under the retired
+# scheme the penalty converges to lambda_prize * overdue_multiplier from below and
+# never reaches it, so a bin costing more than that to insert is skipped at every
+# wait, and no finite horizon can be searched to prove it.  The analytic statement
+# and the measurement have to agree, and this is where that is checked.
+SATURATION_WAITS_H = (48.0, 96.0, 240.0, 1e3, 1e4, 1e6)
+
 
 def one_task(wait_h: float, tau_h: float = AG.DEFAULT_TAU_H) -> VRP.BinTask:
     """
@@ -106,9 +114,60 @@ def sweep(weights: VRP.ObjectiveWeights, tau_h: float = AG.DEFAULT_TAU_H) -> lis
     return rows
 
 
+def retired_pricing_saturation(weights: VRP.ObjectiveWeights,
+                               tau_h: float = AG.DEFAULT_TAU_H) -> dict:
+    """
+    Show that the retired pricing has a ceiling, and what it costs.
+
+    The retired scheme priced skipping on the ordering score `w/(tau + w)`, which
+    is bounded above by 1, so the penalty is bounded by
+    `lambda_prize * overdue_multiplier`.  This evaluates that penalty directly at
+    waits up to a million hours and reports the supremum it approaches, together
+    with the distance at which a bin becomes too expensive to be worth serving
+    under it.  Both are stated in the paper and neither was reproducible before.
+    """
+    ceiling = weights.lambda_prize * weights.overdue_multiplier
+    retired = []
+    for wait in SATURATION_WAITS_H:
+        score = AG.overdue_score(wait, tau_h)          # the retired price basis
+        retired.append({
+            "wait_h": wait,
+            "ordering_score": round(float(score), 9),
+            "retired_skip_cost": round(float(weights.lambda_prize * score
+                                             * weights.overdue_multiplier), 6),
+            "current_skip_cost": round(float(weights.lambda_prize
+                                             * AG.overdue_pressure(wait, tau_h)
+                                             * weights.overdue_multiplier), 6),
+        })
+
+    # The distance at which a dedicated round trip costs more than the ceiling.
+    first_unaffordable = None
+    for km in [float(k) for k in range(5, 101)]:
+        matrix = np.array([[0.0, km * 1000.0], [km * 1000.0, 0.0]])
+        travel = VRP.TravelModel(matrix, default_speed_kmh=SPEED_KMH)
+        vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0, shift_minutes=1200.0)
+        evaluated = VRP.evaluate_route([one_task(tau_h, tau_h)], vehicle, travel)
+        if evaluated is None:
+            continue
+        if VRP.route_cost(evaluated, weights) > ceiling:
+            first_unaffordable = km
+            break
+
+    return {
+        "ceiling": ceiling,
+        "note": "the retired skip cost approaches the ceiling from below and never "
+                "reaches it, so a bin whose insertion cost exceeds the ceiling is "
+                "skipped at every wait, however large; this is an analytic "
+                "property, and the table below evaluates it to 1e6 hours",
+        "by_wait": retired,
+        "first_unaffordable_km": first_unaffordable,
+    }
+
+
 def main() -> None:
     weights = VRP.ObjectiveWeights()
     rows = sweep(weights)
+    saturation = retired_pricing_saturation(weights)
 
     print("Is the wait bound tight?")
     print("=" * 72)
@@ -132,7 +191,23 @@ def main() -> None:
     print(f"  {n_holds} of {len(rows)} respect the bound, "
           f"{n_tight} of {len(rows)} attain it exactly")
 
+    print()
+    print("Why the retired pricing could not do this")
+    print("=" * 72)
+    print(f"  ceiling = lambda_prize * overdue_multiplier = {saturation['ceiling']:.0f}")
+    print(f"  a dedicated round trip first exceeds it at "
+          f"{saturation['first_unaffordable_km']} km from the depot")
+    print(f"{'wait h':>12}{'retired cost':>16}{'current cost':>16}")
+    print("-" * 44)
+    for r in saturation["by_wait"]:
+        print(f"{r['wait_h']:>12.0f}{r['retired_skip_cost']:>16.4f}"
+              f"{r['current_skip_cost']:>16.2f}")
+    print("-" * 44)
+    print(f"  retired cost never reaches {saturation['ceiling']:.0f}; "
+          f"current cost grows without limit")
+
     payload = {
+        "retired_pricing_saturation": saturation,
         "protocol": {
             "cycle_h": CYCLE_H,
             "tau_h": AG.DEFAULT_TAU_H,

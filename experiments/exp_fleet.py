@@ -175,6 +175,39 @@ def scarce_fleet(snapshot: Dict,
     return fleet
 
 
+def worst_insertion_cost(state: Dict, travel, fleet, weights) -> float:
+    """
+    Largest marginal cost any single bin can present, as a dedicated round trip.
+
+    The wait bound needs an upper bound on the marginal insertion cost `C`,
+    because a bin is only worth serving once its escalating skip penalty passes
+    that cost.  Leaving `C` at zero asserts every bin is affordable the moment it
+    is promoted, which holds only while `C <= lambda*mu/2`, or 90 at the deployed
+    weights.  That was asserted and never checked.
+
+    A dedicated out-and-back trip is a genuine upper bound on the marginal cost of
+    inserting one bin, because any real insertion shares part of its travel with
+    the rest of the route and so costs no more.  Taking the maximum over bins
+    gives the `C` the bound is stated in terms of.
+    """
+    vehicle = fleet[0]
+    worst = 0.0
+    for nid in state["node_ids"]:
+        task = SC.make_tasks(
+            [nid], state["fills"], {nid: 1.0},
+            index_of=state["index_of"], hazards={nid: False},
+            tiers={nid: AG.TIER_OVERDUE},
+            tto_hours={nid: float("inf")},
+            streams=state["streams"], capacities_l=state["capacities"],
+            densities=state["densities"], service_minutes=state["service"],
+            windows=state["windows"],
+        )[0]
+        evaluated = VRP.evaluate_route([task], vehicle, travel)
+        if evaluated is not None:
+            worst = max(worst, VRP.route_cost(evaluated, weights))
+    return float(worst)
+
+
 def equity_rollout(snapshots: List[Dict], time_budget_s: float,
                    cycle_h: float = 12.0, n_cycles: int = 40,
                    burn_in: int = 8, shift_minutes: float = 240.0,
@@ -228,6 +261,7 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
 
     for gamma in (0.55, 0.70, 0.85):
         observed_max, breaches, total_obs = 0.0, 0, 0
+        zero_clear_cycles = 0
         worst_backlog, worst_bound = 0, 0.0
         # ceil(m/c) is the whole point of the bound: at 1 the queueing term
         # vanishes and the bound reduces to the promotion threshold, so a rollout
@@ -239,6 +273,13 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
             travel = travel_for(state, when)
             fleet = scarce_fleet(state, shift_minutes=shift_minutes)
             cleared_history = []
+            cleared_since_burn_in = []
+            # Largest marginal insertion cost any bin in this instance can
+            # present, taken as a dedicated out-and-back trip to the farthest
+            # bin.  Leaving this at zero asserts that every bin is affordable the
+            # moment it is promoted, which is only true when the cost stays under
+            # lambda*mu/2, and that was never checked.
+            max_insertion_cost = worst_insertion_cost(state, travel, fleet, weights)
             for cycle in range(n_cycles):
                 overdue_before = [n for n in state["node_ids"]
                                   if state["waits"][n] >= tau_h]
@@ -256,10 +297,42 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
                     # backlog of 1 would be asserting a guarantee the deployment
                     # does not satisfy.
                     m = max(1, len(overdue_before))
-                    c = max(1, min(cleared_history[-1] or 1, m))
+
+                    # `c` is the rate the fleet is *guaranteed* to clear, so it is
+                    # the minimum over the cycles observed so far and not the
+                    # count from this cycle.  Reading it from the current cycle
+                    # made the test relax itself exactly when waits grew: a bad
+                    # cycle lowered `c`, which raised ceil(m/c), which raised the
+                    # bound, which made a breach less likely.  A guarantee that
+                    # weakens whenever it is about to be violated is not a
+                    # guarantee, and that circularity is why this now uses the
+                    # running minimum.
+                    # Only cycles that actually had a backlog say anything about
+                    # the clearing rate.  A cycle with nothing overdue clears zero
+                    # overdue bins, which is not a failure to keep pace, and
+                    # counting it would drive the guaranteed rate to zero on the
+                    # first quiet cycle.
+                    if overdue_before:
+                        cleared_since_burn_in.append(cleared_history[-1])
+                    c_guaranteed = (min(cleared_since_burn_in)
+                                    if cleared_since_burn_in else 1)
+
+                    if c_guaranteed <= 0:
+                        # At least one cycle cleared nothing while a backlog
+                        # existed, so no positive rate can be guaranteed and the
+                        # bound is genuinely infinite.  Record it rather than
+                        # substituting 1 and reporting a number.
+                        zero_clear_cycles += 1
+                        total_obs += 1
+                        continue
+
+                    c = min(c_guaranteed, m)
                     bound = AG.worst_case_wait_bound(
                         tau_h=tau_h, cycle_h=cycle_h,
-                        max_overdue=m, served_overdue_per_cycle=c)
+                        max_overdue=m, served_overdue_per_cycle=c,
+                        max_insertion_cost=max_insertion_cost,
+                        lambda_prize=weights.lambda_prize,
+                        overdue_multiplier=weights.overdue_multiplier)
                     worst = max(state["waits"].values())
                     observed_max = max(observed_max, worst)
                     worst_backlog = max(worst_backlog, m)
@@ -279,6 +352,7 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
             "observed_max_wait_h": round(observed_max, 2),
             "breaches": breaches,
             "observations": total_obs,
+            "cycles_with_no_overdue_cleared": zero_clear_cycles,
             "holds": breaches == 0,
         })
     return {
