@@ -134,6 +134,12 @@ class BinTask:
     stream: str = "general"
     hazard: bool = False
     tier: int = TIER_NORMAL        # 0 hazard, 1 overdue, 2 normal
+    # Pricing escalation for an overdue bin, `wait / (2 tau)`, from
+    # `aging.overdue_pressure`.  `prize` orders bins inside a tier and is bounded
+    # by construction; this prices them and is not bounded, which is the whole
+    # point.  See `skip_cost` for why the two cannot be the same number.  Zero
+    # means the caller supplied no wait, and pricing falls back to the prize.
+    overdue_pressure: float = 0.0
     time_to_overflow_h: float = math.inf
     # Loose density of this bin's contents, in kilograms per cubic metre, used to
     # convert the collected mass into the volume it occupies in the body.  Zero
@@ -470,11 +476,26 @@ def skip_cost(task: BinTask, weights: ObjectiveWeights) -> float:
     construction and only recovered if the local search happened to have budget
     left over to reinsert it.
     """
-    penalty = weights.lambda_prize * max(0.0, _finite(task.prize))
     if task.hazard or task.tier == TIER_HAZARD:
-        penalty *= weights.hazard_multiplier
+        penalty = (weights.lambda_prize * max(0.0, _finite(task.prize))
+                   * weights.hazard_multiplier)
     elif task.tier == TIER_OVERDUE:
-        penalty *= weights.overdue_multiplier
+        # Charge the escalating pressure, not the bounded ordering score.  The
+        # prize for an overdue bin is `w/(tau + w)`, which approaches 1 but never
+        # reaches it, so pricing off the prize capped this penalty at
+        # `lambda_prize * overdue_multiplier`, 180 at the default weights.  Any
+        # bin whose marginal insertion cost exceeded 180, meaning roughly 33 km
+        # from the depot, was then skipped at every wait from 48 h to a million
+        # hours, and the overdue tier's ordering guarantee bought nothing: being
+        # first in a queue nobody is served from is not service.  The `max`
+        # keeps the old behaviour for a caller that supplied no wait, and is
+        # never the binding term once one is supplied, because
+        # `w/(2 tau) >= w/(tau + w)` for every `w >= tau`.
+        pressure = max(max(0.0, _finite(task.prize)),
+                       max(0.0, _finite(task.overdue_pressure)))
+        penalty = weights.lambda_prize * pressure * weights.overdue_multiplier
+    else:
+        penalty = weights.lambda_prize * max(0.0, _finite(task.prize))
     if _overflows_within_horizon(task, weights):
         penalty += weights.missed_overflow_penalty
     return penalty

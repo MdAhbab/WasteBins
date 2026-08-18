@@ -34,10 +34,12 @@ Braking/acceleration energy per stop-go cycle::
 
     E_cycle = 0.5 * m * v^2 * (1 - eta_regen)                         [J]
 
-CO2 follows from the diesel oxidation factor (2.68 kg CO2 per litre, IPCC 2006
-default for diesel oil at 74.1 t CO2/TJ and 35.8 MJ/L).  Battery-electric
-vehicles use a grid intensity instead, so the module also supports the
-electrification scenario reviewers of sustainability venues usually ask about.
+CO2 follows from the diesel oxidation factor (2.653 kg CO2 per litre: the IPCC
+2006 default of 74.1 t CO2/TJ for gas/diesel oil, applied to the *same* 35.8
+MJ/L the energy chain above uses).  A Euro class scales the fuel burned, never
+the carbon in a litre of it.  Battery-electric vehicles use a grid intensity
+instead, so the module also supports the electrification scenario reviewers of
+sustainability venues usually ask about.
 
 Every coefficient is exposed on :class:`VehicleProfile`, defaults are documented
 with their source class, and :func:`flat_factor_equivalent` reports the single
@@ -51,8 +53,19 @@ from typing import Dict, Optional
 
 G = 9.80665                    # m/s^2
 RHO_AIR = 1.20                 # kg/m^3 at ~30 C
-DIESEL_LHV_MJ_PER_L = 35.8     # MJ/L
-DIESEL_KG_CO2_PER_L = 2.68     # kg CO2 per litre burned (IPCC 2006 defaults)
+DIESEL_LHV_MJ_PER_L = 35.8     # MJ/L (43.0 TJ/Gg NCV x ~0.832 kg/L, IPCC t.1.2)
+
+# Carbon intensity of the fuel, on the same net-calorific basis as the LHV above:
+# IPCC 2006 vol. 2 ch. 1 table 1.4 gives 74 100 kg CO2/TJ for gas/diesel oil
+# (range 72 600 - 74 800), i.e. 0.0741 kg CO2/MJ.
+DIESEL_KG_CO2_PER_MJ = 0.0741
+# kg CO2 per litre burned.  Derived rather than asserted, because deriving it
+# from the *same* LHV the energy chain uses is what keeps one litre worth one
+# litre in both halves of the model.  The previous hard-coded 2.68 did not equal
+# the product of its own cited inputs (it implied 74.86 t CO2/TJ, a 1.0 % drift).
+# The derived 2.6528 sits inside the independently published band anyway:
+# DEFRA/BEIS 2025 100 % mineral diesel 2.662 kg/L, US EIA 10.19 kg/gal = 2.692.
+DIESEL_KG_CO2_PER_L = DIESEL_KG_CO2_PER_MJ * DIESEL_LHV_MJ_PER_L      # 2.6528
 
 
 @dataclass
@@ -75,8 +88,12 @@ class VehicleProfile:
     grid_kg_co2_per_kwh: float = 0.62     # Bangladesh grid average intensity
     euro_class: str = "euro4"
 
-    # Efficiency penalty applied at very low mean speed, where an engine spends
-    # more of its time away from its best-efficiency island.
+    # Efficiency penalty applied at very low *mean* speed, where an engine spends
+    # more of its time away from its best-efficiency island.  The reference is a
+    # duty-cycle statistic, so it must be fed the leg's mean speed: the BPR
+    # surface in ``traffic.py`` runs 10-34 km/h, so 18 km/h bites below roughly
+    # friction 0.75 (peak-hour arterials).  Fed the *moving* speed instead it can
+    # never fire at all -- see the note in :func:`leg_emissions`.
     low_speed_penalty_ref_kmh: float = 18.0
     low_speed_penalty_max: float = 0.28
 
@@ -87,10 +104,35 @@ class VehicleProfile:
         shortfall = 1.0 - (speed_kmh / max(self.low_speed_penalty_ref_kmh, 1e-6))
         return base * (1.0 - self.low_speed_penalty_max * shortfall)
 
+    def fuel_factor(self) -> float:
+        """
+        Euro-class multiplier on the fuel this vehicle *burns*.
+
+        This is the only place an emission class may act.  Aftertreatment and
+        engine calibration change how much diesel is needed per unit of work;
+        they cannot change how much carbon a litre of diesel contains, so the
+        factor belongs on the fuel volume and never on
+        :data:`DIESEL_KG_CO2_PER_L`.  Electric drivetrains carry their own
+        efficiency chain (``engine_efficiency``, ``regen_fraction``) and burn no
+        diesel at all, so the table's ``"ev"`` entry is never used as a scale.
+        """
+        if self.is_electric:
+            return 1.0
+        return EURO_FUEL_FACTOR.get(self.euro_class, 1.0)
+
 
 DEFAULT_PROFILE = VehicleProfile()
 
+# The powertrain chain the ``pto_fuel_l_per_lift`` default was measured behind: a
+# diesel engine at its brake thermal efficiency driving the hydraulic pack.  Only
+# this fraction of the litre ever reaches the ram as work, which is the quantity
+# a non-diesel body has to be charged for.  See the compaction term below.
+DIESEL_PTO_REFERENCE_ETA = (DEFAULT_PROFILE.engine_efficiency
+                            * DEFAULT_PROFILE.driveline_efficiency)      # 0.36
+
 # Euro-class multipliers on fuel consumption relative to the Euro IV reference.
+# Applied to litres burned in :func:`leg_emissions`, via
+# :meth:`VehicleProfile.fuel_factor` -- never to the CO2 factor.
 EURO_FUEL_FACTOR = {
     "euro3": 1.08,
     "euro4": 1.00,
@@ -178,8 +220,12 @@ class LegEmissions:
         if profile.is_electric:
             kwh = self.fuel_total_l * profile.kwh_per_l_equivalent
             return kwh * profile.grid_kg_co2_per_kwh
-        factor = EURO_FUEL_FACTOR.get(profile.euro_class, 1.0)
-        return self.fuel_total_l * factor * DIESEL_KG_CO2_PER_L
+        # No Euro term here.  The class has already been charged to the fuel
+        # volume in :func:`leg_emissions`; carbon per litre is a property of the
+        # fuel and is identical for every engine that burns it.  Scaling it here
+        # as well used to make the implied factor swing 2.49-2.89 kg/L across
+        # Euro 3 to Euro 6, which is not a property any diesel has.
+        return self.fuel_total_l * DIESEL_KG_CO2_PER_L
 
     def __add__(self, other: "LegEmissions") -> "LegEmissions":
         return LegEmissions(
@@ -245,7 +291,15 @@ def leg_emissions(distance_m: float,
         speed_kmh, distance_km, friction, freeflow_kmh
     )
     v = max(0.5, v_move_kmh) / 3.6                             # m/s while moving
-    eta = max(0.05, profile.powertrain_efficiency(v_move_kmh))
+
+    # The low-speed derate is a duty-cycle statistic, so it is indexed on the
+    # leg's *mean* speed (clamped exactly as ``decompose_speed`` clamps it), not
+    # on ``v_move_kmh``.  Charged at the moving speed it could never fire:
+    # ``v_move`` is the mean divided by the rolling-time share, so at full
+    # saturation it bottoms out at 10 / (1 - 0.50) = 20 km/h and stays above the
+    # 18 km/h reference for every friction the traffic surface can produce.
+    v_mean_kmh = max(1.0, float(speed_kmh))
+    eta = max(0.05, profile.powertrain_efficiency(v_mean_kmh))
     fuel_energy_j = eta * DIESEL_LHV_MJ_PER_L * 1e6            # J per litre delivered
     moving_s = max(total_s - stopped_s, 0.0)
 
@@ -272,15 +326,33 @@ def leg_emissions(distance_m: float,
     # A fixed cost per lift plus a mass-proportional packing term.
     fuel_pto = lifts * profile.pto_fuel_l_per_lift
     fuel_pto += (max(0.0, lifted_kg) / 1000.0) * profile.pto_fuel_l_per_lift * 0.9
+    if profile.is_electric:
+        # ``pto_fuel_l_per_lift`` is a measured *diesel* volume, so it carries
+        # the whole litre's energy content.  Every other term already expresses
+        # its litres as "energy / (eta * LHV)", which is why the cruise term
+        # converts correctly for an EV and this one did not: an electric body was
+        # charged the full 0.045 L of chemical energy (0.447 kWh per lift) rather
+        # than the work that litre actually delivers.  Published electric refuse
+        # bodies draw 0.10-0.12 kWh per container, so the raw volume overstated
+        # the compaction term by ~2.8x on the work, ~2.1x once the electric
+        # chain's own losses are allowed for.  Convert to useful work at the
+        # diesel reference chain, then back at this drivetrain's efficiency.
+        eta_electric = max(1e-6, profile.engine_efficiency * profile.driveline_efficiency)
+        fuel_pto *= DIESEL_PTO_REFERENCE_ETA / eta_electric
+
+    # --- 5. emission-class scaling -------------------------------------
+    # A Euro class changes fuel burned per unit of work, so it scales every
+    # engine-fed term here and nothing in the CO2 accounting downstream.
+    euro = profile.fuel_factor()
 
     return LegEmissions(
         distance_km=distance_km,
         duration_min=total_s / 60.0 + max(0.0, float(idle_minutes)),
         idle_min=idle_min_total,
-        fuel_cruise_l=fuel_cruise,
-        fuel_stopgo_l=fuel_stopgo,
-        fuel_idle_l=fuel_idle,
-        fuel_pto_l=fuel_pto,
+        fuel_cruise_l=fuel_cruise * euro,
+        fuel_stopgo_l=fuel_stopgo * euro,
+        fuel_idle_l=fuel_idle * euro,
+        fuel_pto_l=fuel_pto * euro,
         lifts=lifts,
     )
 
@@ -312,9 +384,11 @@ def describe_model(profile: VehicleProfile = DEFAULT_PROFILE) -> Dict:
     """Machine-readable description of the model, for the audit ledger and paper."""
     return {
         "model": "modal physics-based (cruise / stop-go / idle / compaction)",
-        "co2_per_litre_diesel_kg": DIESEL_KG_CO2_PER_L,
+        "co2_per_litre_diesel_kg": round(DIESEL_KG_CO2_PER_L, 4),
+        "co2_per_mj_diesel_kg": DIESEL_KG_CO2_PER_MJ,
         "diesel_lhv_mj_per_l": DIESEL_LHV_MJ_PER_L,
         "euro_factors": EURO_FUEL_FACTOR,
+        "euro_factor_applies_to": "fuel_litres",
         "profile": asdict(profile),
         "references": [
             "IPCC 2006 Guidelines vol. 2 ch. 3 (mobile combustion emission factors)",

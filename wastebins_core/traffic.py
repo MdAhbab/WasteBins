@@ -33,6 +33,15 @@ interchangeable providers behind one API:
     feed is unreachable -- so a deployment never loses its planner because an
     upstream API is down.
 
+    A feed of that shape reports the present and nothing else.  The adapter
+    therefore treats a live reading as an answer only for instants close to the
+    wall clock, and hands a departure time further out to the synthetic surface,
+    which does model the hour of day.  Where the configured endpoint genuinely
+    accepts a departure time, a ``{time}`` or ``{epoch}`` placeholder in the URL
+    template turns that on and the requested instant is really forecast.  The
+    one thing the adapter will not do is dress present conditions up as a
+    forecast; see the class docstring for the reasoning.
+
 Friction and speed are related by the Bureau of Public Roads volume-delay
 function (BPR, 1964), with the exponent/coefficient pair calibrated for
 saturated urban arterials rather than the original freeway values:
@@ -49,6 +58,7 @@ import json
 import math
 import threading
 import time
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime, timezone as dt_timezone
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -329,13 +339,43 @@ class LiveTrafficProvider(TrafficProvider):
     """
     Real-time flow adapter with caching and automatic fallback.
 
-    ``url_template`` may contain ``{lat}``, ``{lng}`` and ``{key}`` placeholders.
-    Two response shapes are understood out of the box:
+    ``url_template`` may contain ``{lat}``, ``{lng}``, ``{key}``, ``{time}`` and
+    ``{epoch}`` placeholders.  Two response shapes are understood out of the box:
 
     * ``{"flowSegmentData": {"currentSpeed": 21, "freeFlowSpeed": 40}}``
     * ``{"segments": [{"lat": .., "lng": .., "speed_kmh": .., "freeflow_kmh": ..}]}``
 
     Anything else can be handled by passing a ``parser`` callable.
+
+    The requested time
+    ------------------
+    A route is planned for a departure time, which may be hours away, and the
+    congestion at that time is not the congestion now.  The synthetic surface
+    honours the argument because it is a function of the clock.  A commercial
+    flow endpoint of the shape above does not: it publishes a measurement of the
+    present, and has no parameter in which to ask about a future instant.  There
+    is no forecast to be had from it, and manufacturing one -- extrapolating the
+    current reading, or scaling it by a diurnal profile -- would make the
+    planner's departure-time sensitivity an artefact of this adapter rather than
+    a property of the network.  So the limitation is made explicit instead:
+
+    * If ``url_template`` carries a ``{time}`` (ISO 8601, UTC) or ``{epoch}``
+      (Unix seconds) placeholder, the endpoint has been declared to accept a
+      departure time.  The requested instant is substituted into the URL and
+      becomes part of the cache key, so a genuine forecast is fetched and the
+      answer varies with the argument.
+    * Otherwise the reading is a nowcast, and is treated as valid only for
+      instants within ``live_validity_h`` of the wall clock.  A request outside
+      that window is answered by ``fallback`` -- the synthetic surface, which is
+      a function of the hour of day -- counted in ``out_of_window_count``, and
+      warned about once per provider.  ``describe()`` reports both the flag and
+      the count, so a run can be audited for how much of its costing came from
+      live measurement and how much from the modelled surface.
+
+    Falling back rather than raising is deliberate and matches the existing
+    treatment of an unreachable feed: an operator planning tomorrow's round must
+    still get a plan.  What they must not get is a plan whose traffic was
+    silently taken from the wrong hour.
     """
 
     name = "live"
@@ -344,7 +384,8 @@ class LiveTrafficProvider(TrafficProvider):
                  fallback: Optional[TrafficProvider] = None,
                  cache_seconds: float = 120.0, timeout_seconds: float = 3.0,
                  freeflow_kmh: float = FREEFLOW_KMH, parser=None,
-                 grid_deg: float = 0.004):
+                 grid_deg: float = 0.004, live_validity_h: float = 0.5,
+                 clock=None):
         self.url_template = url_template
         self.api_key = api_key
         self.fallback = fallback or SyntheticTrafficProvider()
@@ -353,11 +394,21 @@ class LiveTrafficProvider(TrafficProvider):
         self.freeflow_kmh = float(freeflow_kmh)
         self.parser = parser
         self.grid_deg = float(grid_deg)     # spatial quantisation for cache keys
-        self._cache: Dict[Tuple[int, int], Tuple[float, float]] = {}
+        # How far from the wall clock a nowcast is still taken to be an answer.
+        self.live_validity_h = max(0.0, float(live_validity_h))
+        # Injectable so a test can pin "now"; production reads the real clock.
+        self._clock = clock or (lambda: datetime.now(dt_timezone.utc))
+        # Set by the URL template rather than by configuration: the placeholder
+        # is the operator's statement that the endpoint takes a departure time.
+        self.supports_departure_time = ("{time}" in url_template
+                                        or "{epoch}" in url_template)
+        self._cache: Dict[Tuple[int, int, int], Tuple[float, float]] = {}
         self._lock = threading.Lock()
         self.last_error: Optional[str] = None
         self.fallback_count = 0
+        self.out_of_window_count = 0
         self.hit_count = 0
+        self._warned_out_of_window = False
 
     # -- parsing ---------------------------------------------------------
     def _parse(self, doc: dict) -> Optional[float]:
@@ -384,13 +435,18 @@ class LiveTrafficProvider(TrafficProvider):
             return max(0.0, min(1.0, float(doc["friction"])))
         return None
 
-    def _fetch(self, lat: float, lng: float) -> Optional[float]:
+    def _fetch(self, lat: float, lng: float, when: datetime) -> Optional[float]:
         import urllib.error
         import urllib.request
 
+        # ``{time}``/``{epoch}`` are substituted unconditionally.  A template
+        # without them is a nowcast endpoint, and `friction` has already made
+        # sure such a template is only asked about the present.
         url = (self.url_template
                .replace("{lat}", f"{lat:.5f}")
                .replace("{lng}", f"{lng:.5f}")
+               .replace("{time}", when.strftime("%Y-%m-%dT%H:%M:%SZ"))
+               .replace("{epoch}", str(int(when.timestamp())))
                .replace("{key}", self.api_key))
         try:
             req = urllib.request.Request(url, headers={"Accept": "application/json"})
@@ -408,8 +464,40 @@ class LiveTrafficProvider(TrafficProvider):
             self.last_error = f"{type(exc).__name__}: {exc}"
             return None
 
+    def _cache_key(self, lat: float, lng: float, when: datetime) -> Tuple[int, int, int]:
+        """
+        Cache key for one query.
+
+        A forecast response belongs to the instant it was asked about, so that
+        instant joins the key, quantised to a quarter hour.  A nowcast response
+        describes the present whatever it was asked about, so every nowcast
+        shares one time slot and expires by age alone, exactly as before.
+        """
+        slot = int(when.timestamp() // 900) if self.supports_departure_time else 0
+        return (int(lat / self.grid_deg), int(lng / self.grid_deg), slot)
+
     def friction(self, lat: float, lng: float, when: datetime) -> float:
-        key = (int(lat / self.grid_deg), int(lng / self.grid_deg))
+        when = _as_aware(when)
+
+        if not self.supports_departure_time:
+            # The feed measures the present.  Asked about anything else, say so
+            # and hand the question to a provider that is a function of time.
+            lead_h = abs((when - self._clock()).total_seconds()) / 3600.0
+            if lead_h > self.live_validity_h:
+                self.out_of_window_count += 1
+                if not self._warned_out_of_window:
+                    self._warned_out_of_window = True
+                    warnings.warn(
+                        "Live traffic feed reports current conditions only, and the "
+                        f"requested time is {lead_h:.2f} h from now, outside the "
+                        f"{self.live_validity_h:.2f} h validity window. The "
+                        f"'{self.fallback.name}' surface is answering instead. Add a "
+                        "'{time}' or '{epoch}' placeholder to the URL template if the "
+                        "endpoint accepts a departure time.",
+                        RuntimeWarning, stacklevel=2)
+                return self.fallback.friction(lat, lng, when)
+
+        key = self._cache_key(lat, lng, when)
         now = time.monotonic()
         with self._lock:
             cached = self._cache.get(key)
@@ -417,7 +505,7 @@ class LiveTrafficProvider(TrafficProvider):
             self.hit_count += 1
             return cached[1]
 
-        value = self._fetch(lat, lng)
+        value = self._fetch(lat, lng, when)
         if value is None:
             self.fallback_count += 1
             return self.fallback.friction(lat, lng, when)
@@ -438,6 +526,14 @@ class LiveTrafficProvider(TrafficProvider):
             "fallbacks": self.fallback_count,
             "last_error": self.last_error,
             "fallback_provider": self.fallback.name,
+            "honours_requested_time": self.supports_departure_time,
+            "live_validity_h": self.live_validity_h,
+            "out_of_window_fallbacks": self.out_of_window_count,
+            "time_handling": (
+                "departure time sent to the endpoint and cached per requested instant"
+                if self.supports_departure_time else
+                f"nowcast: readings used only within {self.live_validity_h:g} h of the "
+                f"wall clock, and the '{self.fallback.name}' surface used beyond it"),
         }
 
 
@@ -512,5 +608,9 @@ def make_provider(config: Optional[dict] = None) -> TrafficProvider:
             cache_seconds=float(config.get("CACHE_SECONDS", 120.0)),
             timeout_seconds=float(config.get("TIMEOUT_SECONDS", 3.0)),
             freeflow_kmh=freeflow,
+            # How far from now a real-time reading is still taken as an answer.
+            # Only consulted when the URL template has no departure-time
+            # placeholder, since a template that has one is forecasting properly.
+            live_validity_h=float(config.get("LIVE_VALIDITY_H", 0.5)),
         )
     return synthetic

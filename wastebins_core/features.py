@@ -42,6 +42,11 @@ TTO_CAP_H = 24.0       # time-to-overflow is right-censored at this value
 GAS_DANGER = 0.62      # latent gas level treated as a biological hazard
 OVERFLOW_LEVEL = 1.0
 
+# Tolerance, in hours, for deciding that a time-to-overflow label sits at the
+# censoring cap.  Downstream code recognises a censored row with the same test
+# (``y >= TTO_CAP_H - 1e-9``), so the constant is shared rather than repeated.
+_CAP_TOL_H = 1e-9
+
 
 def _statistic_names() -> List[str]:
     names: List[str] = []
@@ -274,10 +279,47 @@ def forward_labels(waste: Sequence[float], gas: Sequence[float], hours: Sequence
     """
     Labels derived strictly from the *future* of the series.
 
-    ``hazard_within_h``  -- 1 when the bin overflows or the gas level crosses the
-                            danger threshold within ``horizon_h`` hours.
-    ``time_to_overflow`` -- hours until the fill level first reaches
-                            ``overflow_level``, right-censored at ``tto_cap_h``.
+    Returns ``(hazard_within_h, time_to_overflow, overflow_observed)``.
+
+    ``hazard_within_h``   -- 1 when the bin overflows or the gas level crosses
+                             the danger threshold within ``horizon_h`` hours.
+    ``time_to_overflow``  -- hours until the fill level first reaches
+                             ``overflow_level``.  When no such crossing is seen,
+                             the value is the *censoring time*: how much future
+                             the row actually had to be judged against, which is
+                             ``tto_cap_h`` in the body of a record and less than
+                             that near its end.
+    ``overflow_observed`` -- 1 when ``time_to_overflow`` is a crossing that was
+                             really seen, 0 when it is a censoring time.
+
+    Censoring convention
+    --------------------
+    The pair (time, event) is the representation this code base already uses for
+    a right-censored target: the row carries the time at which observation
+    stopped, and an event flag says whether that time is an outcome or a
+    stopping point.  The trainer's concordance index takes exactly that flag, so
+    pairs whose earlier time is censored are excluded rather than guessed at.
+    What used to be implicit is now returned, because the flag can be recovered
+    from the time alone only while every row happens to be censored at the same
+    cap, and that is true of a trimmed training set rather than of the function.
+
+    Truncation at the end of a record
+    ---------------------------------
+    A record is a finite window.  A row that sits ``r`` hours from the end of it
+    has only ``r`` hours of future to look at, so a bin that does not overflow
+    inside them is censored at ``min(tto_cap_h, r)``, not at ``tto_cap_h``.
+    Returning the cap there would assert a full day of observed safety on
+    evidence that ran out long before, which is a fabricated label rather than a
+    missing one, and it is fabricated in the long-horizon regime the planner
+    leans on hardest.
+
+    The same truncation reaches ``hazard_within_h``: a row with less than
+    ``horizon_h`` of future cannot have a hazard refuted.  Those rows are
+    identifiable as ``hazard_within_h == 0`` together with
+    ``overflow_observed == 0`` and ``time_to_overflow < horizon_h``, so a caller
+    that needs a trustworthy hazard label can drop them.  A caller wanting both
+    targets fully observed should keep only the rows at least
+    ``max(horizon_h, tto_cap_h)`` hours from the end of the record.
 
     The features never observe these quantities, so a good score is genuine
     forecasting skill rather than the self-consistency the original model
@@ -289,6 +331,14 @@ def forward_labels(waste: Sequence[float], gas: Sequence[float], hours: Sequence
     n = h.size
     hazard = np.zeros(n, dtype=int)
     tto = np.full(n, float(tto_cap_h), dtype=float)
+    overflow_observed = np.zeros(n, dtype=int)
+    if n == 0:
+        return hazard, tto, overflow_observed
+
+    # The end of the observation window, taken as a maximum rather than as the
+    # final element so an unsorted or partly missing clock cannot shorten it.
+    finite_hours = h[np.isfinite(h)]
+    last_h = float(finite_hours.max()) if finite_hours.size else 0.0
 
     for i in range(n):
         dt = h - h[i]
@@ -302,7 +352,24 @@ def forward_labels(waste: Sequence[float], gas: Sequence[float], hours: Sequence
         within = (dt >= 0) & (dt <= tto_cap_h) & (w >= overflow_level)
         if within.any():
             tto[i] = float(min(tto_cap_h, float(np.min(dt[within]))))
-    return hazard, tto
+            overflow_observed[i] = 1
+        else:
+            # No crossing was seen, so the label is the length of the look-ahead
+            # that produced that verdict.  In the body of a record this is the
+            # cap and the value is unchanged; near the end it is shorter, and
+            # saying so is the difference between "did not overflow within a
+            # day" and "was not watched for a day".
+            followup = last_h - float(h[i])
+            if followup >= float(tto_cap_h) - _CAP_TOL_H:
+                # A follow-up that reaches the cap is snapped onto it, using the
+                # same tolerance downstream code uses to recognise a censored
+                # row.  Without this, arithmetic on an irregular clock could
+                # leave a full-horizon row a few nanoseconds short of the cap
+                # and have it read as an observed overflow.
+                tto[i] = float(tto_cap_h)
+            else:
+                tto[i] = max(0.0, followup)
+    return hazard, tto, overflow_observed
 
 
 def describe() -> Dict:
@@ -314,12 +381,18 @@ def describe() -> Dict:
         "window_samples": ROLL,
         "channels": list(CHANNELS),
         "targets": {
-            "time_to_overflow": f"hours until fill >= {OVERFLOW_LEVEL}, censored at {TTO_CAP_H} h",
+            "time_to_overflow": (f"hours until fill >= {OVERFLOW_LEVEL}, right-censored at "
+                                 f"{TTO_CAP_H} h or at the end of the record, whichever "
+                                 f"comes first"),
+            "overflow_observed": ("1 when time_to_overflow is an observed crossing, "
+                                  "0 when it is a censoring time"),
             "hazard_within_h": f"overflow or gas >= {GAS_DANGER} within {HORIZON_H} h",
         },
         "leakage_controls": [
             "all statistics computed from samples at or before the prediction instant",
             "trends fitted against elapsed hours, not row positions",
             "labels derived from the strictly future trajectory",
+            "censoring reported rather than imputed: a row watched for less than "
+            "the cap is censored at its own follow-up, not at the cap",
         ],
     }

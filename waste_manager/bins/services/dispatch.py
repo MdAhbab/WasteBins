@@ -277,6 +277,7 @@ def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Dep
 
     fills, prizes, hazards, tiers, tto, streams = {}, {}, {}, {}, {}, {}
     capacities, densities, service, windows = {}, {}, {}, {}
+    pressures = {}
 
     for node in usable:
         entry = scores[node.id]
@@ -285,6 +286,10 @@ def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Dep
         prizes[node.id] = float(tp.score if tp else entry["priority"])
         hazards[node.id] = bool(tp.tier == 0 if tp else False)
         tiers[node.id] = int(tp.tier if tp else CORE_AGING.TIER_NORMAL)
+        # The overdue tier prices skipping off this escalation rather than off
+        # the bounded ordering score, so an overdue bin far from the depot stops
+        # being cheaper to abandon than to collect.
+        pressures[node.id] = float(tp.pressure if tp else 0.0)
         model = entry.get("model") or {}
         # Plan against the pessimistic P10 bound rather than the median: at the
         # median, half of all overflow deadlines would be a coin flip.  A bin is
@@ -307,7 +312,8 @@ def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Dep
 
     tasks = CORE_SCENARIO.make_tasks(
         [n.id for n in usable], fills, prizes, index_of=index_of, hazards=hazards,
-        tiers=tiers, tto_hours=tto, streams=streams, capacities_l=capacities,
+        tiers=tiers, overdue_pressures=pressures,
+        tto_hours=tto, streams=streams, capacities_l=capacities,
         densities=densities, service_minutes=service, windows=windows,
     )
     specs = vehicle_specs(vehicles, depot_index=0)

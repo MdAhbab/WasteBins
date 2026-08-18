@@ -123,9 +123,12 @@ cd experiments && python eval_sensor_health.py
 | Script | Produces | Answers |
 |---|---|---|
 | `eval_sensor_health.py` | `sensor_health.json` | Detection across all nine fault modes; false-positive rate on a clean fleet; priority error under each trust policy |
-| `exp_fleet.py` | `routing.json` | All five solvers on one objective; constraint-violation audit |
+| `exp_fleet.py` | `fleet.json` | All seven policies on one objective; constraint-violation audit; gamma sweep; equity rollout in two backlog regimes |
+| `exp_wait_bound.py` | `wait_bound.json` | Is the worst-case wait bound tight? Sweeps one overdue bin from 10 to 100 km and compares the hour it is collected against the hour the bound predicts |
+| `eval_xai_agreement.py` | `xai_agreement.json` | Like-for-like agreement between the sampled and exact Shapley estimates, against the sampler's own seed-to-seed noise floor |
 | `exp_continual.py` | `continual.json` | Prequential error under seven drift scenarios; do-no-harm check; serving latency |
-| `exp_realdata.py` | `realdata.json` | Validation against public device telemetry |
+| `exp_realdata.py` | `realdata.json` | Validation against public device telemetry, including leave-one-device-out transfer |
+| `exp_censoring.py` | printed | Does a survival objective beat the censored squared loss? Measured: no |
 
 `exp_realdata.py` is the one script needing data that is not in the repository —
 CSVs are gitignored, since a code repo is the wrong place to redistribute a
@@ -189,7 +192,7 @@ where the paper measures one implementation and the prototype ships another.
 
 | Concern | Module | Notes |
 |---|---|---|
-| Travel time under congestion | `traffic.py` | BPR calibrated for saturated urban arterials; falls back to the synthetic provider when a live feed is unreachable |
+| Travel time under congestion | `traffic.py` | BPR calibrated for saturated urban arterials; falls back to the synthetic provider when a live feed is unreachable, and also when a live feed that measures only the present is asked about a departure time further than `TRAFFIC_LIVE_VALIDITY_H` away (see below) |
 | Fuel and CO₂ | `emissions.py` | Duty-cycle sensitive; `sanity_reference_factor` pins the model inside the published 1.5–3 mpg refuse-truck range |
 | Fault injection | `faults.py` | `describe_taxonomy()` documents every mode; magnitudes are in each channel's own units |
 | Detection and trust | `health.py` | Fleet-relative residuals; analytical redundancy predicts each channel from the others; reliability (data quality) is kept separate from trust (maintenance state) |
@@ -285,6 +288,16 @@ Run from `waste_manager/`.
 | `seed_demo` | Build the simulated network and telemetry history |
 | `train_forward` | Train the forward bundle; `--quick` for a small search budget |
 | `verify_ledger` | Recompute the hash chain and report the first divergence |
+
+**Breaking change to the ledger format.** Two defects were fixed in the entry
+hash: the actor field sat outside the hash, and fields were concatenated without
+length prefixes, so two different records could produce one hash. Both are now
+inside a length-prefixed hash. This invalidates every entry written before the
+change, and `verify_ledger` will report a divergence at the first such entry.
+That is the correct outcome, because those old hashes did not commit to what
+their entries claimed. Re-seed with `seed_demo` to rebuild a valid chain, or keep
+the old entries and treat the divergence point as the format boundary. Do not
+"fix" it by relaxing the verifier.
 | `check_system` | Database connectivity, model presence, data integrity |
 | `load_sample_data` | Minimal fixture for the original prototype |
 
@@ -322,7 +335,7 @@ the defaults boot on SQLite with no configuration.
 | Database | `DB_ENGINE` (`sqlite`\|`mysql`\|`postgres`), `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` |
 | ML serving | `ML_CONTINUAL_ENABLED`, `ML_CONTINUAL_MAX_SAMPLES`, `ML_CONTINUAL_MAX_MS`, `ML_ALLOW_INLINE_TRAINING` |
 | Fleet | `FLEET_CAPACITY_KG`, `FLEET_SHIFT_MINUTES`, `FLEET_SERVICE_MINUTES`, `FLEET_AVG_SPEED_KMH`, `FLEET_DEPOT_LAT`, `FLEET_DEPOT_LNG` |
-| Traffic | `TRAFFIC_PROVIDER` (`synthetic`\|`live`), `TRAFFIC_API_URL`, `TRAFFIC_API_KEY` |
+| Traffic | `TRAFFIC_PROVIDER` (`synthetic`\|`live`), `TRAFFIC_API_URL`, `TRAFFIC_API_KEY`, `TRAFFIC_LIVE_VALIDITY_H` |
 | Audit | `AUDIT_LEDGER_ENABLED`, `AUDIT_BLOCK_SIZE`, `AUDIT_HMAC_KEY` |
 
 The frontend reads `VITE_GOOGLE_MAPS_API_KEY` from `frontend/.env.local`. Vite
@@ -391,6 +404,11 @@ censoring is an accelerated failure time model, which receives the interval
 Every AFT variant ranked worse *and* timed worse. The likely reason, offered as a
 hypothesis: censoring here is administrative and Type I, with every record cut at
 the same known 24 h horizon because that is where the label stops being computed.
+That uniformity is a fact of construction rather than an assumption. A row nearer
+than 24 h to the end of its record was not watched for a full day, so
+`forward_labels` censors it at its own shorter follow-up and flags it, and the
+trainer drops those rows; every row that reaches the model therefore carries a
+censoring time of exactly 24 h.
 Accelerated failure time models assume a parametric survival distribution and
 target censoring that varies between subjects, so the parametric assumption costs
 more than the correct censoring treatment gains.
@@ -401,6 +419,23 @@ unbiased timing estimator for rows where timing is defined. Switching the served
 path to the two-part form remains open, since it would change the meaning of the
 served number and with it the dispatch deadline logic and the operator display.
 
+**A live traffic feed cannot cost a future departure, and is not asked to.** The
+synthetic congestion surface is a function of the clock, so a route planned for
+tomorrow's morning peak is costed at that peak. The commercial flow endpoints the
+live adapter speaks to are not: they publish a measurement of the present and
+expose no departure-time parameter. Extrapolating that reading into a forecast
+would make the planner's departure-time sensitivity an artefact of the adapter
+rather than a property of the network, so the adapter does not. A live reading is
+used only for instants within `TRAFFIC_LIVE_VALIDITY_H` (default 0.5 h) of the
+wall clock; a departure time beyond that is costed on the synthetic surface, the
+substitution is counted in `out_of_window_fallbacks`, and `describe()` reports
+both the count and which regime applied, so any run can be audited for how much
+of its costing came from measurement and how much from the model. Where an
+endpoint genuinely does accept a departure time, a `{time}` or `{epoch}`
+placeholder in `TRAFFIC_API_URL` turns that on and the requested instant is sent
+to the API. The operational reading is that live traffic improves *present*
+costing, and that horizon planning remains on the modelled surface.
+
 **Compaction is applied to mass, not volume.** `effective_load = load_kg /
 compaction_ratio` reduces mass by compacting, which is dimensionally wrong when
 capacity is a mass limit — compaction changes volume. Reported utilisation was
@@ -410,20 +445,44 @@ the constraint silently, but the underlying model is still wrong and it spans
 
 **The wait bound is conditional on capacity, and the condition is stated.** The
 guarantee comes from the overdue tier, not from the equity weight: a bin reaching
-τ enters a strictly higher dispatch tier ordered by wait, longest first, and
-skipping one is charged four times the normal prize. The bound is
+τ enters a strictly higher dispatch tier ordered by wait, longest first.
 
-    w_max ≤ τ + Δ · ceil(m / c)
+Ordering alone is not enough, and this was a real defect rather than a
+theoretical one. Ordering decides which bin the planner *tries* first; it does not
+decide whether the planner *accepts* any of them. Skipping used to be priced on
+the ordering score `w/(τ+w)`, which is bounded by 1, so the penalty had a ceiling
+of `λ·μ = 180`. A bin about 33 km out costs more than that to reach and was
+skipped at a wait of 48 h and still skipped at 10^6 h, with the tier ordering
+working correctly throughout. Skipping is now priced on `w/(2τ)`, which grows
+without bound. It equals the old penalty at τ and is never smaller past it, so no
+bin is served later than before. The bound is
 
-for backlog m and clearing rate c per cycle of length Δ. It holds only while the
-fleet clears overdue bins at least as fast as they are promoted. When c is zero
-the function returns infinity rather than a number.
+    w_max ≤ Δ · ceil(w_promote / Δ) + (ceil(m / c) - 1) · Δ
+    w_promote = max(τ, 2·τ·C / (λ·μ))
+
+for backlog m, clearing rate c per cycle of length Δ, and largest marginal
+insertion cost C. It holds only while the fleet clears overdue bins at least as
+fast as they are promoted, and only for bins that are reachable inside their
+servicing window. When c is zero the function returns infinity rather than a
+number.
+
+This form is tighter than the `τ + Δ·ceil(m/c)` it replaces, by exactly
+`τ + Δ - Δ·ceil(τ/Δ)`, or 12 h at the defaults. That gap explains an observation
+we could not previously account for: the rollout attained a worst wait of exactly
+48.0 h against a stated bound of 60.0 h. The 48.0 h was the tight bound being
+reached, and the slack sat in the formula rather than in the policy.
 
 Verified by rolling the policy forward from zero waits on a scarce fleet, so
-every wait measured is one the policy produced: 6 networks × 40 cycles of 12 h,
-**0 of 192 breaches at γ = 0.55, 0.70 and 0.85**, observed maximum 48.0 h against
-a bound of 60.0 h. Worst deferral falls from 41.6 h at γ=0 to 34.5 h once the
-equity term is active.
+every wait measured is one the policy produced, in **two regimes**. At the default
+τ the fleet clears the whole overdue backlog every cycle, so `ceil(m/c) = 1`, the
+queueing term vanishes and the bound is close to trivial. A second regime lowers τ
+to 12 h, raising the promotion rate until the backlog genuinely spans more than
+one cycle. The bound holds in both.
+
+Scarcity must be applied through τ and **not** by shortening the shift. A shift
+shorter than a bin's window start makes that bin unservable by any policy, which
+turns an infeasible instance into what looks like a starvation result. The
+experiment now raises an error in that case rather than reporting the breach.
 
 An earlier closed-form bound in γ was wrong and has been removed. It assumed a
 starved bin competes against a bin that was just served, which fails whenever
@@ -440,8 +499,15 @@ down as the estimate stabilises. The gradient-boosted model is strongly
 interacting locally, and no additive decomposition can represent it faithfully.
 The honest claim is that the attributions are a valid Shapley decomposition and a
 partial account of the model, not a full one; `fidelity_r2` is reported on every
-explanation rather than hidden, and exact TreeSHAP is available for audit. The
-1,000-coalition default is chosen because more does not help.
+explanation rather than hidden, and exact TreeSHAP is available for audit.
+
+The 1,000-coalition default is chosen because more does not improve the *fidelity
+of the additive form*. It does improve *estimator stability*, and the two must not
+be confused. Measured against interventional TreeSHAP on a like-for-like
+comparison, going from 1,000 to 8,000 coalitions halves the mean attribution error
+(0.38 h to 0.14 h) and lifts top-3 driver agreement from 0.55 to 0.83. An operator
+who needs a stable *ranking of drivers*, rather than a stable total, should raise
+the budget. See `experiments/eval_xai_agreement.py`.
 
 **Stream heterogeneity was investigated and stratification rejected.** Bins carry
 different waste streams, and gas generation scales with organic content (0.85

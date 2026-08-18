@@ -137,34 +137,133 @@ def overdue_score(wait_hours: float, tau_h: float = DEFAULT_TAU_H) -> float:
     return float(w / (tau + w))
 
 
+def overdue_pressure(wait_hours: float, tau_h: float = DEFAULT_TAU_H) -> float:
+    """
+    Pricing escalation for the overdue tier: :math:`w/(2\tau)`.
+
+    :func:`overdue_score` decides which overdue bin the planner *tries* first.
+    This decides how much it costs to give up and skip one, and the two need
+    different shapes.  An ordering score should be bounded, because only its
+    ranking matters and a bounded score cannot be destabilised by one extreme
+    value.  A price must not be bounded, because the planner compares it against
+    a detour cost that has no upper limit either.
+
+    That distinction was the defect this function exists to close.  Charging the
+    ordering score, as an earlier version did, capped the penalty for skipping an
+    overdue bin at ``lambda_prize * overdue_multiplier``, or 180 at the default
+    weights.  Any bin whose marginal insertion cost exceeded 180, which at those
+    weights means roughly 33 km from the depot, was skipped at every wait from
+    48 h to a million hours.  The tier ordering was implemented correctly and
+    made no difference: being first in the queue does not help when the planner
+    declines to serve anyone in that queue.  The saturation that retired the
+    previous bound had simply moved from the ranking channel to the pricing one.
+
+    The linear form is chosen for three properties.  It agrees with the old
+    penalty exactly at the promotion threshold, so existing weight tuning carries
+    over.  It is at least as large as the old penalty at every wait past that
+    threshold, since ``w/(2 tau) >= w/(tau + w)`` whenever ``w >= tau``, so no
+    bin is served later than before.  And it inverts in closed form, which is
+    what makes the wait bound in :func:`worst_case_wait_bound` provable rather
+    than asserted: a bin of marginal insertion cost ``C`` becomes worth serving
+    at ``w = 2 tau C / (lambda_prize * overdue_multiplier)``.
+    """
+    tau = max(1e-9, float(tau_h))
+    return float(max(0.0, float(wait_hours)) / (2.0 * tau))
+
+
+def wait_to_outprice(insertion_cost: float, tau_h: float = DEFAULT_TAU_H,
+                     lambda_prize: float = 45.0,
+                     overdue_multiplier: float = 4.0) -> float:
+    """
+    The wait at which skipping a bin costs more than serving it.
+
+    Inverts the escalation in :func:`overdue_pressure`.  ``insertion_cost`` is
+    the marginal cost of inserting the bin into the best route available, in the
+    same units as the routing objective.  Returns the wait in hours at which the
+    planner stops preferring to skip.
+
+    A bin is therefore served once its wait reaches the larger of this value and
+    ``tau_h``: it must be overdue before the escalation applies at all.
+    """
+    denom = max(1e-9, float(lambda_prize) * float(overdue_multiplier))
+    return float(2.0 * max(0.0, float(tau_h)) * max(0.0, float(insertion_cost)) / denom)
+
+
 def worst_case_wait_bound(tau_h: float = DEFAULT_TAU_H,
                           cycle_h: float = 12.0,
                           max_overdue: int = 1,
-                          served_overdue_per_cycle: int = 1) -> float:
+                          served_overdue_per_cycle: int = 1,
+                          max_insertion_cost: float = 0.0,
+                          lambda_prize: float = 45.0,
+                          overdue_multiplier: float = 4.0) -> float:
     """
     Upper bound on any bin's wait, in hours, from the overdue tier.
 
-    ``max_overdue`` is the largest number of bins overdue at one time, and
-    ``served_overdue_per_cycle`` how many of them the fleet clears per cycle.  A
-    bin is promoted at :math:`\\tau` and sits behind at most ``max_overdue``
-    older overdue bins, so it is served within ``ceil(m/c)`` cycles:
+    Three things have to happen before a starved bin is collected, and the bound
+    is the sum of the three delays.
 
-        bound = tau_h + cycle_h * ceil(max_overdue / served_overdue_per_cycle)
+    First the bin must be **promoted** into the overdue tier, which happens at
+    :math:`\\tau`.  Waits are only ever observed in whole cycles, because a bin
+    starts at zero and ages by :math:`\\Delta` each cycle, so the first
+    observable instant at or past :math:`\\tau` is
+    :math:`\\Delta \\lceil \\tau/\\Delta \\rceil`, not :math:`\\tau` itself.
 
-    Returns ``inf`` when the fleet clears no overdue bins, because then the
-    overdue set grows without limit and there is no bound to report.
+    Second the bin must be **worth serving**.  Promotion fixes the order in which
+    the planner tries bins, not whether it accepts any of them, and a
+    prize-collecting objective drops a bin whenever the detour costs more than
+    the penalty for skipping it.  ``max_insertion_cost`` is the largest marginal
+    insertion cost a bin in the instance can present.  By
+    :func:`wait_to_outprice` the escalating penalty passes that cost at
+    :math:`2 \\tau C / (\\lambda \\mu)`, so the effective promotion threshold is
+    the larger of that and :math:`\\tau`.  Left at zero, the argument asserts
+    that every bin is affordable as soon as it is promoted, which holds exactly
+    when :math:`C \\le \\lambda \\mu / 2`, or 90 at the default weights.
 
-    This replaces a closed-form expression in ``gamma`` that did not hold; see
-    the module docstring for the measurements that retired it.  The guarantee is
-    conditional on the fleet keeping pace with promotions, which is a capacity
-    statement about the deployment and not a property of the formula.
+    Third the bin must **reach the front of the queue**.  It sits behind at most
+    ``max_overdue`` older overdue bins and the fleet clears
+    ``served_overdue_per_cycle`` of them each cycle, so this takes
+    :math:`\\lceil m/c \\rceil` cycles.  A bin served in the same cycle it was
+    promoted waits no extra time, so the added delay is
+    :math:`(\\lceil m/c \\rceil - 1)\\Delta`, not
+    :math:`\\lceil m/c \\rceil \\Delta`.
+
+    Together:
+
+        w_promote = max(tau_h, 2 * tau_h * C / (lambda_prize * overdue_multiplier))
+        bound     = Delta * ceil(w_promote / Delta) + (ceil(m / c) - 1) * Delta
+
+    An earlier version returned ``tau_h + cycle_h * ceil(m/c)``.  That is a true
+    bound but a loose one, on both of the counts above, by exactly
+    :math:`\\tau + \\Delta - \\Delta\\lceil \\tau/\\Delta \\rceil`, which is 12 h
+    at the defaults.  It is why the rollout observed a worst wait of 48.0 h
+    against a stated bound of 60.0 h.  The 48.0 h was the tight bound being
+    attained; the slack sat in the formula, not in the policy.
+
+    Returns ``inf`` when the fleet clears no overdue bins, because the overdue
+    set then grows without limit and there is no bound to report.  The guarantee
+    stays conditional on the fleet keeping pace with promotions, which is a
+    capacity statement about the deployment rather than a property of the
+    formula.
     """
     c = int(served_overdue_per_cycle)
     if c <= 0:
         return math.inf
+    tau = max(0.0, float(tau_h))
+    delta = max(0.0, float(cycle_h))
     m = max(0, int(max_overdue))
-    cycles = math.ceil(m / c) if m > 0 else 0
-    return float(max(0.0, float(tau_h)) + max(0.0, float(cycle_h)) * cycles)
+
+    promote_at = max(tau, wait_to_outprice(max_insertion_cost, tau,
+                                           lambda_prize, overdue_multiplier))
+    if delta <= 0.0:
+        return float(promote_at)
+
+    # Waits are observed in whole cycles, so round the promotion instant up to
+    # the next observable one.  The tolerance stops a promotion instant that is
+    # already an exact multiple of the cycle from being pushed a cycle further by
+    # floating-point dust.
+    promote_obs = delta * math.ceil(promote_at / delta - 1e-9)
+    cycles = math.ceil(m / c) if m > 0 else 1
+    return float(promote_obs + delta * max(0, cycles - 1))
 
 
 def tau_for_target_wait(target_wait_h: float, cycle_h: float = 12.0,
@@ -200,6 +299,10 @@ class TieredPriority:
     wait_hours: float
     hazard_prob: float = 0.0
     overdue: bool = False
+    # Pricing escalation, `w/(2 tau)`, carried alongside the ordering score so a
+    # caller cannot pass one channel to the router and forget the other.  Only
+    # meaningful for the overdue tier; see `overdue_pressure`.
+    pressure: float = 0.0
 
     def sort_key(self):
         return (self.tier, -self.score)
@@ -244,6 +347,7 @@ def effective_priorities(priorities: Mapping[int, float],
             node_id=node_id,
             tier=tier,
             score=score,
+            pressure=overdue_pressure(wait, tau_h) if is_overdue else 0.0,
             base_priority=float(base),
             wait_hours=wait,
             hazard_prob=hazard,

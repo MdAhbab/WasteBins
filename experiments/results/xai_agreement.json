@@ -1,0 +1,593 @@
+{
+  "protocol": {
+    "model": "HistGradientBoostingRegressor on time-to-overflow, temporal split at 120 days",
+    "n_features": 18,
+    "n_background": 100,
+    "n_instances": 64,
+    "budgets": [
+      200,
+      500,
+      1000,
+      2000,
+      4000,
+      8000,
+      16000,
+      32000
+    ],
+    "serving_budget": 1000,
+    "units": "attribution differences are in hours of time to overflow",
+    "instances_altered_by_serving_clip": 4,
+    "note": "comparison C is the only like-for-like one; comparison F is the noise floor that every other number must be read against"
+  },
+  "B_baseline_gap": {
+    "treeshap_path_dependent_h": 17.70422,
+    "treeshap_interventional_h": 17.0364,
+    "kernelshap_surrogate_h": 17.0364,
+    "path_dependent_minus_interventional_h": 0.66782,
+    "surrogate_minus_interventional_h": 0.0,
+    "mean_abs_total_h": 6.33869,
+    "note": "the surrogate and interventional TreeSHAP share a baseline to machine precision, so comparison C is like for like on the reference as well as on the value function; the path-dependent baseline sits elsewhere, so in comparison A the two attribution vectors are required to sum to different totals on every instance and can never agree exactly however long the surrogate is run"
+  },
+  "E_value_function_only": {
+    "pooled_r": 0.9946,
+    "pooled_spearman_r": 0.9722,
+    "per_instance_r_mean": 0.9934,
+    "per_instance_r_p10": 0.986,
+    "per_instance_r_min": 0.8906,
+    "per_instance_spearman_mean": 0.9611,
+    "magnitude_rank_r_mean": 0.9511,
+    "mad_h_mean": 0.0669,
+    "mad_h_p90": 0.1367,
+    "normalised_mad_mean": 0.1487,
+    "top3_overlap_mean": 0.849
+  },
+  "treeshap_additivity_gap": {
+    "path_dependent": {
+      "mean_abs_h": 1.772e-14,
+      "max_abs_h": 4.907e-14
+    },
+    "interventional": {
+      "mean_abs_h": 1.801e-08,
+      "max_abs_h": 6.714e-08
+    }
+  },
+  "kernelshap_efficiency_gap": {
+    "200": {
+      "mean_abs_h": 9.958e-07,
+      "max_abs_h": 2.976e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    },
+    "500": {
+      "mean_abs_h": 9.052e-07,
+      "max_abs_h": 4.218e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    },
+    "1000": {
+      "mean_abs_h": 8.695e-07,
+      "max_abs_h": 2.908e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    },
+    "2000": {
+      "mean_abs_h": 8.521e-07,
+      "max_abs_h": 2.965e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    },
+    "4000": {
+      "mean_abs_h": 1.003e-06,
+      "max_abs_h": 3.12e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    },
+    "8000": {
+      "mean_abs_h": 9.346e-07,
+      "max_abs_h": 4.085e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    },
+    "16000": {
+      "mean_abs_h": 1.057e-06,
+      "max_abs_h": 3.474e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    },
+    "32000": {
+      "mean_abs_h": 9.83e-07,
+      "max_abs_h": 2.59e-06,
+      "display_rounding_bound_h": 9e-06,
+      "within_rounding_bound": true
+    }
+  },
+  "attribution_scale": {
+    "mean_abs_phi_path_dependent_h": 0.44887,
+    "mean_abs_phi_interventional_h": 0.45906
+  },
+  "by_budget": {
+    "200": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.8297,
+        "pooled_spearman_r": 0.2452,
+        "per_instance_r_mean": 0.6388,
+        "per_instance_r_p10": 0.3883,
+        "per_instance_r_min": 0.0204,
+        "per_instance_spearman_mean": 0.2016,
+        "magnitude_rank_r_mean": 0.2331,
+        "mad_h_mean": 0.9237,
+        "mad_h_p90": 0.9714,
+        "normalised_mad_mean": 1.2326,
+        "top3_overlap_mean": 0.474
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.8089,
+        "pooled_spearman_r": 0.2528,
+        "per_instance_r_mean": 0.6255,
+        "per_instance_r_p10": 0.3603,
+        "per_instance_r_min": -0.0467,
+        "per_instance_spearman_mean": 0.2066,
+        "magnitude_rank_r_mean": 0.2217,
+        "mad_h_mean": 0.9598,
+        "mad_h_p90": 1.0134,
+        "normalised_mad_mean": 1.265,
+        "top3_overlap_mean": 0.4167
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.8102,
+        "pooled_spearman_r": 0.2438,
+        "per_instance_r_mean": 0.627,
+        "per_instance_r_p10": 0.3609,
+        "per_instance_r_min": -0.0493,
+        "per_instance_spearman_mean": 0.1993,
+        "magnitude_rank_r_mean": 0.2237,
+        "mad_h_mean": 0.9492,
+        "mad_h_p90": 0.9995,
+        "normalised_mad_mean": 1.2613,
+        "top3_overlap_mean": 0.4167
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.6955,
+        "pooled_spearman_r": 0.1244,
+        "per_instance_r_mean": 0.4291,
+        "per_instance_r_p10": 0.1122,
+        "per_instance_r_min": -0.1726,
+        "per_instance_spearman_mean": 0.111,
+        "magnitude_rank_r_mean": 0.2964,
+        "mad_h_mean": 1.1517,
+        "mad_h_p90": 1.2143,
+        "normalised_mad_mean": 1.1183,
+        "top3_overlap_mean": 0.4115
+      },
+      "kernelshap_fidelity_r2_mean": 0.2372
+    },
+    "500": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.9244,
+        "pooled_spearman_r": 0.3992,
+        "per_instance_r_mean": 0.8322,
+        "per_instance_r_p10": 0.7334,
+        "per_instance_r_min": 0.1075,
+        "per_instance_spearman_mean": 0.3587,
+        "magnitude_rank_r_mean": 0.3022,
+        "mad_h_mean": 0.511,
+        "mad_h_p90": 0.6014,
+        "normalised_mad_mean": 0.8574,
+        "top3_overlap_mean": 0.5312
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.9283,
+        "pooled_spearman_r": 0.423,
+        "per_instance_r_mean": 0.8357,
+        "per_instance_r_p10": 0.7477,
+        "per_instance_r_min": 0.0575,
+        "per_instance_spearman_mean": 0.3853,
+        "magnitude_rank_r_mean": 0.308,
+        "mad_h_mean": 0.4884,
+        "mad_h_p90": 0.5375,
+        "normalised_mad_mean": 0.8218,
+        "top3_overlap_mean": 0.5312
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.9275,
+        "pooled_spearman_r": 0.4106,
+        "per_instance_r_mean": 0.8343,
+        "per_instance_r_p10": 0.7403,
+        "per_instance_r_min": 0.0529,
+        "per_instance_spearman_mean": 0.3754,
+        "magnitude_rank_r_mean": 0.3031,
+        "mad_h_mean": 0.4899,
+        "mad_h_p90": 0.5396,
+        "normalised_mad_mean": 0.8267,
+        "top3_overlap_mean": 0.5156
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.8642,
+        "pooled_spearman_r": 0.2255,
+        "per_instance_r_mean": 0.7192,
+        "per_instance_r_p10": 0.5521,
+        "per_instance_r_min": -0.0925,
+        "per_instance_spearman_mean": 0.2107,
+        "magnitude_rank_r_mean": 0.1632,
+        "mad_h_mean": 0.7107,
+        "mad_h_p90": 0.7771,
+        "normalised_mad_mean": 0.9239,
+        "top3_overlap_mean": 0.5208
+      },
+      "kernelshap_fidelity_r2_mean": 0.2239
+    },
+    "1000": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.9626,
+        "pooled_spearman_r": 0.5075,
+        "per_instance_r_mean": 0.9014,
+        "per_instance_r_p10": 0.8296,
+        "per_instance_r_min": 0.4984,
+        "per_instance_spearman_mean": 0.4869,
+        "magnitude_rank_r_mean": 0.2755,
+        "mad_h_mean": 0.3575,
+        "mad_h_p90": 0.3737,
+        "normalised_mad_mean": 0.6856,
+        "top3_overlap_mean": 0.5833
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.9569,
+        "pooled_spearman_r": 0.5222,
+        "per_instance_r_mean": 0.8965,
+        "per_instance_r_p10": 0.835,
+        "per_instance_r_min": 0.4302,
+        "per_instance_spearman_mean": 0.4904,
+        "magnitude_rank_r_mean": 0.2679,
+        "mad_h_mean": 0.3795,
+        "mad_h_p90": 0.418,
+        "normalised_mad_mean": 0.7178,
+        "top3_overlap_mean": 0.5469
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.9564,
+        "pooled_spearman_r": 0.5069,
+        "per_instance_r_mean": 0.8956,
+        "per_instance_r_p10": 0.8364,
+        "per_instance_r_min": 0.4271,
+        "per_instance_spearman_mean": 0.4779,
+        "magnitude_rank_r_mean": 0.2567,
+        "mad_h_mean": 0.3797,
+        "mad_h_p90": 0.423,
+        "normalised_mad_mean": 0.722,
+        "top3_overlap_mean": 0.5417
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.9079,
+        "pooled_spearman_r": 0.381,
+        "per_instance_r_mean": 0.8356,
+        "per_instance_r_p10": 0.6952,
+        "per_instance_r_min": 0.1,
+        "per_instance_spearman_mean": 0.3527,
+        "magnitude_rank_r_mean": 0.2924,
+        "mad_h_mean": 0.5641,
+        "mad_h_p90": 0.6129,
+        "normalised_mad_mean": 0.8577,
+        "top3_overlap_mean": 0.4896
+      },
+      "kernelshap_fidelity_r2_mean": 0.2192
+    },
+    "2000": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.9624,
+        "pooled_spearman_r": 0.5218,
+        "per_instance_r_mean": 0.9201,
+        "per_instance_r_p10": 0.8596,
+        "per_instance_r_min": 0.3745,
+        "per_instance_spearman_mean": 0.4811,
+        "magnitude_rank_r_mean": 0.2263,
+        "mad_h_mean": 0.3426,
+        "mad_h_p90": 0.4131,
+        "normalised_mad_mean": 0.6516,
+        "top3_overlap_mean": 0.5156
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.97,
+        "pooled_spearman_r": 0.5341,
+        "per_instance_r_mean": 0.9263,
+        "per_instance_r_p10": 0.8746,
+        "per_instance_r_min": 0.4769,
+        "per_instance_spearman_mean": 0.4888,
+        "magnitude_rank_r_mean": 0.2531,
+        "mad_h_mean": 0.3057,
+        "mad_h_p90": 0.3196,
+        "normalised_mad_mean": 0.5875,
+        "top3_overlap_mean": 0.5208
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.9696,
+        "pooled_spearman_r": 0.5175,
+        "per_instance_r_mean": 0.9255,
+        "per_instance_r_p10": 0.8708,
+        "per_instance_r_min": 0.4736,
+        "per_instance_spearman_mean": 0.4675,
+        "magnitude_rank_r_mean": 0.2253,
+        "mad_h_mean": 0.3067,
+        "mad_h_p90": 0.3254,
+        "normalised_mad_mean": 0.5921,
+        "top3_overlap_mean": 0.5156
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.9494,
+        "pooled_spearman_r": 0.4895,
+        "per_instance_r_mean": 0.8826,
+        "per_instance_r_p10": 0.8053,
+        "per_instance_r_min": 0.2495,
+        "per_instance_spearman_mean": 0.4578,
+        "magnitude_rank_r_mean": 0.2875,
+        "mad_h_mean": 0.421,
+        "mad_h_p90": 0.4518,
+        "normalised_mad_mean": 0.6939,
+        "top3_overlap_mean": 0.4844
+      },
+      "kernelshap_fidelity_r2_mean": 0.2111
+    },
+    "4000": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.9857,
+        "pooled_spearman_r": 0.6106,
+        "per_instance_r_mean": 0.9618,
+        "per_instance_r_p10": 0.9402,
+        "per_instance_r_min": 0.5114,
+        "per_instance_spearman_mean": 0.5658,
+        "magnitude_rank_r_mean": 0.4166,
+        "mad_h_mean": 0.2042,
+        "mad_h_p90": 0.2657,
+        "normalised_mad_mean": 0.4502,
+        "top3_overlap_mean": 0.651
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.991,
+        "pooled_spearman_r": 0.6441,
+        "per_instance_r_mean": 0.9684,
+        "per_instance_r_p10": 0.954,
+        "per_instance_r_min": 0.5932,
+        "per_instance_spearman_mean": 0.5985,
+        "magnitude_rank_r_mean": 0.4439,
+        "mad_h_mean": 0.1563,
+        "mad_h_p90": 0.1635,
+        "normalised_mad_mean": 0.3545,
+        "top3_overlap_mean": 0.6875
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.9907,
+        "pooled_spearman_r": 0.629,
+        "per_instance_r_mean": 0.9678,
+        "per_instance_r_p10": 0.9534,
+        "per_instance_r_min": 0.5835,
+        "per_instance_spearman_mean": 0.5848,
+        "magnitude_rank_r_mean": 0.4189,
+        "mad_h_mean": 0.1574,
+        "mad_h_p90": 0.1665,
+        "normalised_mad_mean": 0.3595,
+        "top3_overlap_mean": 0.651
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.9778,
+        "pooled_spearman_r": 0.4495,
+        "per_instance_r_mean": 0.9343,
+        "per_instance_r_p10": 0.8996,
+        "per_instance_r_min": 0.3385,
+        "per_instance_spearman_mean": 0.4203,
+        "magnitude_rank_r_mean": 0.3906,
+        "mad_h_mean": 0.2593,
+        "mad_h_p90": 0.2736,
+        "normalised_mad_mean": 0.5145,
+        "top3_overlap_mean": 0.6771
+      },
+      "kernelshap_fidelity_r2_mean": 0.2043
+    },
+    "8000": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.9875,
+        "pooled_spearman_r": 0.7145,
+        "per_instance_r_mean": 0.9761,
+        "per_instance_r_p10": 0.9673,
+        "per_instance_r_min": 0.6683,
+        "per_instance_spearman_mean": 0.6943,
+        "magnitude_rank_r_mean": 0.6206,
+        "mad_h_mean": 0.1804,
+        "mad_h_p90": 0.232,
+        "normalised_mad_mean": 0.406,
+        "top3_overlap_mean": 0.8333
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.995,
+        "pooled_spearman_r": 0.7394,
+        "per_instance_r_mean": 0.9846,
+        "per_instance_r_p10": 0.9773,
+        "per_instance_r_min": 0.8067,
+        "per_instance_spearman_mean": 0.7172,
+        "magnitude_rank_r_mean": 0.6148,
+        "mad_h_mean": 0.1371,
+        "mad_h_p90": 0.1485,
+        "normalised_mad_mean": 0.3206,
+        "top3_overlap_mean": 0.8333
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.9949,
+        "pooled_spearman_r": 0.7276,
+        "per_instance_r_mean": 0.9845,
+        "per_instance_r_p10": 0.9775,
+        "per_instance_r_min": 0.8097,
+        "per_instance_spearman_mean": 0.7062,
+        "magnitude_rank_r_mean": 0.6094,
+        "mad_h_mean": 0.1358,
+        "mad_h_p90": 0.1491,
+        "normalised_mad_mean": 0.3193,
+        "top3_overlap_mean": 0.8177
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.9907,
+        "pooled_spearman_r": 0.6465,
+        "per_instance_r_mean": 0.9715,
+        "per_instance_r_p10": 0.9574,
+        "per_instance_r_min": 0.6398,
+        "per_instance_spearman_mean": 0.6121,
+        "magnitude_rank_r_mean": 0.6464,
+        "mad_h_mean": 0.162,
+        "mad_h_p90": 0.1732,
+        "normalised_mad_mean": 0.3522,
+        "top3_overlap_mean": 0.7708
+      },
+      "kernelshap_fidelity_r2_mean": 0.2005
+    },
+    "16000": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.9893,
+        "pooled_spearman_r": 0.719,
+        "per_instance_r_mean": 0.9795,
+        "per_instance_r_p10": 0.9679,
+        "per_instance_r_min": 0.6438,
+        "per_instance_spearman_mean": 0.6879,
+        "magnitude_rank_r_mean": 0.5461,
+        "mad_h_mean": 0.143,
+        "mad_h_p90": 0.2264,
+        "normalised_mad_mean": 0.3296,
+        "top3_overlap_mean": 0.8073
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.9974,
+        "pooled_spearman_r": 0.748,
+        "per_instance_r_mean": 0.9901,
+        "per_instance_r_p10": 0.9877,
+        "per_instance_r_min": 0.8215,
+        "per_instance_spearman_mean": 0.7174,
+        "magnitude_rank_r_mean": 0.5647,
+        "mad_h_mean": 0.0906,
+        "mad_h_p90": 0.0976,
+        "normalised_mad_mean": 0.2221,
+        "top3_overlap_mean": 0.8854
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.9973,
+        "pooled_spearman_r": 0.7338,
+        "per_instance_r_mean": 0.9899,
+        "per_instance_r_p10": 0.9872,
+        "per_instance_r_min": 0.8198,
+        "per_instance_spearman_mean": 0.7004,
+        "magnitude_rank_r_mean": 0.5556,
+        "mad_h_mean": 0.0921,
+        "mad_h_p90": 0.0994,
+        "normalised_mad_mean": 0.2267,
+        "top3_overlap_mean": 0.875
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.9966,
+        "pooled_spearman_r": 0.7292,
+        "per_instance_r_mean": 0.9876,
+        "per_instance_r_p10": 0.985,
+        "per_instance_r_min": 0.7804,
+        "per_instance_spearman_mean": 0.6939,
+        "magnitude_rank_r_mean": 0.7101,
+        "mad_h_mean": 0.1072,
+        "mad_h_p90": 0.1151,
+        "normalised_mad_mean": 0.25,
+        "top3_overlap_mean": 0.8438
+      },
+      "kernelshap_fidelity_r2_mean": 0.2013
+    },
+    "32000": {
+      "A_as_shipped_vs_path_dependent": {
+        "pooled_r": 0.9938,
+        "pooled_spearman_r": 0.8309,
+        "per_instance_r_mean": 0.9883,
+        "per_instance_r_p10": 0.9822,
+        "per_instance_r_min": 0.8278,
+        "per_instance_spearman_mean": 0.8099,
+        "magnitude_rank_r_mean": 0.7277,
+        "mad_h_mean": 0.1109,
+        "mad_h_p90": 0.1744,
+        "normalised_mad_mean": 0.2577,
+        "top3_overlap_mean": 0.8281
+      },
+      "C_like_for_like_vs_interventional": {
+        "pooled_r": 0.9986,
+        "pooled_spearman_r": 0.8626,
+        "per_instance_r_mean": 0.9946,
+        "per_instance_r_p10": 0.9922,
+        "per_instance_r_min": 0.9164,
+        "per_instance_spearman_mean": 0.8423,
+        "magnitude_rank_r_mean": 0.749,
+        "mad_h_mean": 0.0579,
+        "mad_h_p90": 0.0626,
+        "normalised_mad_mean": 0.1433,
+        "top3_overlap_mean": 0.9375
+      },
+      "D_served_clip_vs_interventional": {
+        "pooled_r": 0.9984,
+        "pooled_spearman_r": 0.8553,
+        "per_instance_r_mean": 0.9943,
+        "per_instance_r_p10": 0.9915,
+        "per_instance_r_min": 0.915,
+        "per_instance_spearman_mean": 0.8345,
+        "magnitude_rank_r_mean": 0.7345,
+        "mad_h_mean": 0.0618,
+        "mad_h_p90": 0.0724,
+        "normalised_mad_mean": 0.1516,
+        "top3_overlap_mean": 0.9219
+      },
+      "F_noise_floor_seed_to_seed": {
+        "pooled_r": 0.9974,
+        "pooled_spearman_r": 0.8006,
+        "per_instance_r_mean": 0.9898,
+        "per_instance_r_p10": 0.9862,
+        "per_instance_r_min": 0.8416,
+        "per_instance_spearman_mean": 0.7848,
+        "magnitude_rank_r_mean": 0.5435,
+        "mad_h_mean": 0.0954,
+        "mad_h_p90": 0.1028,
+        "normalised_mad_mean": 0.2252,
+        "top3_overlap_mean": 0.8854
+      },
+      "kernelshap_fidelity_r2_mean": 0.2049
+    }
+  },
+  "headline": {
+    "as_shipped_pooled_r": 0.9626,
+    "as_shipped_per_instance_r": 0.9014,
+    "like_for_like_pooled_r": 0.9569,
+    "like_for_like_per_instance_r": 0.8965,
+    "like_for_like_per_instance_spearman": 0.4904,
+    "like_for_like_mad_h": 0.3795,
+    "noise_floor_pooled_r": 0.9079,
+    "noise_floor_per_instance_r": 0.8356,
+    "value_function_alone_pooled_r": 0.9946,
+    "value_function_alone_per_instance_r": 0.9934
+  },
+  "verdict": {
+    "original_claim": "KernelSHAP surrogate agrees with TreeSHAP at r = 0.99",
+    "original_claim_reproduced_as": "pooled Pearson r over all (instance, feature) pairs, surrogate against path-dependent TreeSHAP, at 8000 coalitions",
+    "why_it_does_not_measure_agreement": [
+      "the two sides use different value functions, interventional against tree-path-dependent",
+      "the two sides use different reference distributions, the supplied background against the training coverage stored in the trees, which puts their baselines 0.66782 h apart and so forces the two attribution vectors to sum to different totals",
+      "in the service the two sides explain different functions, because explain_with_shap ignores both the predict override and the background argument it is given",
+      "the correlation is pooled across instances, so it is carried by the few features that are large on every instance rather than by the agreement on any one explanation",
+      "it is quoted at 8000 coalitions while the service runs 1000"
+    ],
+    "like_for_like_is_possible": true,
+    "like_for_like_at_serving_budget": {
+      "coalitions": 1000,
+      "pooled_r": 0.9569,
+      "per_instance_r": 0.8965,
+      "per_instance_spearman": 0.4904,
+      "mad_h": 0.3795,
+      "mad_as_fraction_of_mean_abs_phi": 0.827,
+      "top3_overlap": 0.5469,
+      "noise_floor_pooled_r": 0.9079,
+      "noise_floor_per_instance_r": 0.8356
+    },
+    "convergence": {
+      "coalitions": 32000,
+      "pooled_r": 0.9986,
+      "per_instance_r": 0.9946,
+      "reading": "the like-for-like correlation rises monotonically towards 1 as the coalition budget grows, so the surrogate is an unbiased estimator of the interventional Shapley values and the residual gap at any budget is Monte Carlo error rather than systematic disagreement between the methods"
+    },
+    "recommended_sentence": "The KernelSHAP surrogate is an unbiased estimator of the same interventional Shapley values that TreeSHAP computes exactly: given the identical model, background set and value function, the pooled Pearson correlation between the two rises from 0.9569 at the 1000 coalitions the service uses to 0.9986 at 32000. The agreement at the serving budget is limited by Monte Carlo error in the surrogate and not by any disagreement between the methods, as the surrogate reproduces itself across random seeds only to pooled r = 0.9079 at the same budget; per explanation the two agree to Pearson r = 0.8965 with a mean absolute difference of 0.3795 h against a mean attribution magnitude of 0.45906 h, and they select the same three leading drivers on 55 per cent of the top-three slots.",
+    "sentence_that_must_not_be_used": "any bare statement that the surrogate and TreeSHAP agree at r = 0.99, because that number is a pooled correlation between two different value functions at eight times the coalition budget the service runs"
+  }
+}

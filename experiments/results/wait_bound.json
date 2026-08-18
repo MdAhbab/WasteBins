@@ -1,0 +1,83 @@
+{
+  "protocol": {
+    "cycle_h": 12.0,
+    "tau_h": 48.0,
+    "speed_kmh": 20.0,
+    "max_wait_searched_h": 4800.0,
+    "weights": {
+      "lambda_prize": 45.0,
+      "overdue_multiplier": 4.0
+    },
+    "retired_penalty_ceiling": 180.0,
+    "note": "the container is built through effective_priorities and make_tasks so the wiring under test is the one the service uses, not a reconstruction of it"
+  },
+  "sweep": [
+    {
+      "distance_km": 10.0,
+      "insertion_cost": 58.347,
+      "predicted_bound_h": 48.0,
+      "served_at_h": 48.0,
+      "tight": true,
+      "holds": true
+    },
+    {
+      "distance_km": 20.0,
+      "insertion_cost": 111.709,
+      "predicted_bound_h": 60.0,
+      "served_at_h": 60.0,
+      "tight": true,
+      "holds": true
+    },
+    {
+      "distance_km": 25.0,
+      "insertion_cost": 138.391,
+      "predicted_bound_h": 84.0,
+      "served_at_h": 84.0,
+      "tight": true,
+      "holds": true
+    },
+    {
+      "distance_km": 30.0,
+      "insertion_cost": 165.072,
+      "predicted_bound_h": 96.0,
+      "served_at_h": 96.0,
+      "tight": true,
+      "holds": true
+    },
+    {
+      "distance_km": 35.0,
+      "insertion_cost": 191.753,
+      "predicted_bound_h": 108.0,
+      "served_at_h": 108.0,
+      "tight": true,
+      "holds": true
+    },
+    {
+      "distance_km": 40.0,
+      "insertion_cost": 218.435,
+      "predicted_bound_h": 120.0,
+      "served_at_h": 120.0,
+      "tight": true,
+      "holds": true
+    },
+    {
+      "distance_km": 60.0,
+      "insertion_cost": 325.16,
+      "predicted_bound_h": 180.0,
+      "served_at_h": 180.0,
+      "tight": true,
+      "holds": true
+    },
+    {
+      "distance_km": 100.0,
+      "insertion_cost": 538.61,
+      "predicted_bound_h": 288.0,
+      "served_at_h": 288.0,
+      "tight": true,
+      "holds": true
+    }
+  ],
+  "n_holds": 8,
+  "n_tight": 8,
+  "n_cases": 8
+}

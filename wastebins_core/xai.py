@@ -20,8 +20,24 @@ right now?"  Two mechanisms:
     squares under the exact efficiency constraint, so they sum to the
     prediction.  It needs no extra dependency, works for *any* estimator
     including the continually-corrected composite, and costs about 30 ms at the
-    feature count used here.  Validated against exact TreeSHAP: Pearson r rises
-    from 0.80 at 200 coalitions to 0.99 at 8000.
+    feature count used here.  It is an unbiased but *sampled* estimator, so its
+    answer moves with the seed; see ``experiments/eval_xai_agreement.py`` for
+    what it does and does not agree with.
+
+    An earlier version of this docstring claimed validation against exact
+    TreeSHAP, "Pearson r rises from 0.80 at 200 coalitions to 0.99 at 8000".
+    That number was real but it was not a validation.  It pooled every
+    (instance, feature) pair into one correlation, so it was carried by the few
+    features that are large on every instance rather than by the agreement on
+    any single explanation, it compared two different value functions against
+    two different reference distributions, and it was quoted at eight times the
+    coalition budget the service actually runs.  Measured like for like, same
+    model, same background, same interventional value function, the pooled
+    correlation is 0.957 at the 1000 coalitions used in serving and 0.999 at
+    32000, against a seed-to-seed noise floor of 0.908 at 1000.  The surrogate
+    is therefore a correct estimator of the same quantity, and the gap at the
+    serving budget is its own Monte Carlo error rather than a disagreement
+    between the methods.
 
 ``shap`` (audit grade)
     Exact TreeSHAP via the ``shap`` package when it is installed and the
@@ -151,6 +167,27 @@ def explain_with_shap(model, x: np.ndarray, background: np.ndarray,
     Building the explainer costs seconds for a large ensemble, so it is cached
     per model.  Even so this is the audit-grade path, not the interactive one --
     see :func:`explain` for why the surrogate is the serving default.
+
+    Two properties of this path are easy to misread, so they are stated rather
+    than left to be discovered:
+
+    ``background`` is accepted and ignored.
+        The explainer is built with ``data=None``, which selects the
+        *tree-path-dependent* value function: absent features are integrated out
+        along the training distribution recorded in the trees' node coverage,
+        not along the caller's background set.  The baseline is therefore the
+        trees' own expected value, not the mean over ``background``, and the two
+        differ by about 0.67 h on the reference model.  The parameter is kept in
+        the signature so that this function stays interchangeable with
+        :func:`explain_with_surrogate`.  Passing it to
+        ``shap.TreeExplainer(model, data=background,
+        feature_perturbation="interventional")`` instead would make this path
+        estimate the same quantity as the surrogate, at a cost in speed.
+
+    The *model* is explained, not the served function.
+        The ``predict`` override that :func:`explain` accepts is not consulted
+        here, so when the continual corrector or the output clip is active this
+        attributes a different function from the one the operator was shown.
     """
     if not shap_available():
         return None

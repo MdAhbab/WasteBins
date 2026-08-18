@@ -36,7 +36,7 @@ def fig_model():
     labels = ["Persistence", "Ridge\n(current)", "Random\nForest", "Hist. Grad.\nBoosting"]
     r2 = [max(0, reg[n]["r2"]) for n in names]
     mae = [reg[n]["mae_h"] for n in names]
-    fig, ax1 = plt.subplots(figsize=(COL_W, 2.7))
+    fig, ax1 = plt.subplots(figsize=(FULL_W, 3.0))
     x = np.arange(len(names))
     ax1.bar(x - 0.2, r2, 0.4, label="$R^2$", color=BLUE)
     ax1.set_ylabel("$R^2$ (higher is better)", color=BLUE)
@@ -59,7 +59,7 @@ def fig_calibration():
     """Single-column reliability curve for the calibrated hazard classifier."""
     m = load("model.json")
     rc = m["C_forward_classification_hazard"]["reliability_curve_calibrated"]
-    fig, ax = plt.subplots(figsize=(COL_W, 3.1))
+    fig, ax = plt.subplots(figsize=(FULL_W, 3.4))
     ax.plot([0, 1], [0, 1], "--", color=GREY, label="Perfect calibration")
     ax.plot(rc["mean_predicted"], rc["fraction_positive"], "o-", color=BLUE,
             label="Calibrated gradient boosting")
@@ -134,7 +134,7 @@ def fig_equity():
     worst = [x["worst_wait_h"] for x in s]
     gini = [x["gini_visits"] for x in s]
     ttc = [x["mean_time_to_critical_h"] for x in s]
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(COL_W, 3.9), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(FULL_W, 4.2), sharex=True)
     ax1.plot(g, worst, "o-", color=BLUE, label="Worst-case wait (h)")
     for xi, v in zip(g, worst):
         ax1.annotate(f"{v:.0f}", (xi, v), textcoords="offset points",

@@ -67,6 +67,20 @@ Trust is updated asymmetrically -- it falls quickly on evidence of a fault and
 recovers slowly -- because the cost of trusting a broken sensor for one more
 cycle greatly exceeds the cost of down-weighting a healthy one.
 
+The combined score is an evidence score, not a probability
+----------------------------------------------------------
+The nine detector scores are aggregated by the noisy-OR form in
+:func:`_combine`, which is monotone in every input and stops any single
+moderate score from saturating the result.  It is not a posterior probability
+that the channel is faulty, and it is never reported as one.  Reading it that
+way would require the detectors to be conditionally independent, and they are
+not: ``spike``, ``drift``, ``dispersion`` and ``peer`` all read one residual
+series, and on channels carrying a fault the drift and dispersion scores
+correlate at Pearson r = 0.61.  The number is consumed only by
+:func:`update_trust`, which compares it against fixed thresholds, so the
+ordering it induces is what the system relies on.  :func:`_combine` records the
+full measurement.
+
 Status and trust answer different questions
 -------------------------------------------
 ``trust`` is a *data-quality weight*: how much should this reading count in the
@@ -810,13 +824,19 @@ def _leverage(X: np.ndarray, kept: np.ndarray) -> np.ndarray:
     """
     Hat-matrix diagonal of every row against the design actually fitted.
 
-    A node sitting at the edge of the fleet's operating range -- the fullest bin
-    in the network, say -- is not being interpolated by the cross-channel model,
-    it is being extrapolated to, and its residual carries correspondingly less
-    information.  Ignoring that flagged the single most extreme *healthy* bin as
-    faulty on almost every cycle.  Scaling residuals by the prediction standard
-    error ``sqrt(1 + h_ii)`` is the textbook correction and removes the effect
-    without blunting the test for the interior of the fleet.
+    ``h_ii = x_i' (Xk' Xk)^-1 x_i`` where ``Xk`` is the sub-design the trimmed
+    regression kept.  For the kept rows this is the ordinary hat diagonal, which
+    the fixtures confirm: the leverages of the kept rows sum to 4.0000 against a
+    design of exactly 4 columns, which is the identity ``sum_i h_ii = rank``.
+    For a discarded row it is still a well-defined quadratic form, but it is a
+    leverage against a design the row was not part of, so it is not bounded by 1
+    and in practice is not (measured maximum 10.4).
+
+    A node sitting at the edge of the fleet's operating range, the fullest bin in
+    the network say, is not being interpolated by the cross-channel model, it is
+    being extrapolated to.  How that should change the weight given to its
+    residual depends on whether the fit saw it, which is what
+    :func:`_residual_scale` decides.
     """
     Xk = X[kept]
     try:
@@ -824,6 +844,48 @@ def _leverage(X: np.ndarray, kept: np.ndarray) -> np.ndarray:
     except np.linalg.LinAlgError:                  # pragma: no cover - singular
         return np.zeros(X.shape[0])
     return np.clip(np.einsum("ij,jk,ik->i", X, gram, X), 0.0, None)
+
+
+# Smallest value the factor ``1 - h_ii`` is allowed to take for a row that was
+# inside the fit.  A row whose leverage approaches 1 is one the regression passes
+# almost exactly through, so its raw residual approaches zero and dividing by
+# sqrt(1 - h_ii) approaches a division by zero.  This is not hypothetical:
+# measured over the fleet fixtures, 0.19% of fitted rows have h_ii > 0.9 and the
+# smallest observed 1 - h_ii is 0.0040, which unfloored would inflate a residual
+# by a factor of 16.  The floor caps the inflation at sqrt(1 / 0.05) = 4.5, well
+# above the 1.9 that the 95th percentile of ordinary rows reaches, so it binds
+# only on the degenerate rows it exists for.  It is a numerical guard with a
+# stated cost, not a modelling choice.
+LEVERAGE_FLOOR = 0.05
+
+
+def _residual_scale(h: np.ndarray, kept: np.ndarray) -> np.ndarray:
+    """
+    Per-row standard error of the residual, in units of the residual sigma.
+
+    Two different quantities are needed, because the trimmed fit splits the fleet
+    into rows the regression was fitted on and rows it was not.
+
+    * A row that was fitted has residual variance ``sigma^2 (1 - h_ii)``.  The
+      fit is pulled towards such a row, so its raw residual is systematically too
+      small, and dividing by ``sqrt(1 - h_ii)`` is what restores a constant
+      variance.  This is the internally studentised residual of standard
+      regression diagnostics (Belsley, Kuh and Welsch 1980, chapter 2; Cook and
+      Weisberg 1982, section 2.2).
+    * A row the trim discarded was not part of the fit, so its residual is a
+      genuine out-of-sample prediction error with variance ``sigma^2 (1 + h_ii)``.
+
+    Earlier versions of this module used ``sqrt(1 + h_ii)`` for every row and
+    described it as the textbook correction, which it is not: it is the correct
+    form for the discarded rows only.  Applied to a fitted row it shrinks a
+    residual that was already too small, so the test under-flags exactly the
+    high-leverage nodes it was reasoning about.  The two cases cannot be merged
+    into one expression, because ``h_ii`` is computed against the kept design and
+    so exceeds 1 for 4% of discarded rows, where ``sqrt(1 - h_ii)`` is undefined.
+    """
+    scale = np.sqrt(1.0 + h)                       # out-of-sample prediction error
+    scale[kept] = np.sqrt(np.maximum(1.0 - h[kept], LEVERAGE_FLOOR))
+    return scale
 
 
 def _redundancy_scores(levels: Dict[str, np.ndarray], channels: Sequence[str]
@@ -870,7 +932,7 @@ def _redundancy_scores(levels: Dict[str, np.ndarray], channels: Sequence[str]
         beta, r2, kept = _trimmed_least_squares(Xc, yc)
         if beta is None or kept is None or r2 < REDUNDANCY_MIN_R2:
             continue                               # no usable redundancy here
-        scale = np.sqrt(1.0 + _leverage(Xc, kept))
+        scale = _residual_scale(_leverage(Xc, kept), kept)
         residual = np.full(n_nodes, np.nan)
         residual[complete] = (yc - Xc @ beta) / scale
         raw[target] = residual
@@ -939,16 +1001,58 @@ def _confirmation_gate(name: str, score: float, confirm: Dict[str, float]) -> fl
 
 def _combine(scores: Dict[str, float]) -> float:
     """
-    Noisy-OR combination of weighted detector scores.
+    Aggregate the weighted detector scores into one evidence score in [0, 1].
 
-    Independent evidence should accumulate, but no single moderate score should
-    saturate the result, which is what a plain max would do.
+    The arithmetic is the noisy-OR form, one minus the product of the
+    complements.  It is used because evidence should accumulate while no single
+    moderate score saturates the result, which is what a plain max would do, and
+    because it is monotone in every input.  That is the whole of the
+    justification: it is an aggregation rule, not an inference.
+
+    The result is NOT a probability and must not be reported as one.  Reading
+    this expression as "the probability that at least one detector is right"
+    requires the detectors to be conditionally independent given the channel's
+    state, and they are demonstrably not.  Measured on the project's own
+    fixtures (experiments/eval_sensor_health.py, 99,200 assessments over 4 clean
+    fleets and 4 seeds by 9 fault modes):
+
+    * Four of the nine detectors read one series.  ``spike``, ``drift`` and
+      ``dispersion`` are handed the same residual array object by
+      :func:`assess_node` on every call (80 of 80 in a single fleet assessment),
+      and ``peer`` is handed the median of that same array.  This is a shared
+      input by construction, not an incidental correlation.
+    * On channels carrying an injected fault, which is the population where this
+      function is actually accumulating evidence, that group co-varies:
+      ``drift`` against ``dispersion`` gives Pearson r = 0.61 (n = 3348).
+      Pooled over every assessment, clean and faulted alike, the same pair gives
+      r = 0.29 on the raw scores and r = 0.46 on the confirmation-gated scores
+      that are the arguments to this function.
+    * The dependence is not only through the shared series.  ``stuck`` and
+      ``redundancy`` read different inputs and still reach r = 0.35 on faulted
+      channels, because a real fault is a common cause that moves both.
+    * On clean fleets every pairwise correlation is below 0.02, so the
+      dependence appears precisely where the score is used to decide something.
+
+    Shared evidence is therefore counted more than once, and the result sits
+    above whatever an independent combination would give.  The size of that
+    effect was measured rather than assumed: collapsing the four detectors that
+    share the residual to their single strongest member changes the combined
+    score on 0.25% of assessments (247 of 99,200), by 0.05 on average and by at
+    most 0.21 where it bites, and moves 20 of them across the trust deadband.
+    Grouping is deliberately not applied, because the only consumer of this
+    number is :func:`update_trust`, which compares it against fixed thresholds;
+    the grouping would shift every one of those thresholds for a gain that is
+    invisible on 99.75% of assessments.  What the code owes the reader is an
+    accurate description, which is a monotone evidence score, not a fault
+    probability.
     """
-    prob_clean = 1.0
+    # `remaining` is the running product of the complements.  It is the
+    # arithmetic of a noisy-OR, but it is not read as P(no fault): see above.
+    remaining = 1.0
     for name, score in scores.items():
         w = DETECTOR_WEIGHTS.get(name, 0.5)
-        prob_clean *= (1.0 - max(0.0, min(1.0, score)) * w)
-    return float(1.0 - prob_clean)
+        remaining *= (1.0 - max(0.0, min(1.0, score)) * w)
+    return float(1.0 - remaining)
 
 
 def status_for_trust(trust: float) -> str:

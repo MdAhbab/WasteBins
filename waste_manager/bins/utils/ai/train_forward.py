@@ -148,7 +148,14 @@ def build_dataset() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, pd.
         dow = group["timestamp"].dt.dayofweek.to_numpy()
 
         X = CORE_FEATURES.build_matrix(series, hours, dow=dow)
-        hazard, tto = CORE_FEATURES.forward_labels(series["waste"], series["gas"], hours)
+        # The third value is the censoring flag: 1 where `tto` is an overflow
+        # that was really seen, 0 where it is only the time observation stopped.
+        # It is not carried past this loop, because the rows kept below are
+        # exactly the rows censored at the cap, where the flag and the trainer's
+        # `y >= TTO_CAP_H - 1e-9` test are the same statement.  See the note on
+        # redundancy under `keep`.
+        hazard, tto, _tto_observed = CORE_FEATURES.forward_labels(
+            series["waste"], series["gas"], hours)
 
         # The tail of the record has no future to label against, so its labels
         # are censored by construction; dropping it prevents the model from
@@ -162,6 +169,19 @@ def build_dataset() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, pd.
         # for a full day" label on precisely the rows where the answer was
         # unknown, and one that biases the long-horizon regime the planner
         # depends on.
+        #
+        # `forward_labels` no longer fabricates that label: a tail row now
+        # carries the shorter time it was actually watched for, flagged as
+        # censored.  The drop below is therefore neither redundant nor a second
+        # correction of the same error, and it stays for two independent
+        # reasons.  First, the regressor is fitted with a squared loss, which
+        # reads a label as an observed value; a row censored at 3 h supplied as
+        # y = 3 would be a worse claim than the old y = 24, not a better one.
+        # Second, everything downstream identifies a censored row by its label
+        # sitting at the cap, and only a row with a full look-ahead satisfies
+        # that.  Keeping just those rows makes the convention exact rather than
+        # approximate, and leaves every label on the training set bit-identical
+        # to the one that produced the published figures.
         label_horizon = max(CORE_FEATURES.HORIZON_H, CORE_FEATURES.TTO_CAP_H)
         cutoff = hours[-1] - label_horizon
         keep = hours <= cutoff

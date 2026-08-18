@@ -145,6 +145,7 @@ def build_tasks(snapshot: Dict, gamma: float = AG.DEFAULT_GAMMA,
         index_of=snapshot["index_of"],
         hazards=snapshot["hazards"],
         tiers={nid: tiered[nid].tier for nid in snapshot["node_ids"]},
+        overdue_pressures={nid: tiered[nid].pressure for nid in snapshot["node_ids"]},
         tto_hours=snapshot["tto"],
         streams=snapshot["streams"],
         capacities_l=snapshot["capacities"],
@@ -154,7 +155,8 @@ def build_tasks(snapshot: Dict, gamma: float = AG.DEFAULT_GAMMA,
     )
 
 
-def scarce_fleet(snapshot: Dict) -> List[VRP.VehicleSpec]:
+def scarce_fleet(snapshot: Dict,
+                 shift_minutes: float = 240.0) -> List[VRP.VehicleSpec]:
     """
     One vehicle, short shift, licensed for everything.
 
@@ -168,14 +170,15 @@ def scarce_fleet(snapshot: Dict) -> List[VRP.VehicleSpec]:
     nobody is allowed to serve.
     """
     fleet = build_fleet(snapshot)[:1]
-    fleet[0].shift_minutes = 240.0
+    fleet[0].shift_minutes = float(shift_minutes)
     fleet[0].accepts_streams = tuple(sorted(set(snapshot["streams"].values())))
     return fleet
 
 
 def equity_rollout(snapshots: List[Dict], time_budget_s: float,
                    cycle_h: float = 12.0, n_cycles: int = 40,
-                   burn_in: int = 8) -> Dict:
+                   burn_in: int = 8, shift_minutes: float = 240.0,
+                   tau_h: float = AG.DEFAULT_TAU_H) -> Dict:
     """
     Does the certified wait bound actually hold when the policy generates the waits?
 
@@ -198,6 +201,25 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
     import math
     from datetime import datetime, timezone
 
+    # Scarcity has to be of time and capacity, never of possibility.  A bin whose
+    # servicing window opens after the shift ends can never be collected by any
+    # policy, so its wait grows without limit and the rollout reports a breach
+    # that is a property of the instance rather than of the dispatcher.  This
+    # already happened once with licences, and again with a 150-minute shift,
+    # where 8 of 30 bins had a window opening at minute 180.  Both times the
+    # measurement looked like a policy failure and was not.  Fail loudly instead.
+    for snapshot in snapshots[:8]:
+        unservable = [n for n in snapshot["node_ids"]
+                      if snapshot["windows"][n][0] >= shift_minutes]
+        if unservable:
+            raise ValueError(
+                f"{len(unservable)} of {len(snapshot['node_ids'])} bins have a "
+                f"servicing window opening at or after the {shift_minutes:.0f}-minute "
+                f"shift end, so no policy can ever collect them.  This is an "
+                f"infeasible instance, not a starvation result.  Raise the "
+                f"promotion rate with a smaller tau_h instead of shortening the shift."
+            )
+
     # Same fixed instant the rest of the study uses, so the congestion surface is
     # identical and the rollout is comparable to the sweep beside it.
     when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
@@ -207,16 +229,20 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
     for gamma in (0.55, 0.70, 0.85):
         observed_max, breaches, total_obs = 0.0, 0, 0
         worst_backlog, worst_bound = 0, 0.0
+        # ceil(m/c) is the whole point of the bound: at 1 the queueing term
+        # vanishes and the bound reduces to the promotion threshold, so a rollout
+        # that only ever reaches 1 has not tested the claim it was written for.
+        worst_cycles, multi_cycle_obs = 0, 0
         for snapshot in snapshots[:8]:               # 8 networks x 40 cycles
             state = dict(snapshot)
             state["waits"] = {nid: 0.0 for nid in snapshot["node_ids"]}
             travel = travel_for(state, when)
-            fleet = scarce_fleet(state)
+            fleet = scarce_fleet(state, shift_minutes=shift_minutes)
             cleared_history = []
             for cycle in range(n_cycles):
                 overdue_before = [n for n in state["node_ids"]
-                                  if state["waits"][n] >= AG.DEFAULT_TAU_H]
-                tasks = build_tasks(state, gamma=gamma)
+                                  if state["waits"][n] >= tau_h]
+                tasks = build_tasks(state, gamma=gamma, tau_h=tau_h)
                 plan = VRP.solve(tasks, fleet, travel, weights,
                                  time_budget_s=time_budget_s)
                 served = {s.task.node_id for r in plan.routes for s in r.stops}
@@ -232,11 +258,14 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
                     m = max(1, len(overdue_before))
                     c = max(1, min(cleared_history[-1] or 1, m))
                     bound = AG.worst_case_wait_bound(
-                        tau_h=AG.DEFAULT_TAU_H, cycle_h=cycle_h,
+                        tau_h=tau_h, cycle_h=cycle_h,
                         max_overdue=m, served_overdue_per_cycle=c)
                     worst = max(state["waits"].values())
                     observed_max = max(observed_max, worst)
                     worst_backlog = max(worst_backlog, m)
+                    worst_cycles = max(worst_cycles, math.ceil(m / c))
+                    if math.ceil(m / c) > 1:
+                        multi_cycle_obs += 1
                     worst_bound = max(worst_bound, bound if math.isfinite(bound) else 0.0)
                     total_obs += 1
                     if math.isfinite(bound) and worst > bound + 1e-9:
@@ -244,6 +273,8 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
         rows.append({
             "gamma": gamma,
             "max_overdue_backlog_seen": worst_backlog,
+            "max_cycles_to_clear": worst_cycles,
+            "multi_cycle_observations": multi_cycle_obs,
             "bound_at_worst_backlog_h": round(worst_bound, 2),
             "observed_max_wait_h": round(observed_max, 2),
             "breaches": breaches,
@@ -255,7 +286,9 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
         "n_cycles": n_cycles,
         "burn_in_cycles": burn_in,
         "n_networks": min(8, len(snapshots)),
-        "fleet": "1 vehicle, 240-minute shift, licensed for every stream present -- "
+        "shift_minutes": shift_minutes,
+        "tau_h": tau_h,
+        "fleet": f"1 vehicle, {shift_minutes:.0f}-minute shift, licensed for every stream present -- "
                  "scarce in time and capacity so bins are genuinely deferred, but not "
                  "in licence, which would make some bins unservable rather than deferred",
         "initial_waits": "all zero; every wait measured is one the policy produced",
@@ -610,7 +643,17 @@ def main() -> None:
               f"{row['oldest_bin_deferred_h']:>19.1f}"
               f"{str(row['certified_bound_h'] or 'none'):>10}")
 
+    # Two regimes, because one of them does not test the claim.  At the default
+    # tau the fleet clears the whole overdue backlog every cycle, so ceil(m/c) = 1
+    # and the queueing term of the bound vanishes: the bound holds there but
+    # trivially so.  Lowering tau to 12 h raises the promotion rate until the
+    # backlog genuinely spans more than one cycle, which is the case the bound
+    # was written for.  Scarcity is applied through tau rather than by shortening
+    # the shift, because a shift shorter than a bin's window start makes that bin
+    # unservable by any policy and turns an infeasible instance into what looks
+    # like a starvation result.
     rollout = equity_rollout(snapshots, budget)
+    rollout_multi = equity_rollout(snapshots, budget, tau_h=12.0)
     print(f"\nDoes the certified wait bound hold when the policy generates the waits?")
     print(f"  {rollout['n_networks']} networks x {rollout['n_cycles']} cycles of "
           f"{rollout['cycle_h']:.0f} h, all bins starting at zero wait, "
@@ -620,6 +663,20 @@ def main() -> None:
     print("  " + "-" * 63)
     for row in rollout["sweep"]:
         print(f"  {row['gamma']:>7.2f}{row['max_overdue_backlog_seen']:>9}"
+              f"{row['bound_at_worst_backlog_h']:>10.1f}"
+              f"{row['observed_max_wait_h']:>16.1f}"
+              f"{row['breaches']:>8}/{row['observations']:<4}"
+              f"{'HOLDS' if row['holds'] else 'VIOLATED':>10}")
+
+    print()
+    print(f"  Same test at tau = {rollout_multi['tau_h']:.0f} h, where the backlog "
+          f"spans more than one cycle and the bound is not trivial:")
+    print(f"  {'gamma':>7}{'backlog':>9}{'ceil(m/c)':>11}{'bound h':>10}"
+          f"{'observed max h':>16}{'breaches':>11}{'verdict':>10}")
+    print('  ' + '-' * 74)
+    for row in rollout_multi['sweep']:
+        print(f"  {row['gamma']:>7.2f}{row['max_overdue_backlog_seen']:>9}"
+              f"{row['max_cycles_to_clear']:>11}"
               f"{row['bound_at_worst_backlog_h']:>10.1f}"
               f"{row['observed_max_wait_h']:>16.1f}"
               f"{row['breaches']:>8}/{row['observations']:<4}"
@@ -635,6 +692,7 @@ def main() -> None:
         "comparison": comparison,
         "sensitivity": sensitivity,
         "equity_bound_rollout": rollout,
+        "equity_bound_rollout_multicycle": rollout_multi,
         "runtime_s": round(time.perf_counter() - started, 1),
     }
     (RESULTS / "fleet.json").write_text(json.dumps(payload, indent=2))

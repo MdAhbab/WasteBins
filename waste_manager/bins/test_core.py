@@ -11,16 +11,25 @@ property that must hold for any correct implementation.
 """
 from __future__ import annotations
 
+import json
 import math
+import warnings
+from datetime import datetime, timedelta, timezone
+from unittest import mock
 
 import numpy as np
 from django.test import SimpleTestCase
 
+from wastebins_core import aging as AG
 from wastebins_core import continual as CL
 from wastebins_core import emissions as EM
 from wastebins_core import faults as F
+from wastebins_core import features as FEAT
 from wastebins_core import ledger as LG
+from wastebins_core import scenario as SC
 from wastebins_core import stats as ST
+from wastebins_core import traffic as TR
+from wastebins_core import vrp as VRP
 
 
 class LedgerTests(SimpleTestCase):
@@ -376,3 +385,361 @@ class StatsTests(SimpleTestCase):
         self.assertAlmostEqual(ST._norm_ppf(0.5), 0.0, places=4)
         self.assertAlmostEqual(ST._norm_ppf(0.975), 1.959964, places=3)
         self.assertAlmostEqual(ST._norm_ppf(0.025), -1.959964, places=3)
+
+
+class ForwardLabelTests(SimpleTestCase):
+    """
+    The forward labels must not manufacture the evidence they report.
+
+    A row near the end of a record has less future to be judged against than the
+    censoring cap, and the labels used to hand it the cap anyway, which reads as
+    "observed not to overflow for a full day" on a bin nobody watched for a full
+    day. These cases pin the distinction, and one of them pins the fact that the
+    trimmed training set is unaffected, because the published figures were
+    computed on it.
+    """
+
+    CAP = FEAT.TTO_CAP_H
+    HORIZON = FEAT.HORIZON_H
+
+    def _flat_record(self, span_h, fill=0.30, gas=0.10):
+        """A record of `span_h` hours in which nothing ever happens."""
+        hours = np.arange(0.0, float(span_h) + 1e-9, 1.0)
+        return (np.full(hours.size, float(fill)),
+                np.full(hours.size, float(gas)), hours)
+
+    def test_a_truncated_row_is_censored_at_its_own_follow_up(self):
+        waste, gas, hours = self._flat_record(29)
+        _, tto, observed = FEAT.forward_labels(waste, gas, hours)
+
+        for i, hour in enumerate(hours):
+            followup = hours[-1] - hour
+            self.assertEqual(observed[i], 0, f"row {i} claims an overflow it never saw")
+            self.assertAlmostEqual(
+                tto[i], min(self.CAP, followup), places=9,
+                msg=f"row {i} was watched for {followup:g} h but is labelled {tto[i]:g} h")
+
+    def test_a_short_record_never_claims_a_full_day_of_safety(self):
+        """A record shorter than the cap can support no censoring time at the cap."""
+        waste, gas, hours = self._flat_record(8)
+        _, tto, observed = FEAT.forward_labels(waste, gas, hours)
+        self.assertEqual(int(observed.sum()), 0)
+        self.assertLess(float(tto.max()), self.CAP,
+                        "an 8 h record produced a 24 h censoring time")
+        self.assertAlmostEqual(float(tto.max()), 8.0, places=9)
+
+    def test_an_observed_overflow_is_flagged_and_timed(self):
+        """A real crossing keeps its exact delay and is marked as an event."""
+        waste, gas, hours = self._flat_record(29)
+        waste[28] = FEAT.OVERFLOW_LEVEL
+        _, tto, observed = FEAT.forward_labels(waste, gas, hours)
+
+        self.assertEqual(observed[26], 1)
+        self.assertAlmostEqual(tto[26], 2.0, places=9)
+        self.assertEqual(observed[28], 1)
+        self.assertAlmostEqual(tto[28], 0.0, places=9)
+        # A row before the crossing but more than the cap away from it is still
+        # censored at the cap, not credited with the distant overflow.
+        self.assertEqual(observed[0], 0)
+        self.assertAlmostEqual(tto[0], self.CAP, places=9)
+
+    def test_a_full_horizon_row_keeps_the_cap_encoded_convention(self):
+        """
+        The guard on the published numbers.
+
+        Everything downstream identifies a censored row by its label sitting at
+        the cap, and the trainer keeps only rows with a full label horizon. On
+        exactly those rows the returned flag and the cap test must agree, and the
+        labels must be what they always were, or the reported censored share,
+        R^2, MAE and concordance index would move.
+        """
+        rng = np.random.default_rng(0)
+        label_horizon = max(self.HORIZON, self.CAP)
+        for trial in range(25):
+            n = int(rng.integers(80, 200))
+            # An irregular clock, because real telemetry is not on the hour.
+            hours = np.concatenate([[0.0], np.cumsum(rng.uniform(0.4, 1.8, n))[:-1]])
+            fill, waste = float(rng.uniform(0.0, 0.4)), []
+            for _ in range(n):
+                fill += float(rng.uniform(0.0, 0.09))
+                waste.append(min(1.0, fill))
+                if fill >= 1.0:
+                    fill = float(rng.uniform(0.0, 0.1))
+            waste = np.asarray(waste)
+            gas = np.clip(0.7 * waste + rng.normal(0.0, 0.05, n), 0.0, 1.0)
+
+            _, tto, observed = FEAT.forward_labels(waste, gas, hours)
+            keep = hours <= hours[-1] - label_horizon
+            if not keep.any():
+                continue
+
+            cap_says_censored = tto[keep] >= self.CAP - 1e-9
+            self.assertTrue(
+                np.array_equal(cap_says_censored, observed[keep] == 0),
+                f"trial {trial}: the cap test and the censoring flag disagree")
+            # Every kept censored row sits on the cap exactly, so no clock
+            # arithmetic can leave one a hair short and have it read as an event.
+            self.assertTrue(
+                np.all(tto[keep][cap_says_censored] == self.CAP),
+                f"trial {trial}: a kept censored row is not exactly at the cap")
+
+    def test_a_truncated_hazard_label_is_identifiable(self):
+        """
+        The hazard label is truncated too, and the docstring promises a caller
+        can spot it from the three returned arrays alone.
+        """
+        waste, gas, hours = self._flat_record(29)
+        hazard, tto, observed = FEAT.forward_labels(waste, gas, hours)
+        truncated = (hazard == 0) & (observed == 0) & (tto < self.HORIZON)
+        expected = (hours[-1] - hours) < self.HORIZON
+        self.assertTrue(np.array_equal(truncated, expected))
+
+    def test_an_empty_series_returns_three_empty_arrays(self):
+        hazard, tto, observed = FEAT.forward_labels([], [], [])
+        self.assertEqual(hazard.size, 0)
+        self.assertEqual(tto.size, 0)
+        self.assertEqual(observed.size, 0)
+
+
+class _FakeHTTPResponse:
+    """Minimal stand-in for the object `urlopen` returns."""
+
+    def __init__(self, payload: str):
+        self._payload = payload.encode("utf-8")
+
+    def read(self):
+        return self._payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+class LiveTrafficTimeTests(SimpleTestCase):
+    """
+    A route planned for a departure time must not be costed at present conditions.
+
+    The synthetic surface is a function of the clock and always was. The live
+    adapter discarded the timestamp entirely: it fetched the same URL and
+    returned the same friction whether asked about 03:00 or the morning peak. It
+    cannot forecast, because the feed it speaks to publishes only the present, so
+    the fix is to say so rather than to invent one.
+    """
+
+    LAT, LNG = 23.8069, 90.3687
+    NOW = datetime(2026, 3, 10, 3, 0, tzinfo=timezone.utc)
+    NOWCAST_URL = "https://example.test/flow?p={lat},{lng}&key={key}"
+    FORECAST_URL = "https://example.test/flow?p={lat},{lng}&at={time}&key={key}"
+
+    def setUp(self):
+        self.synthetic = TR.SyntheticTrafficProvider(seed=42)
+        self.urls = []
+
+    def _urlopen(self, request, timeout=None):
+        self.urls.append(request.full_url)
+        return _FakeHTTPResponse(json.dumps(
+            {"flowSegmentData": {"currentSpeed": 12.0, "freeFlowSpeed": 34.0}}))
+
+    def _provider(self, url, **kwargs):
+        kwargs.setdefault("cache_seconds", 0.0)
+        return TR.LiveTrafficProvider(url, api_key="SECRET", fallback=self.synthetic,
+                                      clock=lambda: self.NOW, **kwargs)
+
+    def test_the_synthetic_surface_depends_on_the_requested_time(self):
+        """
+        Guard the guard. If congestion did not vary with the clock, every case
+        below would pass without testing anything.
+        """
+        night = self.synthetic.friction(self.LAT, self.LNG, self.NOW)
+        peak = self.synthetic.friction(self.LAT, self.LNG,
+                                       self.NOW + timedelta(hours=6))
+        self.assertGreater(abs(peak - night), 0.2,
+                           "the synthetic surface is flat over the day")
+
+    def test_a_nowcast_still_answers_for_the_present(self):
+        with mock.patch("urllib.request.urlopen", self._urlopen):
+            provider = self._provider(self.NOWCAST_URL)
+            value = provider.friction(self.LAT, self.LNG, self.NOW)
+        self.assertAlmostEqual(value, TR.speed_to_friction(12.0, 34.0), places=9)
+        self.assertEqual(len(self.urls), 1)
+        self.assertEqual(provider.out_of_window_count, 0)
+
+    def test_a_nowcast_is_not_reused_for_a_future_departure(self):
+        later = self.NOW + timedelta(hours=6)
+        with mock.patch("urllib.request.urlopen", self._urlopen):
+            provider = self._provider(self.NOWCAST_URL)
+            with self.assertWarns(RuntimeWarning):
+                future = provider.friction(self.LAT, self.LNG, later)
+
+        # The feed was never asked, and the answer is the surface for that hour.
+        self.assertEqual(self.urls, [])
+        self.assertAlmostEqual(
+            future, self.synthetic.friction(self.LAT, self.LNG, later), places=9)
+        self.assertEqual(provider.out_of_window_count, 1)
+
+        described = provider.describe()
+        self.assertFalse(described["honours_requested_time"])
+        self.assertEqual(described["out_of_window_fallbacks"], 1)
+        self.assertIn("nowcast", described["time_handling"])
+
+    def test_a_nowcast_route_cost_now_varies_with_departure_time(self):
+        """The defect as the planner saw it: identical minutes at every hour."""
+        coords = [(23.7790, 90.3660), (23.8203, 90.3650)]
+        distance = np.array([[0.0, 4800.0], [4800.0, 0.0]])
+        minutes = []
+        with mock.patch("urllib.request.urlopen", self._urlopen), \
+                warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            provider = self._provider(self.NOWCAST_URL)
+            for offset in (0, 6, 12):
+                context = TR.build_travel_context(
+                    coords, distance, provider, self.NOW + timedelta(hours=offset))
+                minutes.append(context.travel_minutes(0, 1))
+        self.assertEqual(len(set(round(m, 6) for m in minutes)), 3,
+                         f"departure time made no difference: {minutes}")
+
+    def test_a_departure_time_placeholder_reaches_the_api(self):
+        with mock.patch("urllib.request.urlopen", self._urlopen):
+            provider = self._provider(self.FORECAST_URL, cache_seconds=600.0)
+            self.assertTrue(provider.supports_departure_time)
+            for offset in (0, 6, 12):
+                provider.friction(self.LAT, self.LNG,
+                                  self.NOW + timedelta(hours=offset))
+
+        self.assertEqual(len(self.urls), 3, "requests were collapsed by the cache")
+        for offset, url in zip((3, 9, 15), self.urls):
+            self.assertIn(f"at=2026-03-10T{offset:02d}:00:00Z", url)
+        self.assertEqual(provider.out_of_window_count, 0)
+        self.assertTrue(provider.describe()["honours_requested_time"])
+
+    def test_a_forecast_is_cached_per_requested_instant(self):
+        """Two instants must not share a cache entry; the same instant must."""
+        with mock.patch("urllib.request.urlopen", self._urlopen):
+            provider = self._provider(self.FORECAST_URL, cache_seconds=600.0)
+            provider.friction(self.LAT, self.LNG, self.NOW)
+            provider.friction(self.LAT, self.LNG, self.NOW)
+            provider.friction(self.LAT, self.LNG, self.NOW + timedelta(hours=6))
+        self.assertEqual(len(self.urls), 2)
+        self.assertEqual(provider.hit_count, 1)
+
+    def test_an_unreachable_feed_still_falls_back(self):
+        """The pre-existing contract: a dead upstream must not cost the planner."""
+        def broken(request, timeout=None):
+            raise OSError("connection refused")
+
+        with mock.patch("urllib.request.urlopen", broken):
+            provider = self._provider(self.NOWCAST_URL)
+            value = provider.friction(self.LAT, self.LNG, self.NOW)
+        self.assertAlmostEqual(
+            value, self.synthetic.friction(self.LAT, self.LNG, self.NOW), places=9)
+        self.assertEqual(provider.fallback_count, 1)
+        self.assertIn("OSError", provider.last_error or "")
+
+
+class EquityGuaranteeTests(SimpleTestCase):
+    """
+    The overdue tier has to survive the pricing channel, not just the ranking one.
+
+    An earlier version ordered overdue bins correctly and then priced them off
+    that same bounded ordering score, which capped the cost of skipping one at
+    ``lambda_prize * overdue_multiplier``.  A bin whose detour cost more than the
+    cap was abandoned at every wait, so the wait bound was an ordering claim with
+    no consequence for what was actually collected.  These cases pin both halves.
+    """
+
+    WEIGHTS = VRP.ObjectiveWeights()
+
+    def _task(self, wait_h, node_id=1):
+        """Build one bin through the production path, not by hand."""
+        tiered = AG.effective_priorities({node_id: 0.30}, {node_id: wait_h},
+                                         {node_id: 0.0})
+        return SC.make_tasks(
+            [node_id], {node_id: 0.5}, {node_id: tiered[node_id].score},
+            index_of={node_id: 1}, hazards={node_id: False},
+            tiers={node_id: tiered[node_id].tier},
+            overdue_pressures={node_id: tiered[node_id].pressure},
+            densities={node_id: 220.0}, capacities_l={node_id: 1100.0},
+        )[0]
+
+    def _travel(self, km):
+        return VRP.TravelModel(np.array([[0.0, km * 1000.0], [km * 1000.0, 0.0]]),
+                               default_speed_kmh=20.0)
+
+    def test_skip_penalty_grows_without_bound(self):
+        """The defect in one line: the penalty must not have a supremum."""
+        cap = self.WEIGHTS.lambda_prize * self.WEIGHTS.overdue_multiplier
+        far = VRP.skip_cost(self._task(10 ** 6), self.WEIGHTS)
+        self.assertGreater(far, 100 * cap)
+        # And it is monotone in the wait, so waiting is never rewarded.
+        costs = [VRP.skip_cost(self._task(w), self.WEIGHTS)
+                 for w in (48, 96, 240, 960)]
+        self.assertEqual(costs, sorted(costs))
+
+    def test_penalty_matches_the_old_one_at_promotion(self):
+        """
+        Continuity at tau, so the existing weight tuning still means what it did.
+
+        At w = tau the pressure w/(2 tau) and the ordering score w/(tau + w) are
+        both exactly 0.5, so the escalation changes nothing at the threshold and
+        only ever raises the penalty past it.
+        """
+        at_tau = VRP.skip_cost(self._task(AG.DEFAULT_TAU_H), self.WEIGHTS)
+        self.assertAlmostEqual(
+            at_tau,
+            0.5 * self.WEIGHTS.lambda_prize * self.WEIGHTS.overdue_multiplier,
+            places=9)
+
+    def test_a_remote_overdue_bin_is_eventually_served(self):
+        """
+        The property the guarantee actually claims, measured end to end.
+
+        A bin 40 km out costs about 218 to insert, comfortably past the old 180
+        cap, so before the fix it was skipped at a wait of a million hours.  It
+        must now be collected, and by the hour the bound predicts.
+        """
+        travel, vehicle = self._travel(40.0), VRP.VehicleSpec(
+            vehicle_id=0, depot_index=0, shift_minutes=1200.0)
+        cost = VRP.route_cost(
+            VRP.evaluate_route([self._task(AG.DEFAULT_TAU_H)], vehicle, travel),
+            self.WEIGHTS)
+        predicted = AG.worst_case_wait_bound(
+            tau_h=AG.DEFAULT_TAU_H, cycle_h=12.0, max_overdue=1,
+            served_overdue_per_cycle=1, max_insertion_cost=cost,
+            lambda_prize=self.WEIGHTS.lambda_prize,
+            overdue_multiplier=self.WEIGHTS.overdue_multiplier)
+
+        served_at = None
+        for wait in range(48, 1201, 12):
+            plan = VRP.solve([self._task(wait)], [vehicle], travel, self.WEIGHTS,
+                             time_budget_s=0.4)
+            if any(r.stops for r in plan.routes):
+                served_at = wait
+                break
+        self.assertIsNotNone(served_at, "remote overdue bin was never served")
+        self.assertLessEqual(served_at, predicted + 1e-9)
+
+    def test_bound_is_tighter_than_the_retired_form(self):
+        """
+        The retired bound was true but loose by tau + Delta - Delta*ceil(tau/Delta).
+
+        At the defaults that is 12 h, which is exactly the gap between the 60.0 h
+        the old formula stated and the 48.0 h the rollout actually attained.
+        """
+        tight = AG.worst_case_wait_bound(tau_h=48.0, cycle_h=12.0,
+                                         max_overdue=1, served_overdue_per_cycle=1)
+        retired = 48.0 + 12.0 * 1
+        self.assertAlmostEqual(tight, 48.0, places=9)
+        self.assertAlmostEqual(retired - tight, 12.0, places=9)
+
+    def test_bound_reports_no_guarantee_when_the_fleet_cannot_keep_up(self):
+        self.assertEqual(
+            AG.worst_case_wait_bound(served_overdue_per_cycle=0), math.inf)
+
+    def test_pressure_is_zero_until_a_bin_is_overdue(self):
+        """A bin inside its deadline is priced on urgency alone, as before."""
+        tiered = AG.effective_priorities({1: 0.3}, {1: AG.DEFAULT_TAU_H - 1.0},
+                                         {1: 0.0})
+        self.assertEqual(tiered[1].tier, AG.TIER_NORMAL)
+        self.assertEqual(tiered[1].pressure, 0.0)

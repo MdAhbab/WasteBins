@@ -295,6 +295,13 @@ FLEET_DEFAULTS = {
 # Traffic provider.  "synthetic" is a deterministic, reproducible congestion
 # surface; "live" activates the HTTP adapter (requires TRAFFIC_API_URL/KEY) and
 # transparently falls back to synthetic when the feed is unreachable.
+#
+# A real-time flow feed measures the present and cannot be asked about a future
+# departure time, so the live adapter only uses its readings for instants within
+# TRAFFIC_LIVE_VALIDITY_H of the wall clock and falls back to the synthetic
+# surface beyond that.  If the endpoint does accept a departure time, put a
+# "{time}" (ISO 8601 UTC) or "{epoch}" (Unix seconds) placeholder in
+# TRAFFIC_API_URL and the requested instant is sent to it instead.
 # ---------------------------------------------------------------------------
 TRAFFIC = {
     "PROVIDER": env("TRAFFIC_PROVIDER", "synthetic"),
@@ -304,6 +311,7 @@ TRAFFIC = {
     "TIMEOUT_SECONDS": env_float("TRAFFIC_TIMEOUT_S", 3.0),
     "FREEFLOW_SPEED_KMH": env_float("TRAFFIC_FREEFLOW_KMH", 34.0),
     "MIN_SPEED_KMH": env_float("TRAFFIC_MIN_KMH", 5.0),
+    "LIVE_VALIDITY_H": env_float("TRAFFIC_LIVE_VALIDITY_H", 0.5),
 }
 
 

@@ -51,6 +51,7 @@ def make_tasks(node_ids: Sequence[int],
                index_of: Optional[Dict[int, int]] = None,
                hazards: Optional[Dict[int, bool]] = None,
                tiers: Optional[Dict[int, int]] = None,
+               overdue_pressures: Optional[Dict[int, float]] = None,
                tto_hours: Optional[Dict[int, float]] = None,
                streams: Optional[Dict[int, str]] = None,
                capacities_l: Optional[Dict[int, float]] = None,
@@ -62,6 +63,7 @@ def make_tasks(node_ids: Sequence[int],
     index_of = index_of or {nid: i for i, nid in enumerate(node_ids)}
     hazards = hazards or {}
     tiers = tiers or {}
+    overdue_pressures = overdue_pressures or {}
     tto_hours = tto_hours or {}
     streams = streams or {}
     capacities_l = capacities_l or {}
@@ -87,6 +89,7 @@ def make_tasks(node_ids: Sequence[int],
             hazard=bool(hazards.get(nid, False)),
             tier=int(tiers.get(nid, aging.TIER_HAZARD if hazards.get(nid)
                                else aging.TIER_NORMAL)),
+            overdue_pressure=float(overdue_pressures.get(nid, 0.0)),
             time_to_overflow_h=float(tto_hours.get(nid, float("inf"))),
             density_kg_per_m3=float(densities.get(nid, 220.0)),
         ))

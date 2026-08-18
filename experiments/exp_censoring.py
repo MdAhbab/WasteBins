@@ -52,10 +52,16 @@ Run:  python exp_censoring.py
 from __future__ import annotations
 
 import os
+import pathlib
 import sys
 
-sys.path.insert(0, r"C:\Users\ahbab\Downloads\Micro Paper\WasteBins\waste_manager")
-sys.path.insert(0, r"C:\Users\ahbab\Downloads\Micro Paper\WasteBins")
+# Resolve the repository from this file's own location.  These two lines used to
+# carry absolute paths from one developer's machine, which meant the script ran
+# nowhere else and the reproducibility claim the paper makes was false for every
+# other reader.
+_ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_ROOT / "waste_manager"))
+sys.path.insert(0, str(_ROOT))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "waste_manager.settings")
 
 import django  # noqa: E402
