@@ -511,12 +511,17 @@ def ortools_solver(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
                                           int(min(t.window_end_min, horizon)))
 
     # --- optional visits with the prize penalty -------------------------
+    # The penalty handed to the solver has to be the one the plan is scored
+    # against, or the comparison is unfair in a way that flatters us.  This block
+    # used to rebuild the penalty by hand and omitted the overdue branch, so for
+    # an overdue bin the objective charged `lambda * mu * w/(2 tau)`, which is at
+    # least four times the prize and unbounded in the wait, while OR-Tools was
+    # told the penalty was `lambda * prize`.  Re-scoring the decoded routes with
+    # the exact evaluator kept the reported numbers honest but left the baseline
+    # optimising a materially weaker objective than the one it was judged on.
+    # `skip_cost` is the single definition, so it is what gets used here.
     for k, t in enumerate(task_list, start=1):
-        penalty = weights.lambda_prize * max(0.0, t.prize)
-        if t.hazard or t.tier == 0:
-            penalty *= weights.hazard_multiplier
-        if math.isfinite(t.time_to_overflow_h):
-            penalty += weights.missed_overflow_penalty
+        penalty = vrp.skip_cost(t, weights)
         routing.AddDisjunction([manager.NodeToIndex(k)], int(round(penalty * SCALE)))
 
     params = pywrapcp.DefaultRoutingSearchParameters()

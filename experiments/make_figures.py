@@ -109,20 +109,23 @@ def fig_routing():
     pols = [("A_static_full", "Static\nsweep"), ("B_threshold", "Threshold"),
             ("C_priority_warped_a1", "Warped\ngreedy"),
             ("D_priority_plus_localsearch", "Warped\n+ 2-opt"),
-            ("E_orienteering_65pct_budget", "Orient.\n(proposed)")]
+            ("E_orienteering_65pct_budget", "Orienteering")]
+    # Distance only.  This study carries a single flat emissions factor of
+    # 1.05 kg per km, so its CO2 series is the distance series times a constant
+    # and adds nothing the distance bars do not already show.  Plotting it would
+    # also put on the page exactly the kind of flat per-kilometre factor the
+    # paper spends a section arguing against.  The orienteering policy is
+    # labelled plainly rather than "proposed", because this panel is not
+    # comparable with the main comparison and that label invites the comparison.
     d = [r[k]["distance_km"] for k, _ in pols]
-    co2 = [r[k]["co2_kg"] for k, _ in pols]
     x = np.arange(len(pols))
-    ax2.bar(x - 0.2, d, 0.4, label="Distance (km)", color=BLUE)
-    ax2.bar(x + 0.2, co2, 0.4, label="CO$_2$ (kg)", color=GREEN)
+    ax2.bar(x, d, 0.55, color=BLUE)
     for i, v in enumerate(d):
-        ax2.text(i - 0.2, v + 0.5, f"{v:.1f}", ha="center", fontsize=9)
-    for i, v in enumerate(co2):
-        ax2.text(i + 0.2, v + 0.5, f"{v:.1f}", ha="center", fontsize=9)
+        ax2.text(i, v + 0.5, f"{v:.1f}", ha="center", fontsize=9)
     ax2.set_ylim(0, 37)
+    ax2.set_ylabel("Distance (km)")
     ax2.set_xticks(x); ax2.set_xticklabels([l for _, l in pols], fontsize=9)
-    ax2.set_title("Distance and CO$_2$ by routing policy")
-    ax2.legend(loc="upper right")
+    ax2.set_title("Distance by routing policy, this study only")
     fig.savefig(FIG / "fig_routing.png"); plt.close(fig)
 
 
