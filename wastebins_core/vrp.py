@@ -140,6 +140,20 @@ class BinTask:
     # point.  See `skip_cost` for why the two cannot be the same number.  Zero
     # means the caller supplied no wait, and pricing falls back to the prize.
     overdue_pressure: float = 0.0
+    # The head of the overdue queue, which the planner may not decline.
+    #
+    # Every other bin is governed by a price, and a price is a preference: the
+    # search weighs it against travel and drops the bin when the arithmetic
+    # says so. That is correct for all of them and fatal for one. Measured on
+    # the rollout, one bin was passed over for forty consecutive cycles, 480 h,
+    # while the fleet cleared other overdue bins every cycle. No price fixes
+    # that, because the bin loses the arithmetic every time it is evaluated.
+    #
+    # `skip_cost` charges a mandatory bin a cost no route can outweigh, which
+    # turns serving it into a constraint the search optimises around rather than
+    # a preference it can trade away. See `reserve_overdue_head` for the repair
+    # that catches the case where it is dropped anyway.
+    mandatory: bool = False
     time_to_overflow_h: float = math.inf
     # Loose density of this bin's contents, in kilograms per cubic metre, used to
     # convert the collected mass into the volume it occupies in the body.  Zero
@@ -476,6 +490,13 @@ def skip_cost(task: BinTask, weights: ObjectiveWeights) -> float:
     construction and only recovered if the local search happened to have budget
     left over to reinsert it.
     """
+    # A mandatory bin is the head of the overdue queue. Charging it a finite
+    # price, however large, still lets a large enough detour outweigh it, and
+    # "large enough" is exactly the situation that starved a bin for 480 h. The
+    # figure below cannot be outweighed by any route this problem admits, and it
+    # stays finite so that objective arithmetic does not produce NaN.
+    if task.mandatory:
+        return MANDATORY_SKIP_COST
     if task.hazard or task.tier == TIER_HAZARD:
         penalty = (weights.lambda_prize * max(0.0, _finite(task.prize))
                    * weights.hazard_multiplier)
@@ -959,6 +980,119 @@ RUIN_PATIENCE = 30
 RUIN_FRACTIONS = (0.15, 0.25, 0.40, 0.25)
 
 
+#: What the planner is charged for declining the head of the overdue queue.
+#: Large enough that no route in this problem can outweigh it, finite so that
+#: sums and differences of objectives stay numbers.
+MANDATORY_SKIP_COST = 1e9
+
+
+def mark_overdue_head(tasks: Sequence[BinTask]) -> Optional[BinTask]:
+    """
+    Mark the longest-waiting promoted bin as mandatory, and return it.
+
+    `overdue_pressure` is `wait/(2 tau)` for a promoted bin and zero otherwise,
+    so a positive value is the promotion test and its magnitude is the wait.
+    Selection ignores the tier on purpose: a bin that is both hazardous and
+    overdue is filed under the hazard tier, and keying on the tier would skip
+    exactly the bins that are most overdue.
+    """
+    promoted = [t for t in tasks if _finite(t.overdue_pressure) > 0.0]
+    if not promoted:
+        return None
+    head = max(promoted, key=lambda t: _finite(t.overdue_pressure))
+    head.mandatory = True
+    return head
+
+
+def reserve_overdue_head(orders: Dict[int, List[BinTask]],
+                         unserved: List[BinTask],
+                         by_id: Dict[int, VehicleSpec],
+                         travel: TravelModel,
+                         weights: ObjectiveWeights
+                         ) -> Tuple[Dict[int, List[BinTask]], List[BinTask]]:
+    """
+    Serve the oldest overdue bin, ejecting whatever is needed to make room.
+
+    The wait bound needs the overdue tier served oldest first.  Construction
+    enforces that, and the descent that follows does not: every move the descent
+    makes is judged on the objective, and an objective is a preference rather
+    than a constraint.  Measured on the rollout, a younger overdue bin was served
+    ahead of an older one in 20 percent of contested cycles, and a bin reached
+    180 h against a bound of 144 h.  Pricing is not the defect.  The escalating
+    skip price does buy service: the farthest bin in the instance is collected at
+    every wait from 48 h upward while 32 others compete for the same shift.  What
+    fails is that nothing obliges the planner to take the *oldest* one.
+
+    So this makes the head of the tier a constraint.  The oldest overdue bin is
+    placed first and the rest of that vehicle's round is rebuilt around it, each
+    bin re-inserted at its cheapest feasible position and dropped when it no
+    longer fits.  The vehicle chosen is the one whose rebuilt round costs least.
+
+    A bin that no vehicle can serve even alone is left where it is.  No dispatch
+    rule can collect it, and assumption (A2) of the bound excludes it already;
+    forcing the issue here would only produce an infeasible plan.
+
+    The objective this gives up is the price of the guarantee, and it is measured
+    rather than assumed: `solve(..., reserve_overdue=False)` is the same planner
+    without the rule.
+    """
+    # Selection is on the wait, not on the tier, and the difference is not
+    # cosmetic.  A bin that is both hazardous and overdue is assigned
+    # `TIER_HAZARD` by `aging.effective_priorities`, so filtering on
+    # `TIER_OVERDUE` silently drops exactly the bins that are most overdue and
+    # most urgent.  That defect left the head of the queue unserved in 1 of 96
+    # contested cycles here, which is one more than a guarantee permits.
+    # `overdue_pressure` is `wait/(2 tau)` for a promoted bin and zero for every
+    # other, so a positive value *is* the promotion test, and it is strictly
+    # increasing in the wait.
+    promoted = [t for order in orders.values() for t in order
+                if _finite(t.overdue_pressure) > 0.0]
+    promoted += [t for t in unserved if _finite(t.overdue_pressure) > 0.0]
+    if not promoted:
+        return orders, unserved
+
+    oldest = max(promoted, key=lambda t: _finite(t.overdue_pressure))
+    if any(t is oldest for order in orders.values() for t in order):
+        return orders, unserved                      # already at the front
+
+    best: Optional[Tuple[float, int, List[BinTask], List[BinTask]]] = None
+    for vid, order in orders.items():
+        vehicle = by_id[vid]
+        if not vehicle.accepts(oldest.stream):
+            continue
+        if evaluate_route([oldest], vehicle, travel) is None:
+            continue                                 # (A2): unservable even alone
+
+        kept: List[BinTask] = [oldest]
+        base = route_cost(evaluate_route(kept, vehicle, travel), weights)
+        dropped: List[BinTask] = []
+        for task in order:
+            spot = _best_insertion(task, kept, vehicle, travel, weights, base)
+            if spot is None:
+                dropped.append(task)
+                continue
+            delta, pos = spot
+            kept = kept[:pos] + [task] + kept[pos:]
+            base += delta
+
+        # Score the whole change, not just this vehicle: the bins dropped here
+        # become unserved and are charged for it.
+        cost = base + sum(skip_cost(t, weights) for t in dropped)
+        previous = evaluate_route(order, vehicle, travel) if order else None
+        cost -= route_cost(previous, weights) if previous is not None else 0.0
+        cost -= skip_cost(oldest, weights)
+        if best is None or cost < best[0]:
+            best = (cost, vid, kept, dropped)
+
+    if best is None:
+        return orders, unserved
+
+    _cost, vid, kept, dropped = best
+    orders = {k: (list(kept) if k == vid else list(v)) for k, v in orders.items()}
+    unserved = [t for t in unserved if t is not oldest] + dropped
+    return orders, unserved
+
+
 def _objective_now(orders: Dict[int, List[BinTask]], unserved: Sequence[BinTask],
                    by_id: Dict[int, VehicleSpec], travel: TravelModel,
                    weights: ObjectiveWeights) -> float:
@@ -976,7 +1110,8 @@ def _objective_now(orders: Dict[int, List[BinTask]], unserved: Sequence[BinTask]
 def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
           travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
           improve: bool = True, time_budget_s: float = 6.0,
-          algorithm: str = "regret2_ls") -> FleetPlan:
+          algorithm: str = "regret2_ls",
+          reserve_overdue: bool = True) -> FleetPlan:
     """
     Construct, then improve, then report a fully evaluated fleet plan.
 
@@ -996,6 +1131,11 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     deadline = started + max(0.1, time_budget_s)
     by_id = {v.vehicle_id: v for v in vehicles}
 
+    # Mark the head before anything looks at the tasks, so construction, the
+    # descent and the ruin-and-recreate all price it the same way. Marking it
+    # afterwards would leave the search free to discard it and leave the repair
+    # to rebuild a round the search never evaluated.
+    head = mark_overdue_head(tasks) if reserve_overdue else None
     orders, unserved = construct_regret2(tasks, vehicles, travel, weights)
     if improve:
         def descend(current_orders, current_unserved):
@@ -1073,6 +1213,14 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
 
         orders, unserved = best_orders, best_unserved
 
+    # The descent optimises the objective and does not consult the tier, so it
+    # can and does take the oldest overdue bin back out of the plan it was
+    # constructed into.  Restoring it here is what makes the wait bound a
+    # guarantee rather than a tendency; see `reserve_overdue_head`.
+    if reserve_overdue:
+        orders, unserved = reserve_overdue_head(orders, unserved, by_id,
+                                                travel, weights)
+
     routes: List[VehicleRoute] = []
     for vid, order in orders.items():
         if not order:
@@ -1093,6 +1241,13 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
                 unserved.extend(t for t in order if t not in unserved)
                 continue
         routes.append(evaluated)
+
+    # The mark belongs to this call. Leaving it set would make the bin
+    # mandatory in every later plan built from the same task objects, and would
+    # put MANDATORY_SKIP_COST into the reported objective if it were still
+    # unserved, which would corrupt every comparison that reads it.
+    if head is not None:
+        head.mandatory = False
 
     objective = plan_objective(routes, unserved, weights)
     plan = FleetPlan(

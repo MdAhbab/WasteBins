@@ -37,7 +37,7 @@ import json
 import pathlib
 import sys
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
@@ -408,7 +408,8 @@ def worst_insertion_cost(state: Dict, travel, fleet, weights) -> float:
 def equity_rollout(snapshots: List[Dict], time_budget_s: float,
                    cycle_h: float = 12.0, n_cycles: int = 40,
                    burn_in: int = 8, shift_minutes: float = 240.0,
-                   tau_h: float = AG.DEFAULT_TAU_H) -> Dict:
+                   tau_h: float = AG.DEFAULT_TAU_H,
+                   gammas: Optional[Sequence[float]] = None) -> Dict:
     """
     Does the certified wait bound actually hold when the policy generates the waits?
 
@@ -456,7 +457,7 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
     weights = VRP.ObjectiveWeights()
     rows = []
 
-    for gamma in (0.55, 0.70, 0.85):
+    for gamma in (gammas if gammas else (0.55, 0.70, 0.85)):
         observed_max, breaches, total_obs = 0.0, 0, 0
         zero_clear_cycles = 0
         worst_backlog, worst_bound = 0, 0.0
@@ -916,6 +917,16 @@ def main() -> None:
                              "the wait-bound rollout needs so its replicates are "
                              "different networks rather than one network seen "
                              "repeatedly")
+    parser.add_argument("--rollout-tau", default="both",
+                        choices=["both", "default", "low"],
+                        help="which deadline the rollout runs: the deployed "
+                             "48 h, the lowered 12 h that forces a multi-cycle "
+                             "backlog, or both. Splitting lets the two halves "
+                             "run at once.")
+    parser.add_argument("--rollout-gamma", type=float, nargs="+", default=None,
+                        help="equity weights for the rollout, default all "
+                             "three. Each is independent of the others, so "
+                             "they can be run as separate jobs and merged.")
     parser.add_argument("--rollout-budget", type=float, default=None,
                         help="search budget inside the equity rollout, which "
                              "runs thousands of solves and does not need the "
@@ -999,10 +1010,21 @@ def main() -> None:
     # the shift, because a shift shorter than a bin's window start makes that bin
     # unservable by any policy and turns an infeasible instance into what looks
     # like a starvation result.
+    # The rollout is six independent units: two deadlines by three equity
+    # weights, sharing nothing but the snapshots.  Run whole it is the longest
+    # job in the study by a factor of two, and it was the reason the last full
+    # regeneration took an evening.  `--rollout-tau` and `--rollout-gamma` cut
+    # it into pieces that run at once; `merge_rollouts.py` puts them back
+    # together.  Passing neither runs all six, as before.
     rollout = rollout_multi = None
     if 'equity' in stages:
-        rollout = equity_rollout(snapshots, rollout_budget)
-        rollout_multi = equity_rollout(snapshots, rollout_budget, tau_h=12.0)
+        if args.rollout_tau in ("both", "default"):
+            rollout = equity_rollout(snapshots, rollout_budget,
+                                     gammas=args.rollout_gamma)
+        if args.rollout_tau in ("both", "low"):
+            rollout_multi = equity_rollout(snapshots, rollout_budget,
+                                           tau_h=12.0,
+                                           gammas=args.rollout_gamma)
     if rollout is not None:
         print(f"\nDoes the certified wait bound hold when the policy generates the waits?")
         print(f"  {rollout['n_networks']} networks x {rollout['n_cycles']} cycles of "

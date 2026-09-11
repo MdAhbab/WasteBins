@@ -61,9 +61,21 @@ WHEN = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
 CONSTANT_DETOUR = 1.30
 
 
+#: Shortest-path matrices, keyed by the stops they were built for.
+#:
+#: This experiment holds the container set fixed and varies only their state, so
+#: every snapshot asks for the same matrix: 161 Dijkstra searches over a graph of
+#: 134,437 nodes, repeated 25 times for an identical answer. That was most of the
+#: run time. `exp_fleet` already caches this; only this script did not.
+_MATRIX_CACHE: Dict[tuple, tuple] = {}
+
+
 def travel_models(coords, net):
     """A street-graph model and a constant-factor model over the same stops."""
-    road, freeflow, _snap = net.matrices(coords)
+    key = tuple(coords)
+    if key not in _MATRIX_CACHE:
+        _MATRIX_CACHE[key] = net.matrices(coords)
+    road, freeflow, _snap = _MATRIX_CACHE[key]
     approx = dist_matrix(coords, detour_factor=CONSTANT_DETOUR)
     provider = TR.SyntheticTrafficProvider(seed=EF.SEED)
     road_model = VRP.TravelModel(
