@@ -108,7 +108,8 @@ _MATRIX_CACHE: Dict[int, object] = {}
 
 
 def set_study(name: str, n_bins: Optional[int] = None,
-              n_vehicles: Optional[int] = None) -> Dict:
+              n_vehicles: Optional[int] = None,
+              resample: Optional[bool] = None) -> Dict:
     """Select the study area, optionally overriding the instance size."""
     global STUDY
     if name not in STUDIES:
@@ -119,6 +120,8 @@ def set_study(name: str, n_bins: Optional[int] = None,
         STUDY["n_bins"] = int(n_bins)
     if n_vehicles is not None:
         STUDY["n_vehicles"] = int(n_vehicles)
+    if resample is not None:
+        STUDY["resample_per_snapshot"] = bool(resample)
     _MATRIX_CACHE.clear()
     return STUDY
 
@@ -145,25 +148,34 @@ def depot_coord() -> "tuple":
 _NETWORK_CACHE: Dict[tuple, "pd.DataFrame"] = {}
 
 
-def dhaka_network():
+def dhaka_network(variant: int = 0):
     """
-    The container set for a Dhaka study, drawn once and reused.
+    The container set for a Dhaka study, drawn from the mapped positions.
 
-    A dispatch snapshot is the same city at a different moment, so the
-    containers do not move between snapshots.  Fixing the set is both the
-    realistic choice and the fast one: the shortest-path matrix is then computed
-    once for the whole study instead of once per snapshot.
+    Two experiments want different things from this, and conflating them would
+    weaken one of them.
 
-    When the study asks for fewer containers than the map records, a seeded
-    sample without replacement is taken.  Sampling before looking at any outcome
+    The routing comparison wants one network observed at several moments. A
+    dispatch snapshot is the same city at a different time, so the containers do
+    not move between snapshots, and every snapshot shares ``variant=0``.  That is
+    the realistic choice and also the fast one, because the shortest-path matrix
+    is then computed once for the whole study.
+
+    The wait-bound rollout wants the opposite. It asks whether the bound holds on
+    a network, so repeating it on one geometry eight times measures one geometry
+    eight times.  Studies that set ``resample_per_snapshot`` draw a fresh subset
+    per snapshot, which costs a matrix build each but gives the claim the
+    independent replicates it needs.
+
+    Either way the draw is seeded and made before any outcome is looked at, which
     is what stops the set being the convenient one.
     """
-    key = (STUDY["area"], STUDY["n_bins"])
+    key = (STUDY["area"], STUDY["n_bins"], int(variant))
     if key not in _NETWORK_CACHE:
         frame = DC.containers()
         wanted = int(STUDY["n_bins"])
         if wanted < len(frame):
-            frame = frame.sample(n=wanted, random_state=SEED)
+            frame = frame.sample(n=wanted, random_state=SEED + 1000 * int(variant))
         _NETWORK_CACHE[key] = frame.reset_index(drop=True)
     return _NETWORK_CACHE[key]
 
@@ -199,7 +211,7 @@ def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
     if STUDY["area"] == "wyndham":
         return _wyndham_snapshot(rng, index)
 
-    network = dhaka_network()
+    network = dhaka_network(index if STUDY.get("resample_per_snapshot") else 0)
     coords = [depot_coord()]
     node_ids: List[int] = []
     index_of = {}
@@ -899,13 +911,19 @@ def main() -> None:
     parser.add_argument("--only", default="all",
                         choices=["all", "comparison", "sensitivity", "equity"],
                         help="run one stage instead of all three")
+    parser.add_argument("--resample", action="store_true",
+                        help="draw a fresh container subset per snapshot, which "
+                             "the wait-bound rollout needs so its replicates are "
+                             "different networks rather than one network seen "
+                             "repeatedly")
     parser.add_argument("--rollout-budget", type=float, default=None,
                         help="search budget inside the equity rollout, which "
                              "runs thousands of solves and does not need the "
                              "budget the benchmark comparison uses")
     args = parser.parse_args()
 
-    set_study(args.study, n_bins=args.bins, n_vehicles=args.vehicles)
+    set_study(args.study, n_bins=args.bins, n_vehicles=args.vehicles,
+              resample=args.resample or None)
     stages = {"comparison", "sensitivity", "equity"} if args.only == "all" else {args.only}
 
     n_snapshots = 6 if args.quick else args.snapshots

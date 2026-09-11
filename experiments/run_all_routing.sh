@@ -33,8 +33,10 @@ step --study dhaka_gc --only comparison --snapshots 25 --budget 3.0
 #    several thousand rollout solves are affordable.
 step --study dhaka --bins 60 --vehicles 4 --only sensitivity --snapshots 25 \
      --budget 2.0 --out fleet_dhaka_equity.json
+# --resample gives the rollout eight different container subsets rather than one
+# network observed eight times, so its replicates are independent.
 step --study dhaka --bins 60 --vehicles 4 --only equity --snapshots 25 \
-     --budget 2.0 --rollout-budget 1.0 --out fleet_dhaka_equity.json
+     --budget 2.0 --rollout-budget 1.0 --resample --out fleet_dhaka_equity.json
 
 # 5. Street-graph measurements and the scalability curve.
 echo "=== exp_network ===" | tee -a "$LOG"
