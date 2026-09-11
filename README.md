@@ -1,16 +1,22 @@
-# Adaptive Priority-Weighted Dynamic Routing for IoT-Based Smart Waste Management
+# No Container Waits Forever
 
-Research prototype and reproduction package for the accompanying manuscript. The
-system ingests bin telemetry, judges whether that telemetry can be trusted,
-forecasts which bins will overflow, and plans a multi-vehicle collection route
-under real operating constraints — with every dispatch decision explainable and
-recorded in a tamper-evident log.
+Research prototype and reproduction package for *No Container Waits Forever:
+Bounded Service Waits for Sensor-Driven Collection Fleets on Street Networks*.
 
-**Status:** research prototype. All results below are reproducible from this
-repository with the commands in [Reproducing the results](#reproducing-the-results).
-Data is simulated plus public device telemetry; there has been no field
-deployment. See [Limitations](#limitations), which is not a formality — read it
-before quoting any number.
+The system ingests container telemetry, judges whether that telemetry can be
+trusted, forecasts which containers will overflow, and plans a multi-vehicle
+collection round on a real street graph under real operating constraints. Its
+main claim is a worst-case waiting time that an operator can compute in advance
+and that no container exceeds.
+
+**Status:** research prototype. Every result below regenerates from this
+repository with the commands in
+[Reproducing the results](#reproducing-the-results).
+
+Container positions are real in both study areas and the street graphs are real.
+Demand is observed in Wyndham and simulated in Dhaka, which has no published fill
+data. There has been no field deployment. See [Limitations](#limitations), which
+is not a formality: read it before quoting any number.
 
 ---
 
@@ -31,7 +37,7 @@ before quoting any number.
 
 ## What this is
 
-Five capabilities, each implemented in a framework-independent module that both
+Six capabilities, each implemented in a framework-independent module that both
 the web service and the experiment scripts import — so the code that produces
 the published numbers is the code that ships:
 
@@ -48,12 +54,22 @@ until overflow and the probability of a hazard within six hours, from labels
 derived strictly from each bin's *future* trajectory. Quantile heads give a
 P10–P90 interval; the hazard head is isotonically calibrated on purged folds.
 
+**Real street networks, not a detour factor.** Distances are shortest paths on
+the drivable OpenStreetMap graph, so one-way restrictions apply and the matrix is
+asymmetric. Each leg carries its own uncongested speed, taken from the arcs its
+shortest path uses. Two study areas are compiled and committed: Dhaka, at 134,437
+nodes and 272,725 arcs, and Wyndham, at 44,180 and 77,543. Container positions
+are real too: 431 waste facilities OpenStreetMap records for Dhaka, with a mapped
+transfer station as the depot, and the 33 Wyndham City Council publishes with
+three years of daily fill readings.
+
 **Multi-vehicle routing under real constraints.** Prize-collecting CVRPTW:
 capacity with on-board compaction, depot return including mid-shift tipping,
-hard shift limits, per-bin service time windows, and waste-stream licensing per
-vehicle. Compared against genetic (Prins route-first-cluster-second), Max–Min
-Ant System, a risk-penalised graph heuristic, and OR-Tools guided local search —
-all scored on one shared objective.
+hard shift limits, per-container service time windows, and waste-stream licensing
+per vehicle. Compared against a genetic algorithm (Prins
+route-first-cluster-second), Max-Min Ant System, a priority-warped graph
+heuristic, OR-Tools guided local search, a static sweep and a fill threshold, all
+scored on one shared objective.
 
 **Differentiated emissions.** A modal model rather than a flat factor: tractive
 power against rolling and aerodynamic resistance, a Positive Kinetic Energy
