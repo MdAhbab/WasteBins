@@ -1,0 +1,84 @@
+{
+  "protocol": {
+    "n_snapshots": 25,
+    "n_bins": 60,
+    "n_vehicles": 4,
+    "study": "dhaka",
+    "area": "dhaka",
+    "distance_model": "road",
+    "seed": 42,
+    "search_budget_s": 2.0,
+    "pairing": "every policy evaluated on the identical snapshots",
+    "statistics": {
+      "intervals": "BCa bootstrap, 10,000 resamples, 95% confidence",
+      "significance": "Wilcoxon signed-rank on paired snapshots; exact sign permutation for small samples",
+      "effect_size": "Cliff's delta (non-parametric) and paired Cohen's d",
+      "multiple_comparisons": "Holm-Bonferroni across baselines",
+      "pairing": "every policy is evaluated on the identical set of scenario snapshots, so all comparisons are within-snapshot",
+      "rationale": "the per-snapshot differences are skewed and heavy-tailed, so normal-theory intervals and t-tests would misstate both the interval width and the p-value"
+    },
+    "stage_history": [
+      {
+        "stages": [
+          "equity"
+        ],
+        "utc": "2026-09-11T18:38:30Z"
+      }
+    ],
+    "road_network": {
+      "area": "dhaka",
+      "nodes": 134437,
+      "arcs": 272725,
+      "fingerprint": "d83c3a7c883b023a",
+      "meta": {
+        "region": "dhaka",
+        "bbox": [
+          23.705,
+          90.315,
+          23.915,
+          90.465
+        ],
+        "fetched_utc": "2026-09-11T09:56:55Z",
+        "overpass_query": "[out:json][timeout:300];way(23.705,90.315,23.915,90.465)[\"highway\"~\"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$\"];out body geom;",
+        "ways_parsed": 25379,
+        "nodes_raw": 137210,
+        "arcs_raw": 277724,
+        "strong_components": 623,
+        "nodes_kept": 134437,
+        "arcs_kept": 272725,
+        "speed_scale": 0.68,
+        "tagged_maxspeed_share": 0.042436660230899564
+      }
+    }
+  },
+  "comparison": null,
+  "sensitivity": null,
+  "equity_bound_rollout": {
+    "cycle_h": 12.0,
+    "n_cycles": 40,
+    "burn_in_cycles": 8,
+    "n_networks": 8,
+    "shift_minutes": 240.0,
+    "tau_h": 48.0,
+    "fleet": "1 vehicle, 240-minute shift, licensed for every stream present -- scarce in time and capacity so bins are genuinely deferred, but not in licence, which would make some bins unservable rather than deferred",
+    "initial_waits": "all zero; every wait measured is one the policy produced",
+    "sweep": [
+      {
+        "guaranteed_clearing_rate": 1,
+        "realised_clearing_rate": 1,
+        "gamma": 0.7,
+        "max_overdue_backlog_seen": 9,
+        "max_cycles_to_clear": 9,
+        "multi_cycle_observations": 118,
+        "bound_at_worst_backlog_h": 144.0,
+        "observed_max_wait_h": 120.0,
+        "breaches": 0,
+        "observations": 256,
+        "cycles_with_no_overdue_cleared": 0,
+        "holds": true
+      }
+    ]
+  },
+  "equity_bound_rollout_multicycle": null,
+  "runtime_s": 2092.7
+}
