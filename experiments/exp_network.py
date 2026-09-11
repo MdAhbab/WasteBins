@@ -86,6 +86,7 @@ def analyse(study: str, n_snapshots: int = 25) -> Dict:
     snap_m: List[float] = []
     short_pairs: List[Dict] = []
     freeflow: List[np.ndarray] = []
+    longest: List[Dict] = []
 
     for snapshot in snapshots:
         coords = snapshot["coords"]
@@ -101,6 +102,19 @@ def analyse(study: str, n_snapshots: int = 25) -> Dict:
         snap_m.append(float(snapped.max()))
         short_pairs.append(net.short_pair_detour(coords, road))
         freeflow.append(ff[off])
+
+        # The wait bound reads the largest marginal insertion cost, which is a
+        # single leg-derived quantity rather than an average. What the constant
+        # factor does to the longest leg is therefore the number that reaches
+        # the guarantee, and it is recorded separately because a mean error near
+        # zero says nothing about it.
+        road_off, approx_off = road[off], approx[off]
+        k = int(np.argmax(road_off))
+        longest.append({
+            "road_m": float(road_off[k]),
+            "constant_m": float(approx_off[k]),
+            "relative_error": float((approx_off[k] - road_off[k]) / road_off[k]),
+        })
 
     circuity_all = np.concatenate(circuity)
     rel_all = np.concatenate(rel_error)
@@ -144,6 +158,15 @@ def analyse(study: str, n_snapshots: int = 25) -> Dict:
             "max_road_m": float(max([sp["max_road_m"] for sp in short_pairs
                                      if sp.get("pairs")])) if pairs_total else None,
         },
+        "longest_leg": {
+            "road_km": float(np.mean([r["road_m"] for r in longest]) / 1000.0),
+            "constant_km": float(np.mean([r["constant_m"] for r in longest]) / 1000.0),
+            "relative_error": float(np.mean([r["relative_error"] for r in longest])),
+            "worst_absolute_relative_error": float(
+                max(abs(r["relative_error"]) for r in longest)),
+            "note": "mean over instances of the single longest leg, which is the "
+                    "kind of quantity the wait bound reads",
+        },
         "best_fit_constant": float(np.nanmean(circuity_all)),
     }
     return out
@@ -179,6 +202,10 @@ def main() -> int:
               f"p10 {100 * e['p10']:+.1f}, p90 {100 * e['p90']:+.1f}; "
               f"{100 * row['constant_factor_error']['share_underestimated']:.0f} percent "
               f"of pairs understated")
+        ll = row["longest_leg"]
+        print(f"  longest leg         {ll['road_km']:.2f} km by road, "
+              f"{ll['constant_km']:.2f} km under the constant "
+              f"({100 * ll['relative_error']:+.1f} percent)")
         sp = row["short_pairs_under_100m"]
         if sp["pairs_per_instance"]:
             print(f"  stops under 100 m apart: {sp['pairs_per_instance']:.1f} ordered pairs "

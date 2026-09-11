@@ -1,0 +1,205 @@
+{
+  "constant_detour_factor": 1.3,
+  "areas": {
+    "dhaka": {
+      "study": "dhaka",
+      "area": "dhaka",
+      "n_snapshots": 25,
+      "n_stops": 161,
+      "graph": {
+        "nodes": 134437,
+        "arcs": 272725,
+        "fingerprint": "d83c3a7c883b023a",
+        "bbox": [
+          23.705,
+          90.315,
+          23.915,
+          90.465
+        ],
+        "ways_parsed": 25379,
+        "strong_components_before_trim": 623,
+        "tagged_maxspeed_share": 0.042436660230899564,
+        "speed_scale": 0.68,
+        "oneway_arc_share": 0.07886930407712023
+      },
+      "snap_distance_m": {
+        "max_over_snapshots": 98.59535763049385,
+        "mean_of_max": 98.59535763049385
+      },
+      "circuity": {
+        "n": 640400,
+        "mean": 1.4382045683435911,
+        "sd": 0.5025184938303616,
+        "p10": 1.1563645067699908,
+        "median": 1.3254478800165526,
+        "p90": 1.7510024188039313,
+        "p99": 3.313057854852141,
+        "max": 17.08899247711366,
+        "min": 0.7048706346402512
+      },
+      "asymmetry": {
+        "n": 643500,
+        "mean": 0.1419454182275605,
+        "sd": 0.5783994912842226,
+        "p10": 0.003370532435119532,
+        "median": 0.05565432063515015,
+        "p90": 0.2893466700741084,
+        "p99": 1.3220117542160177,
+        "max": 40.48495820030105,
+        "min": 0.0
+      },
+      "freeflow_kmh": {
+        "n": 643500,
+        "mean": 32.18418494012009,
+        "sd": 7.5116807375997885,
+        "p10": 21.922500552974363,
+        "median": 32.38725107971139,
+        "p90": 41.54084953685402,
+        "p99": 48.44946118255313,
+        "max": 60.41752752225997,
+        "min": 10.2
+      },
+      "constant_factor_error": {
+        "factor": 1.3,
+        "relative": {
+          "n": 643500,
+          "mean": -0.0357415276523974,
+          "sd": 1.4483206090035494,
+          "p10": -0.26039878298043484,
+          "median": -0.019319581152870132,
+          "p90": 0.12472432287881677,
+          "p99": 0.2539930077218542,
+          "max": 163.0535668505882,
+          "min": -0.9727634292590878
+        },
+        "absolute_m": {
+          "n": 644000,
+          "mean": -66.75654481389248,
+          "sd": 816.3170312114429,
+          "p10": -685.689484123898,
+          "median": -48.86504966398684,
+          "p90": 745.3413548606485,
+          "p99": 1848.381471113651,
+          "max": 2363.59027525513,
+          "min": -7371.190230800425
+        },
+        "share_underestimated": 0.5581196581196581,
+        "note": "negative relative error means the constant-factor matrix is shorter than the shortest path on the street graph"
+      },
+      "short_pairs_under_100m": {
+        "pairs_per_instance": 144.0,
+        "mean_straight_m": 52.767183735189086,
+        "mean_road_m": 218.39032887670473,
+        "max_road_m": 1644.7023791263846
+      },
+      "longest_leg": {
+        "road_km": 21.161268807702086,
+        "constant_km": 17.55992411623554,
+        "relative_error": -0.1701856691199803,
+        "worst_absolute_relative_error": 0.17018566911998032,
+        "note": "mean over instances of the single longest leg, which is the kind of quantity the wait bound reads"
+      },
+      "best_fit_constant": 1.4382045683435911
+    },
+    "wyndham": {
+      "study": "wyndham",
+      "area": "wyndham",
+      "n_snapshots": 25,
+      "n_stops": 33,
+      "graph": {
+        "nodes": 44180,
+        "arcs": 77543,
+        "fingerprint": "71a80ac0c3f75854",
+        "bbox": [
+          -37.925,
+          144.64,
+          -37.865,
+          144.755
+        ],
+        "ways_parsed": 8387,
+        "strong_components_before_trim": 592,
+        "tagged_maxspeed_share": 0.5611064743054728,
+        "speed_scale": 1.0,
+        "oneway_arc_share": 0.2263647266677843
+      },
+      "snap_distance_m": {
+        "max_over_snapshots": 55.44677486123515,
+        "mean_of_max": 55.44677486123514
+      },
+      "circuity": {
+        "n": 20200,
+        "mean": 1.2955681715058567,
+        "sd": 0.30253769083223697,
+        "p10": 1.1380382825521123,
+        "median": 1.2138833307873527,
+        "p90": 1.555850900820676,
+        "p99": 2.3070751968097998,
+        "max": 4.448740027690313,
+        "min": 0.8717767661395301
+      },
+      "asymmetry": {
+        "n": 25550,
+        "mean": 0.3427388449839005,
+        "sd": 1.1924853851430643,
+        "p10": 0.0011643031502361714,
+        "median": 0.02367820008352445,
+        "p90": 0.7262898617591856,
+        "p99": 5.3530031335664665,
+        "max": 21.941920309122242,
+        "min": 0.0
+      },
+      "freeflow_kmh": {
+        "n": 25550,
+        "mean": 50.72761310675947,
+        "sd": 15.335208290791831,
+        "p10": 33.32990503852542,
+        "median": 40.0,
+        "p90": 69.3550474214577,
+        "p99": 71.0782091321959,
+        "max": 71.42373446169235,
+        "min": 29.999999999999993
+      },
+      "constant_factor_error": {
+        "factor": 1.3,
+        "relative": {
+          "n": 25550,
+          "mean": 0.010741658759712898,
+          "sd": 0.2740237571050199,
+          "p10": -0.35082543649702297,
+          "median": 0.06902009703162237,
+          "p90": 0.19510125613040086,
+          "p99": 0.821735962753763,
+          "max": 1.7889196851577172,
+          "min": -0.9778685210648382
+        },
+        "absolute_m": {
+          "n": 26400,
+          "mean": 246.52547585875826,
+          "sd": 326.3269671382253,
+          "p10": -93.27276031717426,
+          "median": 51.40209501415525,
+          "p90": 671.6760746169584,
+          "p99": 751.00212585798,
+          "max": 802.1091529629703,
+          "min": -522.747334116998
+        },
+        "share_underestimated": 0.29060665362035226,
+        "note": "negative relative error means the constant-factor matrix is shorter than the shortest path on the street graph"
+      },
+      "short_pairs_under_100m": {
+        "pairs_per_instance": 248.0,
+        "mean_straight_m": 53.7917447660429,
+        "mean_road_m": 101.901485632463,
+        "max_road_m": 461.5500583113024
+      },
+      "longest_leg": {
+        "road_km": 8.726269058704213,
+        "constant_km": 9.338691994266952,
+        "relative_error": 0.07018153250178123,
+        "worst_absolute_relative_error": 0.07018153250178123,
+        "note": "mean over instances of the single longest leg, which is the kind of quantity the wait bound reads"
+      },
+      "best_fit_constant": 1.2955681715058567
+    }
+  }
+}
