@@ -52,6 +52,7 @@ from wastebins_core import stats as ST            # noqa: E402
 from wastebins_core import traffic as TR          # noqa: E402
 from wastebins_core import vrp as VRP             # noqa: E402
 
+from experiments import dhaka_containers as DC    # noqa: E402
 from experiments import wyndham as WY             # noqa: E402
 
 RESULTS = pathlib.Path(__file__).parent / "results"
@@ -65,10 +66,11 @@ SEED = 42
 # Every routing number is produced on one of three configurations, and which one
 # a result came from is recorded with it.
 #
-# ``dhaka``     Mirpur, Dhaka.  Container positions are drawn inside the Mirpur
-#               bounding box and distances are shortest paths on the drivable
-#               OpenStreetMap street graph, so one-way restrictions apply and
-#               the matrix is asymmetric.  This is the main study.
+# ``dhaka``     Dhaka city.  Container positions are the waste facilities
+#               OpenStreetMap records for the study area, and the depot is one
+#               of the mapped waste transfer stations.  Distances are shortest
+#               paths on the drivable street graph, so one-way restrictions
+#               apply and the matrix is asymmetric.  This is the main study.
 # ``dhaka_gc``  The same instances measured with great-circle distance times a
 #               constant circuity factor of 1.30, which is what the earlier
 #               version of this work used.  Identical containers, identical
@@ -79,23 +81,23 @@ SEED = 42
 #               positions from the Wyndham City Council open dataset, with the
 #               observed daily fill readings driving demand, on that city's
 #               street graph.  This is the transfer study.
+#
+# Positions are real in both cities.  Demand is observed in Wyndham and
+# simulated in Dhaka, because no fill data exists for Dhaka.
 STUDIES: Dict[str, Dict] = {
     "dhaka": {
         "area": "dhaka", "distance_model": "road",
-        "depot": (23.8069, 90.3687),
-        "bbox": (23.780, 90.348, 23.835, 90.390),
-        "n_bins": 200, "n_vehicles": 8,
+        "depot": None,                 # a mapped waste transfer station
+        "n_bins": 160, "n_vehicles": 6,
     },
     "dhaka_gc": {
         "area": "dhaka", "distance_model": "geodesic",
-        "depot": (23.8069, 90.3687),
-        "bbox": (23.780, 90.348, 23.835, 90.390),
-        "n_bins": 200, "n_vehicles": 8,
+        "depot": None,
+        "n_bins": 160, "n_vehicles": 6,
     },
     "wyndham": {
         "area": "wyndham", "distance_model": "road",
         "depot": None,                 # centroid of the real container set
-        "bbox": None,
         "n_bins": 33, "n_vehicles": 3,
     },
 }
@@ -134,8 +136,36 @@ def road_network():
 def depot_coord() -> "tuple":
     if STUDY["depot"] is not None:
         return STUDY["depot"]
-    containers, _ = WY.load()
-    return WY.depot(containers)
+    if STUDY["area"] == "wyndham":
+        containers, _ = WY.load()
+        return WY.depot(containers)
+    return DC.depot()
+
+
+_NETWORK_CACHE: Dict[tuple, "pd.DataFrame"] = {}
+
+
+def dhaka_network():
+    """
+    The container set for a Dhaka study, drawn once and reused.
+
+    A dispatch snapshot is the same city at a different moment, so the
+    containers do not move between snapshots.  Fixing the set is both the
+    realistic choice and the fast one: the shortest-path matrix is then computed
+    once for the whole study instead of once per snapshot.
+
+    When the study asks for fewer containers than the map records, a seeded
+    sample without replacement is taken.  Sampling before looking at any outcome
+    is what stops the set being the convenient one.
+    """
+    key = (STUDY["area"], STUDY["n_bins"])
+    if key not in _NETWORK_CACHE:
+        frame = DC.containers()
+        wanted = int(STUDY["n_bins"])
+        if wanted < len(frame):
+            frame = frame.sample(n=wanted, random_state=SEED)
+        _NETWORK_CACHE[key] = frame.reset_index(drop=True)
+    return _NETWORK_CACHE[key]
 
 # Metrics where a smaller number is better; used to orient every comparison.
 LOWER_IS_BETTER = {
@@ -169,23 +199,31 @@ def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
     if STUDY["area"] == "wyndham":
         return _wyndham_snapshot(rng, index)
 
-    south, west, north, east = STUDY["bbox"]
+    network = dhaka_network()
     coords = [depot_coord()]
-    node_ids = list(range(1, STUDY["n_bins"] + 1))
+    node_ids: List[int] = []
     index_of = {}
-    for nid in node_ids:
+    for row in network.itertuples():
+        nid = int(row.osm_id)
+        node_ids.append(nid)
         index_of[nid] = len(coords)
-        coords.append((
-            south + float(rng.uniform(0, north - south)),
-            west + float(rng.uniform(0, east - west)),
-        ))
+        coords.append((float(row.latitude), float(row.longitude)))
 
     fills, prizes, hazards, tto, streams = {}, {}, {}, {}, {}
     capacities, densities, service, windows, waits = {}, {}, {}, {}, {}
 
-    for nid in node_ids:
-        fill = float(np.clip(rng.beta(2.2, 2.0) * 1.15, 0.02, 1.15))
-        gas = float(np.clip(0.35 * fill + rng.normal(0, 0.06), 0, 1))
+    # A litter bin fills faster relative to its size than a skip does, so the
+    # two classes are given different arrival behaviour rather than one
+    # distribution for every container.
+    for row in network.itertuples():
+        nid = int(row.osm_id)
+        small = float(row.capacity_l) <= 400.0
+        fill = float(np.clip(rng.beta(2.6 if small else 2.2, 2.0) * 1.15,
+                             0.02, 1.15))
+        # Litter bins hold less organic matter than a refuse skip, so they
+        # generate less gas at the same fill.
+        organic = 0.22 if small else 0.35
+        gas = float(np.clip(organic * fill + rng.normal(0, 0.06), 0, 1))
         temp = float(28 + 6 * gas + rng.normal(0, 1.5))
         humidity = float(np.clip(60 + rng.normal(0, 8), 25, 100))
 
@@ -199,13 +237,13 @@ def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
         hazard = fill >= 0.95 or gas >= 0.62
         hazards[nid] = hazard
         # Deadline only where an overflow is genuinely imminent; treating the
-        # censoring cap as a deadline would make every bin look urgent.
+        # censoring cap as a deadline would make every container look urgent.
         tto[nid] = float(rng.uniform(0.5, 6.0)) if hazard else float("inf")
-        streams[nid] = str(rng.choice(
-            ["general", "general", "general", "organic", "recyclable", "hazardous"]))
-        capacities[nid] = float(rng.choice([660, 1100, 1100, 1700]))
+        streams[nid] = str(row.stream)
+        capacities[nid] = float(row.capacity_l)
         densities[nid] = float(rng.uniform(180, 260))
-        service[nid] = float(rng.uniform(2.5, 6.0))
+        service[nid] = float(rng.uniform(1.5, 3.0) if small
+                             else rng.uniform(2.5, 6.0))
         start = float(rng.choice([0, 0, 0, 120, 180]))
         windows[nid] = (start, start + float(rng.choice([300, 360, 480])))
         waits[nid] = float(rng.uniform(0, 96))
@@ -543,12 +581,16 @@ def travel_for(snapshot: Dict, when, use_traffic: bool = True):
     """
     Travel model for one snapshot, with the distance matrix cached.
 
-    Shortest paths over a graph of forty thousand nodes are the same for every
-    dispatch cycle of a snapshot, because the containers do not move.  The
-    equity rollout advances forty cycles per network, so recomputing them each
-    cycle would dominate the run time and change no result.
+    Shortest paths over a graph of a hundred thousand nodes are the same for
+    every dispatch cycle and, on the Dhaka study, for every snapshot as well,
+    because the containers do not move.  The equity rollout advances forty
+    cycles per network, so recomputing them each cycle would dominate the run
+    time and change no result.
+
+    The key is the container positions themselves rather than the snapshot
+    object, so snapshots that share a network share one matrix.
     """
-    key = id(snapshot)
+    key = hash(tuple(snapshot["coords"]))
     cached = _MATRIX_CACHE.get(key)
     if cached is None:
         net = road_network()

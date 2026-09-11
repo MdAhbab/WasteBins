@@ -12,9 +12,10 @@ of the re-run.
 Two study areas.
 
 ``dhaka``
-    Mirpur, Dhaka.  The 30-container network of ``experiments/sim.py`` is placed
-    on real Mirpur coordinates, and this is the bounding box that contains them
-    with room for the jitter applied to the synthetic nodes.
+    Dhaka city.  The bounding box contains the 450 waste facilities
+    OpenStreetMap records for the city, which
+    ``experiments/dhaka_containers.py`` reads, with a margin so that a container
+    near the edge still snaps onto a connected part of the graph.
 
 ``wyndham``
     Werribee and Point Cook, Victoria.  This is the study area of the Wyndham
@@ -37,7 +38,7 @@ from wastebins_core import roadnet as RN            # noqa: E402
 
 AREAS = {
     # name: (south, west, north, east), region speed profile
-    "dhaka": ((23.755, 90.330, 23.850, 90.410), "dhaka"),
+    "dhaka": ((23.705, 90.315, 23.915, 90.465), "dhaka"),
     "wyndham": ((-37.925, 144.640, -37.865, 144.755), "wyndham"),
 }
 
