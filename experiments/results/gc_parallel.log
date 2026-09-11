@@ -1,2 +1,50 @@
 Fleet routing study [dhaka_gc]: 25 snapshots x 160 containers, 6 vehicles, 3.0s search budget, geodesic distances
 ==============================================================================
+
+policy                 km    CO2 kg   served   missed   haz %   objective
+------------------------------------------------------------------------------
+proposed           208.58    239.18   153.40     2.92   100.0      1186.9
+static_sweep       280.90    315.06   157.80    10.20    98.4      2353.4
+threshold          104.32    113.44    64.40     2.92   100.0      7824.1
+risk_graph         167.15    206.74   160.00    10.08   100.0      1723.1
+genetic            654.76    591.05   151.08     8.20   100.0      3162.4
+aco                200.01    229.75   159.96     7.00   100.0      1554.7
+ortools             99.43    157.30   158.24    10.96    99.5      1671.4
+
+Constraint audit: all plans feasible
+
+Proposed vs each baseline (paired, 95% BCa bootstrap):
+metric                baseline         improvement              95% CI   p (Holm)    effect
+--------------------------------------------------------------------------------------------
+distance_km           static_sweep           25.7%        [21.2, 30.6]   1.79e-06     large
+distance_km           threshold             -99.9%     [-119.8, -82.5]   1.79e-06     large
+distance_km           risk_graph            -24.8%      [-34.9, -14.9]   3.23e-04     large
+distance_km           genetic                68.1%        [66.1, 70.3]   1.79e-06     large
+distance_km           aco                    -4.3%        [-11.9, 3.2]   7.56e-01     small
+distance_km           ortools              -109.8%     [-125.0, -94.9]   1.79e-06     large
+co2_kg                static_sweep           24.1%        [20.4, 28.0]   1.79e-06     large
+co2_kg                threshold            -110.8%     [-128.0, -95.9]   1.79e-06     large
+co2_kg                risk_graph            -15.7%       [-22.9, -8.8]   1.08e-03     large
+co2_kg                genetic                59.5%        [57.6, 61.6]   1.79e-06     large
+co2_kg                aco                    -4.1%        [-10.2, 1.8]   7.56e-01     small
+co2_kg                ortools               -52.1%      [-60.8, -43.6]   1.79e-06     large
+missed_overflow       static_sweep           71.4%        [65.2, 77.1]   1.62e-04     large
+missed_overflow       threshold               0.0%          [0.0, 0.0]   1.00e+00negligible
+missed_overflow       risk_graph             71.0%        [65.0, 76.7]   1.42e-04     large
+missed_overflow       genetic                64.4%        [56.3, 71.7]   1.62e-04     large
+missed_overflow       aco                    58.3%        [50.8, 65.7]   1.62e-04     large
+missed_overflow       ortools                73.4%        [67.9, 78.9]   1.42e-04     large
+mean_hazard_response_hstatic_sweep           34.3%        [27.8, 40.4]   4.17e-06     large
+mean_hazard_response_hthreshold              -4.9%        [-8.9, -1.5]   1.84e-02negligible
+mean_hazard_response_hrisk_graph             34.6%        [28.3, 40.3]   2.68e-06     large
+mean_hazard_response_hgenetic                30.2%        [23.1, 36.2]   1.94e-05     large
+mean_hazard_response_haco                    23.1%        [15.4, 30.1]   1.62e-04     large
+mean_hazard_response_hortools                39.2%        [33.4, 44.5]   2.26e-06     large
+objective             static_sweep           49.6%        [46.7, 52.4]   1.79e-06     large
+objective             threshold              84.8%        [83.7, 85.8]   1.79e-06     large
+objective             risk_graph             31.1%        [26.9, 35.3]   2.26e-06     large
+objective             genetic                62.5%        [60.4, 64.6]   1.79e-06     large
+objective             aco                    23.7%        [19.8, 27.5]   2.26e-06     large
+objective             ortools                29.0%        [24.5, 33.3]   2.26e-06     large
+
+Saved C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\results\fleet_dhaka_gc_parallel.json (4528.8s)
