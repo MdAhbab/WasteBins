@@ -1,0 +1,8 @@
+  bins  veh  matrix s   solve s   served       km   objective      gap vs aco
+-----------------------------------------------------------------------------
+    40    2      0.36      3.00    94.2%     55.6       277.8           28.3%
+    80    3      0.71     29.62    95.0%    114.9       639.6           26.4%
+   160    6      1.27    145.69    91.5%    239.8      1369.9           20.2%
+   320   13      2.44    645.00    96.8%    450.9      2417.8           24.8%
+
+Saved C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\results\scale.json

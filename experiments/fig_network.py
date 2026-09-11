@@ -40,7 +40,7 @@ FIGDIR = RESULTS / "figures"
 FIGDIR.mkdir(parents=True, exist_ok=True)
 
 CITY_COLOUR = {"dhaka": FS.BLUE, "wyndham": FS.ORANGE}
-CITY_LABEL = {"dhaka": "Dhaka (Mirpur)", "wyndham": "Wyndham"}
+CITY_LABEL = {"dhaka": "Dhaka", "wyndham": "Wyndham"}
 
 
 def collect(study: str, n_snapshots: int = 25):
