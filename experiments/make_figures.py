@@ -1,6 +1,6 @@
 """
 Generate publication figures from the experiment result JSONs.
-Writes PNGs to results/figures/ and also copies them into ../../Micro/images/.
+Writes PNGs to results/figures/.
 
 Figures follow the shared IEEE style in figstyle.py: single-column plots are
 drawn at 3.5 in, double-column plots at 7.16 in, so no text is rescaled in
@@ -21,7 +21,10 @@ figstyle.apply()
 HERE = pathlib.Path(__file__).parent
 RES = HERE / "results"
 FIG = RES / "figures"; FIG.mkdir(exist_ok=True)
-IMG = HERE.parent.parent / "Micro" / "images"
+# Figures are written once, into results/figures/. An earlier version also
+# copied them into a sibling directory holding a previous submission,
+# which no longer exists and was never part of this repository.
+IMG = FIG
 
 
 def load(name):
