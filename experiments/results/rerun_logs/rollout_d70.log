@@ -1,0 +1,19 @@
+Fleet routing study [dhaka]: 25 snapshots x 60 containers, 4 vehicles, 2.0s search budget, road distances
+==============================================================================
+
+Does the certified wait bound hold when the policy generates the waits?
+  8 networks x 40 cycles of 12 h, all bins starting at zero wait, first 8 discarded as burn-in
+    gamma  backlog   bound h  observed max h   breaches   verdict
+  ---------------------------------------------------------------
+     0.70        9     144.0           120.0       6/256   VIOLATED
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\exp_fleet.py", line 1111, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\exp_fleet.py", line 1044, in main
+    print(f"  Same test at tau = {rollout_multi['tau_h']:.0f} h, where the backlog "
+                                  ~~~~~~~~~~~~~^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable

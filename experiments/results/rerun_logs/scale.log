@@ -1,0 +1,10 @@
+  bins  veh  matrix s   solve s   served       km   objective      gap vs aco
+-----------------------------------------------------------------------------
+    40    2      0.58      6.11    94.2%     56.2       278.5           28.4%
+    80    3      1.09     66.55    95.0%    114.9       639.6           28.4%
+   160    6      2.23    331.66    91.5%    239.8      1369.9           22.0%
+   320   13      4.15    968.03    96.8%    450.9      2417.8           25.3%
+
+search time grows as n^1.93 over the sizes above 40 containers, where the search no longer finishes inside its budget
+
+Saved C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\results\scale.json

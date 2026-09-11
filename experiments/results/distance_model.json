@@ -8,36 +8,36 @@
     "note": "the same containers, fills, fleet and seeds throughout; only the distances the planner optimises on differ"
   },
   "believed_km": {
-    "mean": 208.57536888248106
+    "mean": 208.81566023584548
   },
   "actually_driven_km": {
-    "mean": 247.16844067801713
+    "mean": 247.3616012447572
   },
   "road_planner_km": {
-    "mean": 249.3485857198734
+    "mean": 249.4216314679466
   },
-  "reporting_error_pct": 19.06324299125972,
-  "optimisation_error_pct": -0.5144176097353406,
+  "reporting_error_pct": 19.016658105109688,
+  "optimisation_error_pct": -0.47089114891085954,
   "infeasible_routes_under_road_model": 50,
   "paired_reporting": {
     "label": "believed vs actually driven",
     "n_pairs": 25,
-    "mean_proposed": 208.57537,
-    "mean_baseline": 247.16844,
+    "mean_proposed": 208.81566,
+    "mean_baseline": 247.3616,
     "mean_difference": {
-      "estimate": 38.593072,
-      "ci_low": 35.170102,
-      "ci_high": 41.15195,
+      "estimate": 38.545941,
+      "ci_low": 35.123466,
+      "ci_high": 41.041407,
       "n": 25,
       "method": "bca",
       "confidence": 0.95,
       "n_resamples": 10000,
-      "std_error": 1.498965
+      "std_error": 1.481568
     },
-    "relative_improvement_pct": 15.6141,
+    "relative_improvement_pct": 15.5828,
     "relative_improvement_ci": [
-      14.273,
-      16.8738
+      14.2477,
+      16.8281
     ],
     "test": {
       "test": "wilcoxon_signed_rank",
@@ -47,31 +47,31 @@
       "alternative": "two-sided"
     },
     "cliffs_delta": {
-      "delta": -0.5488,
+      "delta": -0.5456,
       "magnitude": "large"
     },
-    "paired_cohens_d": -5.05493,
+    "paired_cohens_d": -5.1071,
     "lower_is_better": true
   },
   "paired_optimisation": {
     "label": "street-graph planner vs approximate planner",
     "n_pairs": 25,
-    "mean_proposed": 249.34859,
-    "mean_baseline": 247.16844,
+    "mean_proposed": 249.42163,
+    "mean_baseline": 247.3616,
     "mean_difference": {
-      "estimate": -2.180145,
-      "ci_low": -19.243002,
-      "ci_high": 9.786562,
+      "estimate": -2.06003,
+      "ci_low": -19.196819,
+      "ci_high": 10.108992,
       "n": 25,
       "method": "bca",
       "confidence": 0.95,
       "n_resamples": 10000,
-      "std_error": 7.197685
+      "std_error": 7.262448
     },
-    "relative_improvement_pct": -0.882,
+    "relative_improvement_pct": -0.8328,
     "relative_improvement_ci": [
-      -7.2758,
-      4.3208
+      -7.2794,
+      4.4296
     ],
     "test": {
       "test": "wilcoxon_signed_rank",
@@ -84,7 +84,7 @@
       "delta": 0.0272,
       "magnitude": "negligible"
     },
-    "paired_cohens_d": 0.05978,
+    "paired_cohens_d": 0.05598,
     "lower_is_better": true
   }
 }

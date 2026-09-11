@@ -1,0 +1,11 @@
+Fleet routing study [dhaka]: 25 snapshots x 60 containers, 4 vehicles, 2.0s search budget, road distances
+==============================================================================
+
+Does the certified wait bound hold when the policy generates the waits?
+  8 networks x 40 cycles of 12 h, all bins starting at zero wait, first 8 discarded as burn-in
+    gamma  backlog   bound h  observed max h   breaches   verdict
+  ---------------------------------------------------------------
+     0.85        7     132.0           108.0       0/256      HOLDS
+
+
+Saved C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\results\fleet_rollout_default_85.json (1702.8s)

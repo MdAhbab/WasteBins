@@ -1,0 +1,15 @@
+Fleet routing study [dhaka]: 25 snapshots x 60 containers, 4 vehicles, 2.0s search budget, road distances
+==============================================================================
+
+Equity weight sweep on a deliberately scarce fleet (1 vehicle, 240 min),
+because gamma decides who is deferred and an unconstrained fleet defers nobody:
+  gamma        km  served %  hazard resp h  oldest deferred h   bound h
+-----------------------------------------------------------------------
+   0.00     65.01      49.7          2.095               73.2     384.0
+   0.20     65.40      49.1          2.063               72.8     384.0
+   0.40     65.52      49.0          2.139               73.8     384.0
+   0.55     65.83      49.0          2.166               73.7     384.0
+   0.70     65.58      49.1          2.219               73.7     384.0
+   0.85     65.41      48.7          2.198               73.6     384.0
+
+Saved C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\results\fleet_sens.json (5848.1s)

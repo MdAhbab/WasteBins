@@ -1,0 +1,8 @@
+Fleet routing study [dhaka]: 25 snapshots x 60 containers, 4 vehicles, 2.0s search budget, road distances
+==============================================================================
+  Same test at tau = 12 h, where the backlog spans more than one cycle and the bound is not trivial:
+    gamma  backlog  ceil(m/c)   bound h  observed max h   breaches   verdict
+  --------------------------------------------------------------------------
+     0.70       40         40     492.0           132.0       0/256      HOLDS
+
+Saved C:\Users\ahbab\Downloads\Micro Paper\WasteBins\experiments\results\fleet_rollout_low_70.json (1876.9s)

@@ -1,0 +1,6 @@
+rollout_default_85 exit 0 00:32:00
+rollout_low_85 exit 0 00:34:09
+rollout_low_55 exit 0 00:34:20
+rollout_low_70 exit 0 00:34:54
+rollout_default_70 exit 0 00:38:30
+rollout_default_55 exit 0 00:39:30
