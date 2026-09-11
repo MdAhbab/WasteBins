@@ -96,8 +96,18 @@ def sweep(weights: VRP.ObjectiveWeights, tau_h: float = AG.DEFAULT_TAU_H) -> lis
         served_at = None
         wait = tau_h
         while wait <= MAX_WAIT_H:
+            # The reservation rule is switched off here, and it has to be.
+            # This sweep asks a question about the *price*: at what wait does
+            # the escalating skip penalty of `eq:skip` first exceed the cost of
+            # a dedicated round trip? There is one container in the instance, so
+            # the rule would mark it unskippable and the planner would collect
+            # it the moment it was promoted. The sweep would then report the
+            # promotion threshold in every row and appear to confirm a bound it
+            # had stopped testing. The two mechanisms are measured separately:
+            # this one covers the affordability term, and the rollout in
+            # `exp_fleet` covers the queueing term the rule delivers.
             plan = VRP.solve([one_task(wait, tau_h)], [vehicle], travel, weights,
-                             time_budget_s=0.4)
+                             time_budget_s=0.4, reserve_overdue=False)
             if any(route.stops for route in plan.routes):
                 served_at = wait
                 break
