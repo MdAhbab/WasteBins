@@ -22,11 +22,13 @@ Implemented
     deposits, and pheromone is clamped to [tau_min, tau_max] to delay stagnation.
 
 ``risk_graph``
-    The risk-penalised graph approach from the related-work section: edge weights
-    are inflated by the destination's risk, and the tour is the greedy walk on
-    that warped graph.  This is the closest published analogue of the original
-    manuscript's own method, so it establishes whether the gain comes from the
-    warping idea or from the fleet model built around it.
+    A priority-warped greedy walk: edge weights are deflated by the destination's
+    priority, so an urgent container appears nearer, and the tour is the greedy
+    walk on that warped graph.  This is the method this project itself used
+    before the fleet model was built, so it establishes whether the gain comes
+    from the warping idea or from the fleet model constructed around it.  It is
+    not attributed to any particular publication, because we have not verified
+    that any specific paper uses this exact form.
 
 ``ortools``
     Optional. Uses Google OR-Tools routing when it is installed, giving a
@@ -358,8 +360,8 @@ def risk_penalised_graph(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpe
                          travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
                          alpha: float = 1.0, refine: bool = False) -> FleetPlan:
     """
-    Greedy walk on a priority-warped graph -- the published risk-penalised
-    approach, and the direct analogue of the original manuscript's own method.
+    Greedy walk on a priority-warped graph, which is the direct analogue of the
+    original manuscript's own method.
 
     Edge cost is ``distance / (1 + alpha * 10 * priority(destination))``, so
     urgent bins appear nearer.  No capacity, window or shift reasoning enters the
