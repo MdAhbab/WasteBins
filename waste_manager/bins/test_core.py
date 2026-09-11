@@ -25,7 +25,9 @@ from wastebins_core import continual as CL
 from wastebins_core import emissions as EM
 from wastebins_core import faults as F
 from wastebins_core import features as FEAT
+from wastebins_core import geo as GEO
 from wastebins_core import ledger as LG
+from wastebins_core import roadnet as RN
 from wastebins_core import scenario as SC
 from wastebins_core import stats as ST
 from wastebins_core import traffic as TR
@@ -798,3 +800,205 @@ class EquityGuaranteeTests(SimpleTestCase):
                   for w in (48, 49, 60, 96, 240, 1000)]
         self.assertEqual(scores, sorted(scores))
         self.assertEqual(len(set(scores)), len(scores), "two waits tied")
+
+
+class RoadNetworkTests(SimpleTestCase):
+    """
+    The street-graph distance model.
+
+    These run against the cached study areas committed under ``data/roadnet``.
+    They never touch the network, so a failure here is a defect in the code and
+    not an outage at Overpass.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.net = RN.load("dhaka")
+
+    def test_graph_is_strongly_connected(self):
+        """Every stop must be reachable from every other, or a plan is a fiction."""
+        from scipy.sparse import csr_matrix
+        from scipy.sparse.csgraph import connected_components
+        adj = csr_matrix((self.net.length_m, (self.net.src, self.net.dst)),
+                         shape=(self.net.n_nodes, self.net.n_nodes))
+        n_comp, _ = connected_components(adj, directed=True, connection="strong")
+        self.assertEqual(n_comp, 1)
+
+    def test_distances_exceed_great_circle(self):
+        """A road path can never be shorter than the straight line it spans."""
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550), (23.8203, 90.3650),
+                  (23.7780, 90.3800)]
+        distance, _freeflow, _snap = self.net.matrices(coords)
+        for i in range(len(coords)):
+            for j in range(len(coords)):
+                if i == j:
+                    continue
+                straight = GEO.haversine(coords[i][0], coords[i][1],
+                                         coords[j][0], coords[j][1])
+                self.assertGreaterEqual(distance[i][j], straight - 1.0)
+
+    def test_matrix_is_asymmetric(self):
+        """One-way streets make the matrix directed; a symmetric one hides them."""
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550), (23.8203, 90.3650),
+                  (23.8100, 90.3780), (23.7890, 90.3740)]
+        distance, _freeflow, _snap = self.net.matrices(coords)
+        self.assertFalse(np.allclose(distance, distance.T, atol=1.0))
+
+    def test_diagonal_is_zero_distance_and_undefined_speed(self):
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550)]
+        distance, freeflow, _snap = self.net.matrices(coords)
+        self.assertEqual(distance[0][0], 0.0)
+        self.assertTrue(math.isnan(freeflow[0][0]))
+
+    def test_freeflow_is_within_the_arc_speed_range(self):
+        """A path speed is a weighted mean, so it cannot leave the arc range."""
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550), (23.8203, 90.3650)]
+        _distance, freeflow, _snap = self.net.matrices(coords)
+        finite = freeflow[np.isfinite(freeflow)]
+        self.assertGreater(finite.size, 0)
+        self.assertGreaterEqual(finite.min(), self.net.speed_kmh.min() - 1e-6)
+        self.assertLessEqual(finite.max(), self.net.speed_kmh.max() + 1e-6)
+
+    def test_circuity_excludes_near_coincident_pairs(self):
+        """Two stops metres apart give a ratio that says nothing about the grid."""
+        coords = [(23.8069, 90.3687), (23.80691, 90.36871), (23.7910, 90.3550)]
+        ratio = self.net.circuity(coords, min_straight_m=100.0)
+        self.assertTrue(math.isnan(ratio[0][1]))
+        self.assertTrue(np.isfinite(ratio[0][2]))
+
+    def test_snapping_stays_close_to_the_requested_point(self):
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550), (23.8203, 90.3650)]
+        _idx, snap_m = self.net.snap(coords)
+        self.assertLess(float(snap_m.max()), 300.0)
+
+    def test_maxspeed_parsing(self):
+        self.assertAlmostEqual(RN._parse_maxspeed("50"), 50.0)
+        self.assertAlmostEqual(RN._parse_maxspeed("30 mph"), 48.28032, places=4)
+        self.assertIsNone(RN._parse_maxspeed("signals"))
+        self.assertIsNone(RN._parse_maxspeed(None))
+        self.assertIsNone(RN._parse_maxspeed("none"))
+
+    def test_oneway_tag_reading(self):
+        self.assertEqual(RN._is_oneway({"oneway": "yes"}), 1)
+        self.assertEqual(RN._is_oneway({"oneway": "-1"}), -1)
+        self.assertEqual(RN._is_oneway({"highway": "residential"}), 0)
+        self.assertEqual(RN._is_oneway({"junction": "roundabout"}), 1)
+        # An explicit oneway=no must beat the motorway default.
+        self.assertEqual(RN._is_oneway({"highway": "motorway", "oneway": "no"}), 0)
+
+
+class RoadNetworkTravelTests(SimpleTestCase):
+    """The travel model must use the per-leg free-flow speed the graph supplies."""
+
+    def test_per_leg_freeflow_changes_the_derated_speed(self):
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550)]
+        distance = np.array([[0.0, 4000.0], [4000.0, 0.0]])
+        fast = np.array([[np.nan, 60.0], [60.0, np.nan]])
+        slow = np.array([[np.nan, 15.0], [15.0, np.nan]])
+        when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
+        provider = TR.SyntheticTrafficProvider(seed=42)
+
+        ctx_fast = TR.build_travel_context(coords, distance, provider, when,
+                                           freeflow_matrix=fast)
+        ctx_slow = TR.build_travel_context(coords, distance, provider, when,
+                                           freeflow_matrix=slow)
+        self.assertGreater(ctx_fast.speed_kmh(0, 1), ctx_slow.speed_kmh(0, 1))
+
+    def test_directed_cache_does_not_merge_the_two_directions(self):
+        """With a directed graph the cache key must keep i->j apart from j->i."""
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550)]
+        distance = np.array([[0.0, 4000.0], [4200.0, 0.0]])
+        freeflow = np.array([[np.nan, 60.0], [15.0, np.nan]])
+        when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
+        ctx = TR.build_travel_context(coords, distance,
+                                      TR.SyntheticTrafficProvider(seed=42), when,
+                                      freeflow_matrix=freeflow)
+        self.assertNotAlmostEqual(ctx.speed_kmh(0, 1), ctx.speed_kmh(1, 0))
+
+    def test_absent_matrix_keeps_the_single_constant(self):
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550)]
+        distance = np.array([[0.0, 4000.0], [4000.0, 0.0]])
+        when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
+        ctx = TR.build_travel_context(coords, distance,
+                                      TR.SyntheticTrafficProvider(seed=42), when,
+                                      freeflow_kmh=34.0)
+        self.assertEqual(ctx.leg_freeflow_kmh(0, 1), 34.0)
+
+    def test_scenario_builds_road_distances_when_given_a_network(self):
+        net = RN.load("dhaka")
+        coords = [(23.8069, 90.3687), (23.7910, 90.3550), (23.8203, 90.3650)]
+        when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
+        road = SC.build_travel(coords, when, road_network=net)
+        great_circle = SC.build_travel(coords, when)
+        # The 1.30 constant is an approximation of the real street pattern, so
+        # the two must not agree to the metre on every pair.
+        self.assertFalse(np.allclose(road.distance_m, great_circle.distance_m,
+                                     atol=1.0))
+        self.assertGreater(road.distance(0, 1), 0.0)
+
+
+class ConstructionCacheTests(SimpleTestCase):
+    """
+    The insertion table is memoised between iterations, not approximated.
+
+    Inserting a bin changes one vehicle's route, so every other pairing keeps
+    its costed answer.  If that reasoning is ever wrong the constructor silently
+    becomes a different heuristic, so it is pinned rather than argued.
+    """
+
+    def _instance(self, n_bins: int, seed: int):
+        rng = np.random.default_rng(seed)
+        coords = [(23.8069, 90.3687)]
+        tasks = []
+        for i in range(n_bins):
+            coords.append((23.780 + float(rng.uniform(0, 0.055)),
+                           90.348 + float(rng.uniform(0, 0.042))))
+            tasks.append(VRP.BinTask(
+                node_id=i + 1, index=i + 1,
+                prize=float(rng.uniform(0.05, 0.95)),
+                load_kg=float(rng.uniform(40, 260)),
+                service_minutes=float(rng.uniform(2.5, 6.0)),
+                window_start_min=float(rng.choice([0, 0, 120, 180])),
+                window_end_min=480.0,
+                stream=str(rng.choice(["general", "general", "recyclable", "organic"])),
+                density_kg_per_m3=float(rng.uniform(180, 260)),
+                tier=int(rng.choice([1, 2, 2, 2])),
+                overdue_pressure=float(rng.uniform(0.0, 3.0)),
+            ))
+        when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
+        travel = SC.build_travel(coords, when,
+                                 provider=TR.SyntheticTrafficProvider(seed=42))
+        fleet = SC.make_fleet(3, depot_index=0, capacity_kg=4500.0,
+                              shift_minutes=480.0)
+        fleet[0].accepts_streams = ("general", "organic", "recyclable")
+        fleet[1].accepts_streams = ("general", "recyclable")
+        fleet[2].accepts_streams = ("general", "organic")
+        return tasks, fleet, travel
+
+    def test_cached_and_uncached_construction_agree(self):
+        for seed in (1, 7, 13):
+            tasks, fleet, travel = self._instance(24, seed)
+            weights = VRP.ObjectiveWeights()
+            cached = VRP.construct_regret2(tasks, fleet, travel, weights,
+                                           use_cache=True)
+            plain = VRP.construct_regret2(tasks, fleet, travel, weights,
+                                          use_cache=False)
+            for vid in cached[0]:
+                self.assertEqual([t.node_id for t in cached[0][vid]],
+                                 [t.node_id for t in plain[0][vid]],
+                                 msg=f"vehicle {vid} diverged at seed {seed}")
+            self.assertEqual(sorted(t.node_id for t in cached[1]),
+                             sorted(t.node_id for t in plain[1]))
+
+    def test_cache_is_invalidated_for_the_touched_vehicle(self):
+        """A stale entry for the changed vehicle would reorder the insertions."""
+        tasks, fleet, travel = self._instance(18, seed=3)
+        weights = VRP.ObjectiveWeights()
+        orders, _unserved = VRP.construct_regret2(tasks, fleet, travel, weights)
+        # Every routed bin must be feasible in the order it was placed, which is
+        # only true if each insertion was costed against the route as it stood.
+        for vehicle in fleet:
+            order = orders[vehicle.vehicle_id]
+            if order:
+                self.assertIsNotNone(VRP.evaluate_route(order, vehicle, travel))

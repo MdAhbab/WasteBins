@@ -537,7 +537,8 @@ def _best_insertion(task: BinTask, order: List[BinTask], vehicle: VehicleSpec,
 
 
 def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
-                      travel: TravelModel, weights: ObjectiveWeights
+                      travel: TravelModel, weights: ObjectiveWeights,
+                      use_cache: bool = True
                       ) -> Tuple[Dict[int, List[BinTask]], List[BinTask]]:
     """
     Regret-2 insertion.
@@ -548,6 +549,10 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     which will become most expensive if it is left for later.  Plain cheapest
     insertion is myopic in exactly the way that produces the detours the
     reviewers noticed in the original greedy tour.
+
+    ``use_cache`` exists only so a test can run the same instance with the
+    insertion table rebuilt from scratch every iteration and assert that the two
+    produce the identical sequence of insertions.  Leave it on.
     """
     orders: Dict[int, List[BinTask]] = {v.vehicle_id: [] for v in vehicles}
     by_id = {v.vehicle_id: v for v in vehicles}
@@ -561,6 +566,15 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
 
     base_costs = {v.vehicle_id: 0.0 for v in vehicles}
 
+    # Cheapest insertion of each pending bin into each vehicle, kept between
+    # iterations.  Inserting a bin changes exactly one vehicle's route, so every
+    # other (bin, vehicle) pairing is costed against a route that did not move
+    # and its cached answer is still the answer.  Only the touched vehicle's
+    # column is discarded.  This is memoisation and not an approximation: the
+    # sequence of insertions is identical to recomputing the whole table each
+    # iteration, which a test pins by comparing the two on the same instance.
+    cache: Dict[Tuple[int, int], Optional[Tuple[float, int]]] = {}
+
     while pending:
         best_choice = None       # (regret_key, task, vehicle_id, position, delta)
 
@@ -569,8 +583,13 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
             for v in vehicles:
                 if not v.accepts(task.stream):
                     continue
-                found = _best_insertion(task, orders[v.vehicle_id], v, travel,
-                                        weights, base_costs[v.vehicle_id])
+                key_cache = (task.node_id, v.vehicle_id)
+                if use_cache and key_cache in cache:
+                    found = cache[key_cache]
+                else:
+                    found = _best_insertion(task, orders[v.vehicle_id], v, travel,
+                                            weights, base_costs[v.vehicle_id])
+                    cache[key_cache] = found
                 if found is not None:
                     options.append((found[0], v.vehicle_id, found[1]))
             if not options:
@@ -618,6 +637,8 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
         orders[vid] = orders[vid][:pos] + [task] + orders[vid][pos:]
         base_costs[vid] += delta
         pending.remove(task)
+        for cached_key in [k for k in cache if k[1] == vid]:
+            del cache[cached_key]
 
     return orders, unserved
 

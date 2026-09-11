@@ -33,3 +33,4 @@ frontend/.vite/
 experiments/realdata/*.csv
 experiments/results/*.parquet
 experiments/results/*.pkl
+experiments/results/run_all.log

@@ -26,13 +26,31 @@ def build_travel(coords: Sequence[Coord], when: datetime,
                  detour_factor: float = DEFAULT_DETOUR_FACTOR,
                  default_speed_kmh: float = 20.0,
                  freeflow_kmh: float = TR.FREEFLOW_KMH,
-                 use_traffic: bool = True) -> vrp.TravelModel:
-    """Distance matrix plus a traffic-aware travel model."""
-    matrix = dist_matrix(coords, detour_factor=detour_factor)
+                 use_traffic: bool = True,
+                 road_network: Optional[object] = None) -> vrp.TravelModel:
+    """
+    Distance matrix plus a traffic-aware travel model.
+
+    With ``road_network`` set to a :class:`wastebins_core.roadnet.RoadNetwork`,
+    distances are shortest paths on the real drivable street graph and each leg
+    carries its own uncongested speed, taken from the arcs that path uses.  The
+    matrix is then asymmetric, because one-way streets are.
+
+    Without it, distances are great-circle multiplied by ``detour_factor`` and
+    every leg shares one free-flow constant.  That is the earlier behaviour and
+    it is kept so the two can be compared on identical instances, which is what
+    the distance-model ablation does.
+    """
+    if road_network is not None:
+        matrix, freeflow_matrix, _snap = road_network.matrices(coords)
+    else:
+        matrix = dist_matrix(coords, detour_factor=detour_factor)
+        freeflow_matrix = None
     ctx = None
     if use_traffic:
         provider = provider or TR.SyntheticTrafficProvider()
-        ctx = TR.build_travel_context(coords, matrix, provider, when, freeflow_kmh)
+        ctx = TR.build_travel_context(coords, matrix, provider, when, freeflow_kmh,
+                                      freeflow_matrix=freeflow_matrix)
     return vrp.TravelModel(matrix, travel_context=ctx,
                            default_speed_kmh=default_speed_kmh,
                            freeflow_kmh=freeflow_kmh)

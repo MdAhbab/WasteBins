@@ -549,15 +549,31 @@ class TravelContext:
     provider: TrafficProvider
     when: datetime
     freeflow_kmh: float = FREEFLOW_KMH
+    #: Optional per-leg uncongested speed, (n, n) in km/h.  Supplied by
+    #: :mod:`wastebins_core.roadnet`, where it is the length-weighted mean of
+    #: the free-flow speeds of the arcs the shortest path uses.  A leg along a
+    #: primary road then starts from a higher uncongested speed than one
+    #: threading residential lanes, and the congestion surface derates that
+    #: instead of derating one global constant.  When absent, every leg uses
+    #: ``freeflow_kmh``, which is the behaviour of the earlier version.
+    freeflow_matrix: "object" = None          # np.ndarray or None
     _speed_cache: Dict[Tuple[int, int], float] = field(default_factory=dict)
 
+    def leg_freeflow_kmh(self, i: int, j: int) -> float:
+        if self.freeflow_matrix is None:
+            return self.freeflow_kmh
+        v = float(self.freeflow_matrix[i][j])
+        return v if v == v and v > 1.0 else self.freeflow_kmh
+
     def speed_kmh(self, i: int, j: int) -> float:
-        key = (i, j) if i <= j else (j, i)
+        # A road graph is directed, so the cache may only be symmetrised when
+        # the free-flow speed is a single constant shared by both directions.
+        key = ((i, j) if i <= j else (j, i)) if self.freeflow_matrix is None else (i, j)
         cached = self._speed_cache.get(key)
         if cached is not None:
             return cached
         v = self.provider.speed_kmh(self.coords[i], self.coords[j], self.when,
-                                    self.freeflow_kmh)
+                                    self.leg_freeflow_kmh(i, j))
         self._speed_cache[key] = v
         return v
 
@@ -568,13 +584,15 @@ class TravelContext:
         return 60.0 * km / max(self.speed_kmh(i, j), 1e-6)
 
     def friction(self, i: int, j: int) -> float:
-        return speed_to_friction(self.speed_kmh(i, j), self.freeflow_kmh)
+        return speed_to_friction(self.speed_kmh(i, j), self.leg_freeflow_kmh(i, j))
 
 
 def build_travel_context(coords: Sequence[Coord], distance_m, provider: TrafficProvider,
-                         when: datetime, freeflow_kmh: float = FREEFLOW_KMH) -> TravelContext:
+                         when: datetime, freeflow_kmh: float = FREEFLOW_KMH,
+                         freeflow_matrix=None) -> TravelContext:
     return TravelContext(coords=list(coords), distance_m=distance_m,
-                         provider=provider, when=_as_aware(when), freeflow_kmh=freeflow_kmh)
+                         provider=provider, when=_as_aware(when), freeflow_kmh=freeflow_kmh,
+                         freeflow_matrix=freeflow_matrix)
 
 
 # ---------------------------------------------------------------------------

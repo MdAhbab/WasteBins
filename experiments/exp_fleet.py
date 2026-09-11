@@ -37,7 +37,7 @@ import json
 import pathlib
 import sys
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -46,18 +46,96 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from wastebins_core import aging as AG            # noqa: E402
 from wastebins_core import metaheuristics as MH   # noqa: E402
 from wastebins_core import priority as PR         # noqa: E402
+from wastebins_core import roadnet as RN          # noqa: E402
 from wastebins_core import scenario as SC         # noqa: E402
 from wastebins_core import stats as ST            # noqa: E402
 from wastebins_core import traffic as TR          # noqa: E402
 from wastebins_core import vrp as VRP             # noqa: E402
 
+from experiments import wyndham as WY             # noqa: E402
+
 RESULTS = pathlib.Path(__file__).parent / "results"
 RESULTS.mkdir(exist_ok=True)
 
 SEED = 42
-N_BINS = 30
-N_VEHICLES = 3
-DEPOT = (23.8069, 90.3687)
+
+# ---------------------------------------------------------------------------
+# Study areas
+# ---------------------------------------------------------------------------
+# Every routing number is produced on one of three configurations, and which one
+# a result came from is recorded with it.
+#
+# ``dhaka``     Mirpur, Dhaka.  Container positions are drawn inside the Mirpur
+#               bounding box and distances are shortest paths on the drivable
+#               OpenStreetMap street graph, so one-way restrictions apply and
+#               the matrix is asymmetric.  This is the main study.
+# ``dhaka_gc``  The same instances measured with great-circle distance times a
+#               constant circuity factor of 1.30, which is what the earlier
+#               version of this work used.  Identical containers, identical
+#               fills, identical seeds: the only difference is the distance
+#               model, which is what makes the comparison an ablation of the
+#               distance model rather than of anything else.
+# ``wyndham``   Werribee and Point Cook, Victoria.  Thirty-three real container
+#               positions from the Wyndham City Council open dataset, with the
+#               observed daily fill readings driving demand, on that city's
+#               street graph.  This is the transfer study.
+STUDIES: Dict[str, Dict] = {
+    "dhaka": {
+        "area": "dhaka", "distance_model": "road",
+        "depot": (23.8069, 90.3687),
+        "bbox": (23.780, 90.348, 23.835, 90.390),
+        "n_bins": 200, "n_vehicles": 8,
+    },
+    "dhaka_gc": {
+        "area": "dhaka", "distance_model": "geodesic",
+        "depot": (23.8069, 90.3687),
+        "bbox": (23.780, 90.348, 23.835, 90.390),
+        "n_bins": 200, "n_vehicles": 8,
+    },
+    "wyndham": {
+        "area": "wyndham", "distance_model": "road",
+        "depot": None,                 # centroid of the real container set
+        "bbox": None,
+        "n_bins": 33, "n_vehicles": 3,
+    },
+}
+
+STUDY: Dict = dict(STUDIES["dhaka"])
+_ROADNET_CACHE: Dict[str, object] = {}
+_MATRIX_CACHE: Dict[int, object] = {}
+
+
+def set_study(name: str, n_bins: Optional[int] = None,
+              n_vehicles: Optional[int] = None) -> Dict:
+    """Select the study area, optionally overriding the instance size."""
+    global STUDY
+    if name not in STUDIES:
+        raise KeyError(f"unknown study '{name}', expected one of {sorted(STUDIES)}")
+    STUDY = dict(STUDIES[name])
+    STUDY["name"] = name
+    if n_bins is not None:
+        STUDY["n_bins"] = int(n_bins)
+    if n_vehicles is not None:
+        STUDY["n_vehicles"] = int(n_vehicles)
+    _MATRIX_CACHE.clear()
+    return STUDY
+
+
+def road_network():
+    """The cached street graph for the active study, or None for great-circle."""
+    if STUDY["distance_model"] != "road":
+        return None
+    area = STUDY["area"]
+    if area not in _ROADNET_CACHE:
+        _ROADNET_CACHE[area] = RN.load(area)
+    return _ROADNET_CACHE[area]
+
+
+def depot_coord() -> "tuple":
+    if STUDY["depot"] is not None:
+        return STUDY["depot"]
+    containers, _ = WY.load()
+    return WY.depot(containers)
 
 # Metrics where a smaller number is better; used to orient every comparison.
 LOWER_IS_BETTER = {
@@ -81,15 +159,25 @@ def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
     Bins are heterogeneous in fill rate, capacity, waste stream and servicing
     window, because a homogeneous network makes every routing policy look alike
     and would flatter the proposed method.
+
+    On the Wyndham study the positions, the waste streams and the fill levels
+    are read from the council's published record of a real day rather than
+    generated.  Everything the dataset does not publish, meaning the servicing
+    windows, the service durations and the waiting times, is still drawn, and
+    Section "what the transfer study does not show" in the paper says so.
     """
-    coords = [DEPOT]
-    node_ids = list(range(1, N_BINS + 1))
+    if STUDY["area"] == "wyndham":
+        return _wyndham_snapshot(rng, index)
+
+    south, west, north, east = STUDY["bbox"]
+    coords = [depot_coord()]
+    node_ids = list(range(1, STUDY["n_bins"] + 1))
     index_of = {}
     for nid in node_ids:
         index_of[nid] = len(coords)
         coords.append((
-            23.780 + float(rng.uniform(0, 0.055)),
-            90.348 + float(rng.uniform(0, 0.042)),
+            south + float(rng.uniform(0, north - south)),
+            west + float(rng.uniform(0, east - west)),
         ))
 
     fills, prizes, hazards, tto, streams = {}, {}, {}, {}, {}
@@ -124,6 +212,65 @@ def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
 
     return {
         "index": index, "coords": coords, "node_ids": node_ids, "index_of": index_of,
+        "fills": fills, "prizes": prizes, "hazards": hazards, "tto": tto,
+        "streams": streams, "capacities": capacities, "densities": densities,
+        "service": service, "windows": windows, "waits": waits,
+    }
+
+
+def _wyndham_snapshot(rng: np.random.Generator, index: int) -> Dict:
+    """One observed day of the Wyndham network as a routing instance."""
+    containers, _ = WY.load()
+    days = WY.snapshots(n_snapshots=64, seed=SEED)
+    day = days[index % len(days)]
+
+    coords = [depot_coord()]
+    node_ids: List[int] = []
+    index_of: Dict[int, int] = {}
+    fills, prizes, hazards, tto, streams = {}, {}, {}, {}, {}
+    capacities, densities, service, windows, waits = {}, {}, {}, {}, {}
+
+    # The council's ordinal scale tops out at the container being full, so a
+    # reading at the top of the scale is the dataset's own overflow signal.
+    for _, row in containers.iterrows():
+        serial = int(row["serial"])
+        if serial not in day["fills"]:
+            continue
+        nid = serial
+        node_ids.append(nid)
+        index_of[nid] = len(coords)
+        coords.append((float(row["latitude"]), float(row["longitude"])))
+
+        fill = float(day["fills"][serial])
+        # Gas is not measured by this hardware.  It is derived from fill and the
+        # stream so the priority rule has an input, and it is therefore a model
+        # quantity on this network rather than an observation.
+        organic = 0.55 if row["stream"] == "general" else 0.15
+        gas = float(np.clip(organic * fill + rng.normal(0, 0.05), 0.0, 1.0))
+        temp = float(20 + 5 * gas + rng.normal(0, 1.5))
+        humidity = float(np.clip(65 + rng.normal(0, 8), 25, 100))
+
+        rule = PR.compute_priority({
+            "waste_level": fill, "gas_level": gas,
+            "temperature": temp, "humidity": humidity,
+        }, policy=PR.POLICY_RENORMALISE)
+
+        fills[nid] = fill
+        prizes[nid] = rule.score
+        hazard = fill >= 0.95 or gas >= 0.62
+        hazards[nid] = hazard
+        tto[nid] = float(rng.uniform(0.5, 6.0)) if hazard else float("inf")
+        streams[nid] = "general" if row["stream"] == "general" else "recyclable"
+        capacities[nid] = WY.CAPACITY_L
+        densities[nid] = WY.DENSITY_KG_PER_M3
+        service[nid] = float(rng.uniform(2.5, 6.0))
+        start = float(rng.choice([0, 0, 0, 120, 180]))
+        windows[nid] = (start, start + float(rng.choice([300, 360, 480])))
+        waits[nid] = float(rng.uniform(0, 96))
+
+    return {
+        "index": index, "date": day["date"],
+        "coords": coords, "node_ids": node_ids, "index_of": index_of,
         "fills": fills, "prizes": prizes, "hazards": hazards, "tto": tto,
         "streams": streams, "capacities": capacities, "densities": densities,
         "service": service, "windows": windows, "waits": waits,
@@ -370,23 +517,64 @@ def equity_rollout(snapshots: List[Dict], time_budget_s: float,
     }
 
 
+#: Three body and licence configurations, repeated as the fleet grows.  A fleet
+#: of identical vehicles makes every routing policy look alike, and the stream
+#: licence is what forces a planner to think about which vehicle goes where.
+_FLEET_TEMPLATE = (
+    (6000.0, ("general", "organic", "recyclable")),
+    (4500.0, ("general", "recyclable")),
+    (3000.0, ("general", "organic", "hazardous")),
+)
+
+
 def build_fleet(snapshot: Dict) -> List[VRP.VehicleSpec]:
     """A deliberately heterogeneous fleet: different bodies, different licences."""
-    fleet = SC.make_fleet(N_VEHICLES, depot_index=0, capacity_kg=5000.0,
+    n = STUDY["n_vehicles"]
+    fleet = SC.make_fleet(n, depot_index=0, capacity_kg=5000.0,
                           shift_minutes=480.0)
-    fleet[0].capacity_kg = 6000.0
-    fleet[0].accepts_streams = ("general", "organic", "recyclable")
-    fleet[1].capacity_kg = 4500.0
-    fleet[1].accepts_streams = ("general", "recyclable")
-    fleet[2].capacity_kg = 3000.0
-    fleet[2].accepts_streams = ("general", "organic", "hazardous")
+    for k, vehicle in enumerate(fleet):
+        capacity, streams = _FLEET_TEMPLATE[k % len(_FLEET_TEMPLATE)]
+        vehicle.capacity_kg = capacity
+        vehicle.accepts_streams = streams
     return fleet
 
 
 def travel_for(snapshot: Dict, when, use_traffic: bool = True):
-    return SC.build_travel(snapshot["coords"], when,
-                           provider=TR.SyntheticTrafficProvider(seed=SEED),
-                           use_traffic=use_traffic)
+    """
+    Travel model for one snapshot, with the distance matrix cached.
+
+    Shortest paths over a graph of forty thousand nodes are the same for every
+    dispatch cycle of a snapshot, because the containers do not move.  The
+    equity rollout advances forty cycles per network, so recomputing them each
+    cycle would dominate the run time and change no result.
+    """
+    key = id(snapshot)
+    cached = _MATRIX_CACHE.get(key)
+    if cached is None:
+        net = road_network()
+        if net is None:
+            cached = (None, None)
+        else:
+            matrix, freeflow, snap_m = net.matrices(snapshot["coords"])
+            if not np.all(np.isfinite(matrix + np.eye(len(matrix)))):
+                raise RuntimeError(
+                    f"snapshot {snapshot['index']} has unreachable container pairs "
+                    f"on the {STUDY['area']} street graph")
+            snapshot["snap_m_max"] = float(np.max(snap_m))
+            cached = (matrix, freeflow)
+        _MATRIX_CACHE[key] = cached
+
+    matrix, freeflow = cached
+    provider = TR.SyntheticTrafficProvider(seed=SEED)
+    if matrix is None:
+        return SC.build_travel(snapshot["coords"], when, provider=provider,
+                               use_traffic=use_traffic)
+    ctx = None
+    if use_traffic:
+        ctx = TR.build_travel_context(snapshot["coords"], matrix, provider, when,
+                                      TR.FREEFLOW_KMH, freeflow_matrix=freeflow)
+    return VRP.TravelModel(matrix, travel_context=ctx, default_speed_kmh=20.0,
+                           freeflow_kmh=TR.FREEFLOW_KMH)
 
 
 # ---------------------------------------------------------------------------
@@ -422,7 +610,7 @@ def run_policy(name: str, tasks, fleet, travel, weights, snapshot,
     if name == "static_sweep":
         # Traditional fixed schedule: visit every bin, ordered by a geographic
         # sweep about the depot, using no priority information at all.
-        order = SC.sweep_order(snapshot["coords"][1:], DEPOT)
+        order = SC.sweep_order(snapshot["coords"][1:], depot_coord())
         by_index = {t.index: t for t in tasks}
         swept = [by_index[i + 1] for i in order if (i + 1) in by_index]
         return SC.static_sweep_plan(swept, fleet, travel, weights)
@@ -657,65 +845,90 @@ def main() -> None:
     parser.add_argument("--snapshots", type=int, default=25)
     parser.add_argument("--budget", type=float, default=3.0)
     parser.add_argument("--quick", action="store_true")
+    parser.add_argument("--study", default="dhaka", choices=sorted(STUDIES),
+                        help="study area and distance model")
+    parser.add_argument("--bins", type=int, default=None,
+                        help="override the number of containers")
+    parser.add_argument("--vehicles", type=int, default=None,
+                        help="override the fleet size")
+    parser.add_argument("--out", default=None,
+                        help="result filename under results/ "
+                             "(default fleet_<study>.json)")
+    parser.add_argument("--only", default="all",
+                        choices=["all", "comparison", "sensitivity", "equity"],
+                        help="run one stage instead of all three")
+    parser.add_argument("--rollout-budget", type=float, default=None,
+                        help="search budget inside the equity rollout, which "
+                             "runs thousands of solves and does not need the "
+                             "budget the benchmark comparison uses")
     args = parser.parse_args()
+
+    set_study(args.study, n_bins=args.bins, n_vehicles=args.vehicles)
+    stages = {"comparison", "sensitivity", "equity"} if args.only == "all" else {args.only}
 
     n_snapshots = 6 if args.quick else args.snapshots
     budget = 1.0 if args.quick else args.budget
+    rollout_budget = args.rollout_budget if args.rollout_budget is not None else budget
 
     rng = np.random.default_rng(SEED)
     snapshots = [make_snapshot(rng, i) for i in range(n_snapshots)]
 
-    print(f"Fleet routing study: {n_snapshots} snapshots x {N_BINS} bins, "
-          f"{N_VEHICLES} vehicles, {budget}s search budget")
+    print(f"Fleet routing study [{STUDY['name']}]: {n_snapshots} snapshots x "
+          f"{STUDY['n_bins']} containers, {STUDY['n_vehicles']} vehicles, "
+          f"{budget}s search budget, {STUDY['distance_model']} distances")
     print("=" * 78)
 
     started = time.perf_counter()
-    comparison = main_comparison(snapshots, budget)
+    comparison = (main_comparison(snapshots, budget)
+                  if 'comparison' in stages else None)
+    if comparison is not None:
 
-    print(f"\n{'policy':<16}{'km':>9}{'CO2 kg':>10}{'served':>9}{'missed':>9}"
-          f"{'haz %':>8}{'objective':>12}")
-    print("-" * 78)
-    for policy in comparison["policies"]:
-        row = comparison["summary"].get(policy)
-        if not row:
-            continue
-        print(f"{policy:<16}{row['distance_km']['mean']:>9.2f}"
-              f"{row['co2_kg']['mean']:>10.2f}"
-              f"{row['bins_served']['mean']:>9.2f}"
-              f"{row['missed_overflow']['mean']:>9.2f}"
-              f"{row['hazard_coverage_pct']['mean']:>8.1f}"
-              f"{row['objective']['mean']:>12.1f}")
+        print(f"\n{'policy':<16}{'km':>9}{'CO2 kg':>10}{'served':>9}{'missed':>9}"
+              f"{'haz %':>8}{'objective':>12}")
+        print("-" * 78)
+        for policy in comparison["policies"]:
+            row = comparison["summary"].get(policy)
+            if not row:
+                continue
+            print(f"{policy:<16}{row['distance_km']['mean']:>9.2f}"
+                  f"{row['co2_kg']['mean']:>10.2f}"
+                  f"{row['bins_served']['mean']:>9.2f}"
+                  f"{row['missed_overflow']['mean']:>9.2f}"
+                  f"{row['hazard_coverage_pct']['mean']:>8.1f}"
+                  f"{row['objective']['mean']:>12.1f}")
 
-    print(f"\nConstraint audit: "
-          f"{'all plans feasible' if comparison['feasible'] else str(len(comparison['constraint_violations'])) + ' VIOLATIONS'}")
+        print(f"\nConstraint audit: "
+              f"{'all plans feasible' if comparison['feasible'] else str(len(comparison['constraint_violations'])) + ' VIOLATIONS'}")
 
-    print("\nProposed vs each baseline (paired, 95% BCa bootstrap):")
-    print(f"{'metric':<22}{'baseline':<14}{'improvement':>14}{'95% CI':>20}"
-          f"{'p (Holm)':>11}{'effect':>10}")
-    print("-" * 92)
-    for metric, rows in comparison["paired_comparisons"].items():
-        for baseline, result in rows.items():
-            adjusted = comparison["holm_bonferroni"].get(f"{metric}|{baseline}", {})
-            ci = result["relative_improvement_ci"]
-            print(f"{metric:<22}{baseline:<14}"
-                  f"{result['relative_improvement_pct']:>13.1f}%"
-                  f"{f'[{ci[0]:.1f}, {ci[1]:.1f}]':>20}"
-                  f"{adjusted.get('p_adjusted', float('nan')):>11.2e}"
-                  f"{result['cliffs_delta']['magnitude']:>10}")
+        print("\nProposed vs each baseline (paired, 95% BCa bootstrap):")
+        print(f"{'metric':<22}{'baseline':<14}{'improvement':>14}{'95% CI':>20}"
+              f"{'p (Holm)':>11}{'effect':>10}")
+        print("-" * 92)
+        for metric, rows in comparison["paired_comparisons"].items():
+            for baseline, result in rows.items():
+                adjusted = comparison["holm_bonferroni"].get(f"{metric}|{baseline}", {})
+                ci = result["relative_improvement_ci"]
+                print(f"{metric:<22}{baseline:<14}"
+                      f"{result['relative_improvement_pct']:>13.1f}%"
+                      f"{f'[{ci[0]:.1f}, {ci[1]:.1f}]':>20}"
+                      f"{adjusted.get('p_adjusted', float('nan')):>11.2e}"
+                      f"{result['cliffs_delta']['magnitude']:>10}")
 
-    sensitivity = sensitivity_study(snapshots, budget)
+    sensitivity = (sensitivity_study(snapshots, budget)
+                   if 'sensitivity' in stages else None)
+    if sensitivity is not None:
 
-    print("\nEquity weight sweep on a deliberately scarce fleet (1 vehicle, 240 min),")
-    print("because gamma decides who is deferred and an unconstrained fleet defers nobody:")
-    print(f"{'gamma':>7}{'km':>10}{'served %':>10}{'hazard resp h':>15}"
-          f"{'oldest deferred h':>19}{'bound h':>10}")
-    print("-" * 71)
-    for row in sensitivity["gamma"]["sweep"]:
-        print(f"{row['gamma']:>7.2f}{row['distance_km']:>10.2f}"
-              f"{100 * row['served_share']:>10.1f}"
-              f"{row['mean_hazard_response_h']:>15.3f}"
-              f"{row['oldest_bin_deferred_h']:>19.1f}"
-              f"{str(row['certified_bound_h'] or 'none'):>10}")
+        print("\nEquity weight sweep on a deliberately scarce fleet (1 vehicle, 240 min),")
+        print("because gamma decides who is deferred and an unconstrained fleet defers nobody:")
+        print(f"{'gamma':>7}{'km':>10}{'served %':>10}{'hazard resp h':>15}"
+              f"{'oldest deferred h':>19}{'bound h':>10}")
+        print("-" * 71)
+        for row in sensitivity["gamma"]["sweep"]:
+            print(f"{row['gamma']:>7.2f}{row['distance_km']:>10.2f}"
+                  f"{100 * row['served_share']:>10.1f}"
+                  f"{row['mean_hazard_response_h']:>15.3f}"
+                  f"{row['oldest_bin_deferred_h']:>19.1f}"
+                  f"{str(row['certified_bound_h'] or 'none'):>10}")
 
     # Two regimes, because one of them does not test the claim.  At the default
     # tau the fleet clears the whole overdue backlog every cycle, so ceil(m/c) = 1
@@ -726,39 +939,44 @@ def main() -> None:
     # the shift, because a shift shorter than a bin's window start makes that bin
     # unservable by any policy and turns an infeasible instance into what looks
     # like a starvation result.
-    rollout = equity_rollout(snapshots, budget)
-    rollout_multi = equity_rollout(snapshots, budget, tau_h=12.0)
-    print(f"\nDoes the certified wait bound hold when the policy generates the waits?")
-    print(f"  {rollout['n_networks']} networks x {rollout['n_cycles']} cycles of "
-          f"{rollout['cycle_h']:.0f} h, all bins starting at zero wait, "
-          f"first {rollout['burn_in_cycles']} discarded as burn-in")
-    print(f"  {'gamma':>7}{'backlog':>9}{'bound h':>10}{'observed max h':>16}"
-          f"{'breaches':>11}{'verdict':>10}")
-    print("  " + "-" * 63)
-    for row in rollout["sweep"]:
-        print(f"  {row['gamma']:>7.2f}{row['max_overdue_backlog_seen']:>9}"
-              f"{row['bound_at_worst_backlog_h']:>10.1f}"
-              f"{row['observed_max_wait_h']:>16.1f}"
-              f"{row['breaches']:>8}/{row['observations']:<4}"
-              f"{'HOLDS' if row['holds'] else 'VIOLATED':>10}")
+    rollout = rollout_multi = None
+    if 'equity' in stages:
+        rollout = equity_rollout(snapshots, rollout_budget)
+        rollout_multi = equity_rollout(snapshots, rollout_budget, tau_h=12.0)
+    if rollout is not None:
+        print(f"\nDoes the certified wait bound hold when the policy generates the waits?")
+        print(f"  {rollout['n_networks']} networks x {rollout['n_cycles']} cycles of "
+              f"{rollout['cycle_h']:.0f} h, all bins starting at zero wait, "
+              f"first {rollout['burn_in_cycles']} discarded as burn-in")
+        print(f"  {'gamma':>7}{'backlog':>9}{'bound h':>10}{'observed max h':>16}"
+              f"{'breaches':>11}{'verdict':>10}")
+        print("  " + "-" * 63)
+        for row in rollout["sweep"]:
+            print(f"  {row['gamma']:>7.2f}{row['max_overdue_backlog_seen']:>9}"
+                  f"{row['bound_at_worst_backlog_h']:>10.1f}"
+                  f"{row['observed_max_wait_h']:>16.1f}"
+                  f"{row['breaches']:>8}/{row['observations']:<4}"
+                  f"{'HOLDS' if row['holds'] else 'VIOLATED':>10}")
 
-    print()
-    print(f"  Same test at tau = {rollout_multi['tau_h']:.0f} h, where the backlog "
-          f"spans more than one cycle and the bound is not trivial:")
-    print(f"  {'gamma':>7}{'backlog':>9}{'ceil(m/c)':>11}{'bound h':>10}"
-          f"{'observed max h':>16}{'breaches':>11}{'verdict':>10}")
-    print('  ' + '-' * 74)
-    for row in rollout_multi['sweep']:
-        print(f"  {row['gamma']:>7.2f}{row['max_overdue_backlog_seen']:>9}"
-              f"{row['max_cycles_to_clear']:>11}"
-              f"{row['bound_at_worst_backlog_h']:>10.1f}"
-              f"{row['observed_max_wait_h']:>16.1f}"
-              f"{row['breaches']:>8}/{row['observations']:<4}"
-              f"{'HOLDS' if row['holds'] else 'VIOLATED':>10}")
+        print()
+        print(f"  Same test at tau = {rollout_multi['tau_h']:.0f} h, where the backlog "
+              f"spans more than one cycle and the bound is not trivial:")
+        print(f"  {'gamma':>7}{'backlog':>9}{'ceil(m/c)':>11}{'bound h':>10}"
+              f"{'observed max h':>16}{'breaches':>11}{'verdict':>10}")
+        print('  ' + '-' * 74)
+        for row in rollout_multi['sweep']:
+            print(f"  {row['gamma']:>7.2f}{row['max_overdue_backlog_seen']:>9}"
+                  f"{row['max_cycles_to_clear']:>11}"
+                  f"{row['bound_at_worst_backlog_h']:>10.1f}"
+                  f"{row['observed_max_wait_h']:>16.1f}"
+                  f"{row['breaches']:>8}/{row['observations']:<4}"
+                  f"{'HOLDS' if row['holds'] else 'VIOLATED':>10}")
 
     payload = {
         "protocol": {
-            "n_snapshots": n_snapshots, "n_bins": N_BINS, "n_vehicles": N_VEHICLES,
+            "n_snapshots": n_snapshots, "n_bins": STUDY["n_bins"],
+            "n_vehicles": STUDY["n_vehicles"], "study": STUDY["name"],
+            "area": STUDY["area"], "distance_model": STUDY["distance_model"],
             "seed": SEED, "search_budget_s": budget,
             "pairing": "every policy evaluated on the identical snapshots",
             "statistics": ST.describe_protocol(),
@@ -769,10 +987,38 @@ def main() -> None:
         "equity_bound_rollout_multicycle": rollout_multi,
         "runtime_s": round(time.perf_counter() - started, 1),
     }
-    (RESULTS / "fleet.json").write_text(json.dumps(payload, indent=2))
-    print(f"\nSaved {RESULTS / 'fleet.json'} ({payload['runtime_s']}s)")
+    name = args.out or f"fleet_{STUDY['name']}.json"
 
-    if not comparison["feasible"]:
+    # Stages are expensive and are run separately, so a partial run merges into
+    # the existing file instead of replacing it.  A stage that did run always
+    # wins; a stage that was skipped keeps whatever the previous run produced,
+    # and the protocol block records which run each stage came from.
+    existing_path = RESULTS / name
+    if existing_path.exists():
+        previous = json.loads(existing_path.read_text())
+        for key in ("comparison", "sensitivity",
+                    "equity_bound_rollout", "equity_bound_rollout_multicycle"):
+            if payload.get(key) is None and previous.get(key) is not None:
+                payload[key] = previous[key]
+        payload["protocol"]["stage_history"] = (
+            previous.get("protocol", {}).get("stage_history", [])
+            + [{"stages": sorted(stages), "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                                                               time.gmtime())}])
+    else:
+        payload["protocol"]["stage_history"] = [
+            {"stages": sorted(stages),
+             "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}]
+
+    net = road_network()
+    if net is not None:
+        payload["protocol"]["road_network"] = {
+            "area": net.name, "nodes": net.n_nodes, "arcs": net.n_arcs,
+            "fingerprint": RN.fingerprint(net), "meta": net.meta,
+        }
+    (RESULTS / name).write_text(json.dumps(payload, indent=2))
+    print(f"\nSaved {RESULTS / name} ({payload['runtime_s']}s)")
+
+    if comparison is not None and not comparison["feasible"]:
         print("\nFAILED: some plans violated a hard constraint:")
         for problem in comparison["constraint_violations"][:20]:
             print(f"  {problem}")

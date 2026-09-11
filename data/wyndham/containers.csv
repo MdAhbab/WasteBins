@@ -1,0 +1,34 @@
+serial,description,latitude,longitude,threshold,n_readings,stream,suburb
+1510830,Bendigo Bank G Werribee - General Waste,-37.9018111375,144.6601949611,6.0,990,general,Werribee
+1511190,Aldi G Point Cook,-37.8825216667,144.7356233333,8.0,976,general,Point Cook
+1511191,Cash Converters G Werribee,-37.9007616667,144.6614092517,8.0,976,general,Werribee
+1511192,General Practice R Werribee,-37.900181,144.66128,8.0,976,recycling,Werribee
+1511193,Wedge St Piazza G Werribee,-37.9030024868,144.6575503108,8.0,976,general,Werribee
+1511194,Ally Fashion G Point Cook,-37.88338,144.7354966667,8.0,976,general,Point Cook
+1511195,Nandos G Point Cook,-37.8832200529,144.7351407368,8.0,976,general,Point Cook
+1511196,Woolworths G Point Cook,-37.8841133333,144.7351416667,8.0,976,general,Point Cook
+1511197,Ballan House G Werribee,-37.9011583333,144.6619166667,8.0,976,general,Werribee
+1511198,79 Watton St G Werribee,-37.9013174858,144.6611494901,8.0,976,general,Werribee
+1511199,Coles G Point Cook,-37.8827389697,144.7352828938,8.0,976,general,Point Cook
+1511200,Watton Plaza G Werribee,-37.9016183333,144.6607366667,8.0,976,general,Werribee
+1511201,Commercial Hotel G Werribee,-37.9020383333,144.6603083333,8.0,976,general,Werribee
+1511202,Bendigo Bank G Werribee,-37.9018666667,144.6602433333,8.0,181,general,Werribee
+1511203,Proven Training G Werribee,-37.9000316667,144.661445,8.0,976,general,Werribee
+1511204,Hockingstuart G Werribee,-37.9006433333,144.6619166667,8.0,976,general,Werribee
+1511205,Park Hotel G Werribee,-37.9011926717,144.6613755151,8.0,976,general,Werribee
+1511206,Watton Plaza R Werribee,-37.901555,144.6607583333,8.0,976,recycling,Werribee
+1511207,Commercial Hotel R Werribee,-37.9020266667,144.6602866667,8.0,976,recycling,Werribee
+1511208,Coles R Point Cook,-37.8827266667,144.735345,8.0,976,recycling,Point Cook
+1511209,Bendigo Bank R Werribee,-37.9018541015,144.6602679348,8.0,976,recycling,Werribee
+1511210,Wedge St Piazza R Werribee,-37.903025,144.6575183333,8.0,976,recycling,Werribee
+1511211,Cash Converters R Werribee,-37.9007198946,144.6614327211,8.0,976,recycling,Werribee
+1511212,General Practice R Werribee,-37.900181,144.66128,8.0,976,recycling,Werribee
+1511213,79 Watton St R Werribee,-37.9013126406,144.6611613075,8.0,976,recycling,Werribee
+1511214,Ally Fashion R Point Cook,-37.883445,144.7354533333,8.0,976,recycling,Point Cook
+1511215,Woolworths R Point Cook,-37.884073105,144.7351335129,8.0,976,recycling,Point Cook
+1511216,Hockingstuart R Werribee,-37.9005884942,144.661874373,8.0,976,recycling,Werribee
+1511217,Ballan House R Werribee,-37.901148703,144.6619360691,8.0,976,recycling,Werribee
+1511218,Aldi R Point Cook,-37.882425,144.7356466667,8.0,976,recycling,Point Cook
+1511219,Proven Training R Werribee,-37.9000687209,144.6614718221,8.0,976,recycling,Werribee
+1511220,Nandos R Point Cook,-37.88323,144.7352166667,8.0,976,recycling,Point Cook
+1511221,Park Hotel R Werribee,-37.9011767991,144.6614036347,8.0,976,recycling,Werribee

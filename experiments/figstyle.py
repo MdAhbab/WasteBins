@@ -9,20 +9,18 @@ Rules kept in sync with the paper's figure specification:
 - a series keeps the same colour in every figure (proposed = blue,
   comparator/naive = orange, CO2/secondary = green, neutral = grey).
 
-The layout is single column.  The previous submission was to a two-column IEEE
-journal, where a figure was drawn either at 3.5 in to sit inside one column or at
-7.16 in to span both.  Neither width is right here.  A single-column page has one
-text width, so a full-width figure is 6.0 in and a half-width figure that shares a
-row with another is 2.95 in.  Redrawing at the correct width matters because text
-inside a figure is not rescaled by LaTeX only when the figure is placed at the
-width it was drawn for; a 7.16 in figure squeezed into a 6.0 in column drops its
-9 pt labels to about 7.5 pt, below the floor the specification sets.
+The layout is the two-column IEEE journal page.  A figure is drawn either at
+3.5 in to sit inside one column or at 7.16 in to span both.  Drawing at the true
+placement width matters because LaTeX does not rescale the text inside a figure
+only when the figure is placed at the width it was drawn for.  A 7.16 in figure
+squeezed into a 3.5 in column drops its 9 pt labels to about 4.4 pt, far below
+the floor the specification sets.
 """
 import matplotlib as mpl
 
-# True print widths in inches, for a single-column layout.
-COL_W = 2.95    # half width, for two figures side by side
-FULL_W = 6.0    # full text width
+# True print widths in inches, for the IEEE two-column layout.
+COL_W = 3.5     # one column
+FULL_W = 7.16   # spanning both columns
 
 # Palette (fixed per series across all figures).
 BLUE = "#2563EB"    # proposed method / renormalised series
