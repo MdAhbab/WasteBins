@@ -1,43 +1,94 @@
-# Reproducible experiments (SCS revision)
+# Experiments
 
-All quantitative results in the revised manuscript are generated here from a
-**physically-grounded, seeded simulation** — no proprietary or unavailable data.
-Everything is honest about being simulation and is fully reproducible.
+Every quantitative result in *No Container Waits Forever* is produced here and
+written to `results/` as JSON. Nothing in the paper is typed by hand: the tables
+are generated from these files and a checker re-derives each quoted figure from
+them.
+
+Container positions are real in both study areas and both street graphs are
+compiled from OpenStreetMap. Demand is observed in Wyndham and simulated in
+Dhaka, which publishes no fill data. The forecast and fault layers are evaluated
+on a simulated network, because no public dataset pairs container telemetry with
+labelled sensor faults.
 
 ## Requirements
-Python 3.11+ with `numpy pandas scikit-learn scipy matplotlib pyarrow`.
 
-## Run everything
+Python 3.11 or newer with `numpy pandas scikit-learn scipy matplotlib`.
+No GPU is used anywhere. `exp_censoring.py` additionally needs `xgboost` and a
+seeded database; nothing else does.
+
+## Regenerating the routing results
+
 ```bash
-python dataset.py       # build + cache the 30-bin, 180-day dataset (seed=42) -> results/{latent.pkl,features.parquet}
-python exp_model.py     # Q1/Q2 + model bake-off, quantile uncertainty, calibration, circular-pitfall -> results/model.json
-python exp_ablation.py  # Q5 sensor-failure ablation (renorm vs naive, 0-90% missing)                 -> results/ablation.json
-python exp_routing.py   # Q3/Q4/Q9 routing baselines + real km/CO2/time-to-serve + alpha sweep         -> results/routing.json
-python exp_equity.py    # Q8 equity / anti-starvation aging sweep                                      -> results/equity.json
-python make_figures.py  # all figures -> results/figures/ and ../../Micro/images/
+bash run_all_routing.sh
 ```
 
-## What each file is
-| File | Purpose |
+That runs the stages below in dependency order and logs to
+`results/run_all.log`. It takes several hours on twelve cores. Individual
+stages:
+
+| Command | Writes | Roughly |
+|---|---|---|
+| `python -m experiments.exp_fleet --study wyndham --only comparison` | `fleet_wyndham.json` | 5 min |
+| `python -m experiments.exp_fleet --study dhaka --only comparison` | `fleet_dhaka.json` | 70 min |
+| `python -m experiments.exp_fleet --study dhaka_gc --only comparison` | `fleet_dhaka_gc.json` | 65 min |
+| `python -m experiments.exp_fleet --study dhaka --only sensitivity` | `fleet_dhaka_equity.json` | 65 min |
+| `python -m experiments.exp_fleet --study dhaka --only equity --resample` | `fleet_dhaka_equity.json` | 140 min |
+| `python -m experiments.exp_distance_model` | `distance_model.json` | 110 min |
+| `python -m experiments.exp_network` | `network.json` | 40 min |
+| `python -m experiments.exp_scale` | `scale.json` | 40 min |
+| `python -m experiments.exp_wait_bound` | `wait_bound.json` | seconds |
+
+The stages are independent apart from the two that share
+`fleet_dhaka_equity.json`, so most of them can run at once. `exp_network`
+measures properties of the street graph rather than of any plan, so it does not
+need rerunning when the planner changes.
+
+## What each script does
+
+| Script | Purpose |
 |---|---|
-| `sim.py` | Latent bin-fill + decomposition + sensor-observation simulator with **forward-looking** hazard labels (non-circular). |
-| `dataset.py` | Builds and caches the dataset once for reuse. |
-| `exp_model.py` | Demonstrates the circular-target pitfall ($R^2=0.99$), then the honest forward task; Ridge vs Random Forest vs HistGradientBoosting under a **temporal split** and **group-by-bin CV**; quantile intervals; probability calibration; latency. |
-| `exp_ablation.py` | Dynamic Weight Renormalisation vs naive zero-fill under sensor loss (priority error + rank correlation). |
-| `routing.py` / `exp_routing.py` | Haversine matrix, greedy warp, **2-opt/Or-opt**, **prize-collecting orienteering**; distance, CO2, time-to-serve, missed-overflow. |
-| `exp_equity.py` | Aging/anti-starvation term; worst-case wait, Gini, hazard-response cost. |
+| `build_roadnets.py` | Compiles both street graphs from Overpass into `data/roadnet/*.npz` |
+| `dhaka_containers.py` | Extracts the mapped Dhaka waste facilities into `data/dhaka/` |
+| `wyndham.py` | Parses the council feed into `data/wyndham/` |
+| `exp_fleet.py` | The routing comparison, the sensitivity sweeps and the wait-bound rollout |
+| `exp_distance_model.py` | Plans on a constant detour factor, then measures that plan on the street graph |
+| `exp_network.py` | Circuity, direction asymmetry, snap distance, the longest leg |
+| `exp_scale.py` | Cost and quality at four instance sizes |
+| `exp_wait_bound.py` | The controlled single-container sweep that tests the bound exactly |
+| `exp_model.py` | Forecast bake-off under a temporal split and group-by-bin CV |
+| `exp_censoring.py` | Whether a survival objective beats the censored squared loss. It does not |
+| `eval_sensor_health.py` | The nine-mode fault taxonomy, on held-out seeds |
+| `dataset.py`, `sim.py` | The simulator behind the forecast and fault evaluations |
+| `fig_*.py`, `make_figures.py` | Figures, from the result files just written |
 
-## Headline numbers (from `results/*.json`)
-- Circular target (reproduced pitfall): RF $R^2=0.99$ (self-consistency).
-- Forward time-to-overflow: HistGB $R^2=0.83$, MAE 2.17 h (RF 0.81; Ridge 0.70; persistence ≈0).
-- Group-by-bin CV: $R^2=0.81\pm0.05$. Hazard: calibrated ROC-AUC 0.98, Brier 0.033.
-- Renormalisation @50% sensor loss: Spearman 0.56 vs 0.42 (naive).
-- Routing: orienteering 13.45 km / 14.12 kg CO2 vs static 22.05 km / 23.15 kg (−39%), fastest time-to-critical, fewest missed overflows.
-- Equity: worst-case wait 231.7 h → 66.0 h with aging (−72%), hazard-response cost +0.013 h.
+`exp_ablation.py`, `exp_continual.py`, `exp_equity.py`, `exp_realdata.py`,
+`exp_routing.py`, `routing.py` and `eval_xai_agreement.py` belong to an earlier
+version of this work. They still run, and their results are still in `results/`,
+but nothing in the current paper is drawn from them.
 
-## In the Django app
-The same methods are wired into the backend:
-- `manage.py train_forward` trains the forward-looking bundle (HistGB regressor + P10/P50/P90 quantiles + calibrated hazard classifier) on stored telemetry.
-- `bins/utils/dijkstra.py` adds `two_opt_order`, `or_opt_order`, `orienteering_route`, `apply_aging`, and a `refine` flag on `compute_optimal_route`.
-- `bins/utils/priority_calculator.py` uses the forward bundle for risk-aware priorities when available.
-- Unit tests: `bins/tests.py::RoutingRefinementTests`.
+## Checking the numbers
+
+The paper's build directory carries the checker:
+
+```bash
+cd ../../TITS_Submission
+python make_tables.py && python check_numbers.py && python build.py all
+```
+
+`check_numbers.py` re-derives every quoted figure from `results/` and reports
+anything the prose no longer matches. It also refuses to pass when the wait
+bound is violated in the rollout, because a paper that claims a guarantee must
+not build while its own experiment breaks it.
+
+## A note on reproducibility
+
+The search budget is wall-clock, so a busier machine gives the metaheuristics
+fewer iterations in the same three seconds and their distances move by a few
+tenths of a percent between runs. Every conclusion in the paper rests on
+differences an order of magnitude larger.
+
+`build_roadnets.py` and `dhaka_containers.py` query Overpass live, so a rebuild
+picks up map edits and will not reproduce the committed extracts byte for byte.
+The fingerprint stored in each `.npz` identifies the extract the published
+results were computed on.

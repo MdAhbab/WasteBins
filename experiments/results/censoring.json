@@ -1,0 +1,137 @@
+{
+  "protocol": {
+    "rows": 19200,
+    "features": 31,
+    "censoring_cap_h": 24.0,
+    "split": "temporal hold-out, 20 percent test, embargo equal to the cap",
+    "train_rows": 7680,
+    "test_rows": 3840,
+    "censored_share_train": 0.6259,
+    "censored_share_test": 0.599,
+    "note": "the served model is 'pooled squared loss (served)'; quote its uncensored_rows_only figures, because the pooled ones are inflated by the labels sitting at the cap"
+  },
+  "served_model": "pooled squared loss (served)",
+  "models": {
+    "pooled squared loss (served)": {
+      "c_index": 0.8995,
+      "uncensored_rows_only": {
+        "mae_h": 3.271,
+        "r2": 0.6466
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.392,
+        "r2": 0.7932
+      }
+    },
+    "conditional squared loss": {
+      "c_index": 0.8681,
+      "uncensored_rows_only": {
+        "mae_h": 2.393,
+        "r2": 0.7974
+      },
+      "all_rows_pooled": {
+        "mae_h": 4.672,
+        "r2": 0.5687
+      }
+    },
+    "AFT normal, scale 0.5": {
+      "c_index": 0.8518,
+      "uncensored_rows_only": {
+        "mae_h": 3.451,
+        "r2": 0.553
+      },
+      "all_rows_pooled": {
+        "mae_h": 1.903,
+        "r2": 0.7754
+      }
+    },
+    "AFT normal, scale 1.0": {
+      "c_index": 0.8167,
+      "uncensored_rows_only": {
+        "mae_h": 4.331,
+        "r2": 0.3401
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.158,
+        "r2": 0.7153
+      }
+    },
+    "AFT normal, scale 1.5": {
+      "c_index": 0.7899,
+      "uncensored_rows_only": {
+        "mae_h": 5.063,
+        "r2": 0.1354
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.387,
+        "r2": 0.6554
+      }
+    },
+    "AFT logistic, scale 0.5": {
+      "c_index": 0.8033,
+      "uncensored_rows_only": {
+        "mae_h": 4.766,
+        "r2": 0.2225
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.714,
+        "r2": 0.5538
+      }
+    },
+    "AFT logistic, scale 1.0": {
+      "c_index": 0.8035,
+      "uncensored_rows_only": {
+        "mae_h": 4.638,
+        "r2": 0.256
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.573,
+        "r2": 0.5854
+      }
+    },
+    "AFT logistic, scale 1.5": {
+      "c_index": 0.7874,
+      "uncensored_rows_only": {
+        "mae_h": 4.743,
+        "r2": 0.2442
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.427,
+        "r2": 0.629
+      }
+    },
+    "AFT extreme, scale 0.5": {
+      "c_index": 0.8228,
+      "uncensored_rows_only": {
+        "mae_h": 4.304,
+        "r2": 0.3763
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.121,
+        "r2": 0.7323
+      }
+    },
+    "AFT extreme, scale 1.0": {
+      "c_index": 0.8038,
+      "uncensored_rows_only": {
+        "mae_h": 4.673,
+        "r2": 0.2741
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.195,
+        "r2": 0.7076
+      }
+    },
+    "AFT extreme, scale 1.5": {
+      "c_index": 0.7884,
+      "uncensored_rows_only": {
+        "mae_h": 4.971,
+        "r2": 0.1723
+      },
+      "all_rows_pooled": {
+        "mae_h": 2.291,
+        "r2": 0.6749
+      }
+    }
+  }
+}

@@ -51,6 +51,7 @@ Run:  python exp_censoring.py
 """
 from __future__ import annotations
 
+import json
 import os
 import pathlib
 import sys
@@ -97,12 +98,31 @@ print(f"train {len(y_train)} ({censored_train.mean():.1%} censored), "
 print()
 
 
+#: Every figure this script prints, keyed by model, so the paper can quote it
+#: without anyone retyping a number out of a terminal.  The pooled columns exist
+#: because the manuscript used to quote them alone, which the repository's own
+#: README warns against: with most labels at the cap, a pooled score is largely a
+#: score for recognising "not today".  Recording both side by side is what stops
+#: the flattering one being quoted on its own again.
+RESULTS = pathlib.Path(__file__).parent / "results"
+RESULTS.mkdir(exist_ok=True)
+MODELS = {}
+
+
 def report(name, predictions):
     c = _concordance_index(y_test, predictions, event=observed_test)
     mae = mean_absolute_error(y_test[observed_test], predictions[observed_test])
     r2 = r2_score(y_test[observed_test], predictions[observed_test])
     mae_all = mean_absolute_error(y_test, predictions)
+    r2_all = r2_score(y_test, predictions)
     print(f"  {name:<34}{c:>9.4f}{mae:>11.3f}{r2:>9.4f}{mae_all:>11.3f}")
+    MODELS[name] = {
+        "c_index": round(float(c), 4),
+        "uncensored_rows_only": {"mae_h": round(float(mae), 3),
+                                 "r2": round(float(r2), 4)},
+        "all_rows_pooled": {"mae_h": round(float(mae_all), 3),
+                            "r2": round(float(r2_all), 4)},
+    }
     return c, mae, r2
 
 
@@ -152,3 +172,23 @@ for dist in ("normal", "logistic", "extreme"):
         # AFT predicts the survival time directly.
         predictions = np.clip(booster.predict(dtest), 0.0, CAP)
         report(f"AFT {dist}, scale {scale}", predictions)
+
+payload = {
+    "protocol": {
+        "rows": int(len(y_tto)),
+        "features": int(X.shape[1]),
+        "censoring_cap_h": float(CAP),
+        "split": "temporal hold-out, 20 percent test, embargo equal to the cap",
+        "train_rows": int(len(y_train)),
+        "test_rows": int(len(y_test)),
+        "censored_share_train": round(float(censored_train.mean()), 4),
+        "censored_share_test": round(float(censored_test.mean()), 4),
+        "note": "the served model is 'pooled squared loss (served)'; quote its "
+                "uncensored_rows_only figures, because the pooled ones are "
+                "inflated by the labels sitting at the cap",
+    },
+    "served_model": "pooled squared loss (served)",
+    "models": MODELS,
+}
+(RESULTS / "censoring.json").write_text(json.dumps(payload, indent=2))
+print(f"\nSaved {RESULTS / 'censoring.json'}")
