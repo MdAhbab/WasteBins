@@ -50,6 +50,28 @@ CONTAINERS_PER_VEHICLE = 25
 COMPARATOR = "aco"           # the strongest baseline at the headline size
 
 
+def growth_exponent(rows: List[Dict], field: str = "solve_s",
+                    min_bins: int = 80) -> float:
+    """
+    Slope of log solve time against log instance size, by least squares.
+
+    Reported rather than asserted, because "grows faster than linearly" is a
+    claim a reader can check and "is cubic" is a claim we have not earned.
+
+    Sizes below ``min_bins`` are excluded. At 40 containers the search finishes
+    inside its own three-second budget, so the measured time is the budget and
+    not the cost of the work, and including it would bend the fitted slope
+    upward for a reason that has nothing to do with how the method scales.
+    """
+    points = [(r["n_bins"], r["proposed"][field]) for r in rows
+              if r["n_bins"] >= min_bins and r["proposed"][field] > 0]
+    if len(points) < 2:
+        return float("nan")
+    x = np.log(np.array([p[0] for p in points], dtype=float))
+    y = np.log(np.array([p[1] for p in points], dtype=float))
+    return float(np.polyfit(x, y, 1)[0])
+
+
 def run_size(n_bins: int, n_snapshots: int, budget: float) -> Dict:
     from datetime import datetime, timezone
     when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
@@ -135,9 +157,19 @@ def main() -> int:
               f"{p['distance_km']:>9.1f}{p['objective']:>12.1f}"
               f"{row['objective_gap_pct']:>15.1f}%", flush=True)
 
+    exponent = growth_exponent(rows)
+    print(f"\nsearch time grows as n^{exponent:.2f} over the sizes above 40 "
+          f"containers, where the search no longer finishes inside its budget")
+
     payload = {
         "containers_per_vehicle": CONTAINERS_PER_VEHICLE,
         "comparator": COMPARATOR,
+        "growth_exponent": exponent,
+        "growth_exponent_note": "least-squares slope of log search time against "
+                                "log container count, fitted above 40 containers "
+                                "because at 40 the search finishes inside its "
+                                "three-second budget and the measured time is "
+                                "the budget",
         "sizes": rows,
         "note": "the fleet grows with the network so the per-vehicle workload "
                 "stays roughly constant; the curve measures the planner and not "

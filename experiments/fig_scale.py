@@ -64,15 +64,26 @@ def main() -> int:
     left.plot(n, matrix, marker="^", ms=4.5, lw=1.4, color=FS.GREEN,
               ls=(0, (1, 1.6)), label="Shortest paths, per instance")
 
-    # Reference slopes, so the growth exponent is readable off the plot.
-    anchor = solve[0] / (n[0] ** 2)
-    left.plot(n, anchor * n ** 2, lw=0.9, color=FS.GREY, ls=":", zorder=1)
-    left.annotate("slope 2", xy=(n[-1], anchor * n[-1] ** 2), xytext=(-4, 6),
+    # The fitted slope, drawn so the reader can check the exponent rather than
+    # take it from the caption. It is anchored on the second size, because at
+    # the first the search finishes inside its own budget and the measured time
+    # is the budget rather than the cost of the work.
+    exponent = data.get("growth_exponent", 2.0)
+    anchor = solve[1] / (n[1] ** exponent)
+    fit_x = n[n >= n[1]]
+    left.plot(fit_x, anchor * fit_x ** exponent, lw=1.0, color=FS.GREY, ls=":",
+              zorder=1)
+    left.annotate(f"fitted slope {exponent:.2f}",
+                  xy=(n[-1], anchor * n[-1] ** exponent), xytext=(-4, 8),
                   textcoords="offset points", color=FS.GREY, fontsize=9,
                   ha="right")
-    left.annotate(f"{solve[-1]:.0f} s at {n[-1]:.0f}", xy=(n[-1], solve[-1]),
+    left.annotate(f"{solve[-1]:.0f} s at {n[-1]:.0f} containers",
+                  xy=(n[-1], solve[-1]), xytext=(-6, -16),
+                  textcoords="offset points", color=FS.BLUE, fontsize=9,
+                  ha="right")
+    left.annotate(f"{matrix[-1]:.1f} s", xy=(n[-1], matrix[-1]),
                   xytext=(-6, -14), textcoords="offset points",
-                  color=FS.BLUE, fontsize=9, ha="right")
+                  color=FS.GREEN, fontsize=9, ha="right")
 
     left.set_xscale("log")
     left.set_yscale("log")

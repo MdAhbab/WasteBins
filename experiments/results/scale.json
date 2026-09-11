@@ -1,0 +1,113 @@
+{
+  "containers_per_vehicle": 25,
+  "comparator": "aco",
+  "sizes": [
+    {
+      "n_bins": 40,
+      "n_vehicles": 2,
+      "n_snapshots": 3,
+      "search_budget_s": 3.0,
+      "matrix_build_s": 0.3595148333333782,
+      "proposed": {
+        "solve_s": 3.00109023333304,
+        "objective": 277.7842454225082,
+        "distance_km": 55.577,
+        "co2_kg": 59.335,
+        "served": 37.666666666666664,
+        "served_share": 0.9416666666666668
+      },
+      "aco": {
+        "solve_s": 3.0087231999999253,
+        "objective": 387.18460673068427,
+        "distance_km": 84.98833333333333,
+        "co2_kg": 81.635,
+        "served": 40.0,
+        "served_share": 1.0
+      },
+      "objective_gap_pct": 28.305576818174664,
+      "feasible": true,
+      "violations": []
+    },
+    {
+      "n_bins": 80,
+      "n_vehicles": 3,
+      "n_snapshots": 3,
+      "search_budget_s": 3.0,
+      "matrix_build_s": 0.7064488999997897,
+      "proposed": {
+        "solve_s": 29.619946566666233,
+        "objective": 639.6178043177389,
+        "distance_km": 114.94933333333331,
+        "co2_kg": 126.45066666666668,
+        "served": 76.0,
+        "served_share": 0.9500000000000001
+      },
+      "aco": {
+        "solve_s": 3.023687800000213,
+        "objective": 899.416498860548,
+        "distance_km": 154.595,
+        "co2_kg": 158.69433333333333,
+        "served": 79.33333333333333,
+        "served_share": 0.9916666666666667
+      },
+      "objective_gap_pct": 26.434662651939206,
+      "feasible": true,
+      "violations": []
+    },
+    {
+      "n_bins": 160,
+      "n_vehicles": 6,
+      "n_snapshots": 3,
+      "search_budget_s": 3.0,
+      "matrix_build_s": 1.2672891666661599,
+      "proposed": {
+        "solve_s": 145.68943086666636,
+        "objective": 1369.899749595577,
+        "distance_km": 239.81133333333332,
+        "co2_kg": 262.6646666666667,
+        "served": 146.33333333333334,
+        "served_share": 0.9145833333333333
+      },
+      "aco": {
+        "solve_s": 3.0572376999995563,
+        "objective": 1722.4307072768404,
+        "distance_km": 245.45866666666666,
+        "co2_kg": 261.47,
+        "served": 160.0,
+        "served_share": 1.0
+      },
+      "objective_gap_pct": 20.15140676725352,
+      "feasible": true,
+      "violations": []
+    },
+    {
+      "n_bins": 320,
+      "n_vehicles": 13,
+      "n_snapshots": 3,
+      "search_budget_s": 3.0,
+      "matrix_build_s": 2.437894000000597,
+      "proposed": {
+        "solve_s": 644.9964168333323,
+        "objective": 2417.800725877873,
+        "distance_km": 450.8613333333333,
+        "co2_kg": 497.15200000000004,
+        "served": 309.6666666666667,
+        "served_share": 0.9677083333333334
+      },
+      "aco": {
+        "solve_s": 3.140193500000047,
+        "objective": 3221.591678796028,
+        "distance_km": 407.3223333333333,
+        "co2_kg": 459.75966666666665,
+        "served": 320.0,
+        "served_share": 1.0
+      },
+      "objective_gap_pct": 24.842644529046133,
+      "feasible": true,
+      "violations": []
+    }
+  ],
+  "note": "the fleet grows with the network so the per-vehicle workload stays roughly constant; the curve measures the planner and not a change in how constrained the instance is",
+  "growth_exponent": 2.2223251013714727,
+  "growth_exponent_note": "least-squares slope of log search time against log container count, fitted above 40 containers because at 40 the search finishes inside its three-second budget and the measured time is the budget"
+}
