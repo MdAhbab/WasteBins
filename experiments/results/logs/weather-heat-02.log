@@ -8,3 +8,6 @@
 
 === 2026-10-02 01:55:00 experiments.exp_weather --scenario heat --shard 2 --of 8
 [weather-heat] shard 2/8: networks ['R2']
+
+=== 2026-10-01 20:11:55 experiments.exp_weather --scenario heat --shard 2 --of 8
+[weather-heat] shard 2/8: networks ['R2']
