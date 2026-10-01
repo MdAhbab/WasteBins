@@ -1,0 +1,462 @@
+{
+  "study": "weather-storm",
+  "scenario": "storm",
+  "modes": [
+    "blind",
+    "protected",
+    "current"
+  ],
+  "load": {
+    "fill_hours": 96.0,
+    "persistent_hazard_share": 0.0
+  },
+  "networks": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7"
+  ],
+  "spell_cycles": [
+    16,
+    27
+  ],
+  "cycle_h": 12.0,
+  "n_cycles": 40,
+  "burn_in": 8,
+  "shift_min": 240.0,
+  "tau_h": 48.0,
+  "improve_s": 3.0,
+  "specs": [
+    [
+      "insertion",
+      "full"
+    ],
+    [
+      "insertion",
+      "urgency"
+    ],
+    [
+      "ortools",
+      "full"
+    ]
+  ],
+  "factors": {
+    "day": {
+      "dispatch": {
+        "temperature_c": 28.2,
+        "relative_humidity": 88.0,
+        "rain_mm_h": 20.0,
+        "uv_index": 2.0,
+        "is_daytime": true,
+        "standing_water_mm": 0.0,
+        "daily_max_c": null,
+        "wet_day": null,
+        "observed_at": null,
+        "source": "scenario"
+      },
+      "shift_hours": [
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        }
+      ],
+      "rain_class": [
+        "heavy",
+        "heavy",
+        "heavy",
+        "heavy"
+      ],
+      "speed_factor": [
+        0.88,
+        0.88,
+        0.88,
+        0.88
+      ],
+      "speed_cap_kmh": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "wbgt_c": [
+        27.05,
+        27.05,
+        27.05,
+        27.05
+      ],
+      "sun_exposed": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "uv_category": [
+        "low",
+        "low",
+        "low",
+        "low"
+      ],
+      "work_capacity": [
+        0.799,
+        0.799,
+        0.799,
+        0.799
+      ],
+      "service_factor": [
+        1.122,
+        1.122,
+        1.122,
+        1.122
+      ],
+      "service_factor_shift_mean": 1.122,
+      "speed_factor_shift_mean": 0.88,
+      "service_factor_at_dispatch": 1.122,
+      "speed_factor_at_dispatch": 0.88,
+      "sensed_temperature_c": 27.9,
+      "gas_factor": 0.987,
+      "daily_max_c": 31.0,
+      "wet_day": true,
+      "litter_demand_factor": 0.9422
+    },
+    "night": {
+      "dispatch": {
+        "temperature_c": 28.2,
+        "relative_humidity": 88.0,
+        "rain_mm_h": 20.0,
+        "uv_index": 0.0,
+        "is_daytime": false,
+        "standing_water_mm": 0.0,
+        "daily_max_c": null,
+        "wet_day": null,
+        "observed_at": null,
+        "source": "scenario"
+      },
+      "shift_hours": [
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 0.0,
+          "is_daytime": false,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 0.0,
+          "is_daytime": false,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 0.0,
+          "is_daytime": false,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 20.0,
+          "uv_index": 0.0,
+          "is_daytime": false,
+          "standing_water_mm": 0.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        }
+      ],
+      "rain_class": [
+        "heavy",
+        "heavy",
+        "heavy",
+        "heavy"
+      ],
+      "speed_factor": [
+        0.88,
+        0.88,
+        0.88,
+        0.88
+      ],
+      "speed_cap_kmh": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "wbgt_c": [
+        27.05,
+        27.05,
+        27.05,
+        27.05
+      ],
+      "sun_exposed": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "uv_category": [
+        "low",
+        "low",
+        "low",
+        "low"
+      ],
+      "work_capacity": [
+        0.799,
+        0.799,
+        0.799,
+        0.799
+      ],
+      "service_factor": [
+        1.122,
+        1.122,
+        1.122,
+        1.122
+      ],
+      "service_factor_shift_mean": 1.122,
+      "speed_factor_shift_mean": 0.88,
+      "service_factor_at_dispatch": 1.122,
+      "speed_factor_at_dispatch": 0.88,
+      "sensed_temperature_c": 27.9,
+      "gas_factor": 0.987,
+      "daily_max_c": 31.0,
+      "wet_day": true,
+      "litter_demand_factor": 0.9422
+    },
+    "storm peak day": {
+      "dispatch": {
+        "temperature_c": 28.2,
+        "relative_humidity": 88.0,
+        "rain_mm_h": 60.0,
+        "uv_index": 2.0,
+        "is_daytime": true,
+        "standing_water_mm": 150.0,
+        "daily_max_c": null,
+        "wet_day": null,
+        "observed_at": null,
+        "source": "scenario"
+      },
+      "shift_hours": [
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 60.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 150.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 60.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 150.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 60.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 150.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        },
+        {
+          "temperature_c": 28.2,
+          "relative_humidity": 88.0,
+          "rain_mm_h": 60.0,
+          "uv_index": 2.0,
+          "is_daytime": true,
+          "standing_water_mm": 150.0,
+          "daily_max_c": null,
+          "wet_day": null,
+          "observed_at": null,
+          "source": "scenario"
+        }
+      ],
+      "rain_class": [
+        "violent",
+        "violent",
+        "violent",
+        "violent"
+      ],
+      "speed_factor": [
+        0.82,
+        0.82,
+        0.82,
+        0.82
+      ],
+      "speed_cap_kmh": [
+        24.26,
+        24.26,
+        24.26,
+        24.26
+      ],
+      "wbgt_c": [
+        27.05,
+        27.05,
+        27.05,
+        27.05
+      ],
+      "sun_exposed": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "uv_category": [
+        "low",
+        "low",
+        "low",
+        "low"
+      ],
+      "work_capacity": [
+        0.799,
+        0.799,
+        0.799,
+        0.799
+      ],
+      "service_factor": [
+        1.122,
+        1.122,
+        1.122,
+        1.122
+      ],
+      "service_factor_shift_mean": 1.122,
+      "speed_factor_shift_mean": 0.82,
+      "service_factor_at_dispatch": 1.122,
+      "speed_factor_at_dispatch": 0.82,
+      "sensed_temperature_c": 27.9,
+      "gas_factor": 0.987,
+      "daily_max_c": 31.0,
+      "wet_day": true,
+      "litter_demand_factor": 0.9422
+    }
+  },
+  "rain_speed_factor": {
+    "dry": 1.0,
+    "slight": 0.98,
+    "moderate": 0.95,
+    "heavy": 0.88,
+    "violent": 0.82
+  },
+  "decomposition_q10": 3.7919553292794634,
+  "demand_coefficients": {
+    "per_10C": 0.1025,
+    "wet": -0.0903
+  },
+  "weather_source": "Weather data by Open-Meteo.com (CC BY 4.0); ERA5 reanalysis, Copernicus Climate Change Service; UV index, Copernicus Atmosphere Monitoring Service",
+  "solver_config": {
+    "ortools": {
+      "first_solution": "PARALLEL_CHEAPEST_INSERTION",
+      "metaheuristic": "GUIDED_LOCAL_SEARCH",
+      "emission_model": "mean_load"
+    },
+    "aco": {
+      "n_ants": 8,
+      "alpha": 1.0,
+      "beta": 2.5,
+      "rho": 0.1,
+      "q0": 0.25,
+      "polish_fraction": 0.3
+    },
+    "genetic": {
+      "population_size": 40,
+      "crossover_rate": 0.85,
+      "mutation_rate": 0.5,
+      "elite": 4,
+      "tournament": 3,
+      "polish_fraction": 0.3
+    }
+  },
+  "environment": {
+    "versions": {
+      "python": "3.13.14",
+      "numpy": "2.3.3",
+      "scipy": "1.18.0",
+      "pandas": "2.3.2",
+      "ortools": "9.15.6755",
+      "matplotlib": "3.10.8"
+    },
+    "platform": "Linux-6.18.44-fc-v50-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "logical_cpus": 4,
+    "utc": "2026-10-01T22:45:54Z"
+  }
+}

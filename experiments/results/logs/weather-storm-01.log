@@ -1,0 +1,4 @@
+
+=== 2026-10-01 22:40:05 experiments.exp_weather --scenario storm --shard 1 --of 8
+[weather-storm] shard 1/8: networks ['R1']
+  R1 storm blind    insertion full      served 38.5>35.6  dropped  4.0  max wait  144  breach False  heads lost 8  overflow 0.25>1.00   5.3 min

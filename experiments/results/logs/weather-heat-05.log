@@ -10,3 +10,7 @@
   R5 heat  current  insertion urgency   served 40.0>35.9  dropped  3.5  max wait  168  breach None  heads lost 0  overflow 0.38>0.92   5.7 min
   R5 heat  current  ortools   full      served 41.5>34.8  dropped  3.2  max wait   60  breach False  heads lost 0  overflow 0.25>0.83   5.4 min
   R5 heat  forecast insertion full      served 39.2>32.8  dropped  0.8  max wait   48  breach False  heads lost 0  overflow 0.38>0.42   5.3 min
+  R5 heat  forecast insertion urgency   served 39.6>34.2  dropped  0.8  max wait  168  breach None  heads lost 0  overflow 0.38>0.33   5.3 min
+  R5 heat  forecast ortools   full      served 42.4>33.9  dropped  0.8  max wait   72  breach False  heads lost 2  overflow 0.12>0.08   5.3 min
+  R5: 11 chains, 60.0 min
+[weather-heat] shard 5 finished
