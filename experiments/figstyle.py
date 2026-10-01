@@ -2,31 +2,33 @@
 Shared figure style for the publication plots.
 
 Rules kept in sync with the paper's figure specification:
-- all text in the 9 to 9.5 pt band (9.5 pt titles, 9 pt everything else);
+- titles and axis labels at 9 to 9.5 pt, ticks, legends and annotations at
+  8.5 pt, nothing below 8 pt;
 - figures are drawn at their true print width so text is never scaled down
   in LaTeX;
-- flat, colour-blind-safe palette, white background, 300 dpi export;
-- a series keeps the same colour in every figure (proposed = blue,
-  comparator/naive = orange, CO2/secondary = green, neutral = grey).
+- flat, colour-blind-safe palette, white background, 300 dpi export, fonts
+  embedded as TrueType;
+- a series keeps the same colour in every figure (proposed rule = blue,
+  comparator = orange, secondary measured series = green, neutral = grey), and
+  a marker or line style as well, so no reading depends on hue alone.
 
-The layout is the two-column IEEE journal page.  A figure is drawn either at
-3.5 in to sit inside one column or at 7.16 in to span both.  Drawing at the true
-placement width matters because LaTeX does not rescale the text inside a figure
-only when the figure is placed at the width it was drawn for.  A 7.16 in figure
-squeezed into a 3.5 in column drops its 9 pt labels to about 4.4 pt, far below
-the floor the specification sets.
+The layout is the single-column Elsevier page of the cas-sc template, whose text
+block is 164.6 mm wide.  A figure is drawn either at that full width or at half
+of it, for two panels set side by side.  Drawing at the placement width matters
+because LaTeX scales the text inside a figure with the figure.
 """
 import matplotlib as mpl
 
-# True print widths in inches, for the IEEE two-column layout.
-COL_W = 3.5     # one column
-FULL_W = 7.16   # spanning both columns
+# True print widths in inches for the cas-sc single-column page.
+FULL_W = 6.48   # the text width
+HALF_W = 3.2    # one of two figures side by side
+COL_W = HALF_W  # kept for scripts written against the earlier layout
 
 # Palette (fixed per series across all figures).
-BLUE = "#2563EB"    # proposed method / renormalised series
-ORANGE = "#E8710A"  # baseline / naive comparator
-GREEN = "#059669"   # CO2 / secondary measured series
-GREY = "#6B7280"    # neutral reference (persistence, diagonals)
+BLUE = "#2563EB"    # proposed rule
+ORANGE = "#E8710A"  # comparator
+GREEN = "#059669"   # secondary measured series
+GREY = "#6B7280"    # neutral reference
 TEXT = "#111827"
 GRID = "#E5E7EB"
 
@@ -35,13 +37,14 @@ def apply():
     mpl.rcParams.update({
         "font.family": "sans-serif",
         "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
-        "font.size": 9,
+        "font.size": 9.0,
         "axes.titlesize": 9.5,
         "axes.titleweight": "semibold",
-        "axes.labelsize": 9,
-        "xtick.labelsize": 9,
-        "ytick.labelsize": 9,
-        "legend.fontsize": 9,
+        "axes.labelsize": 9.0,
+        "xtick.labelsize": 8.5,
+        "ytick.labelsize": 8.5,
+        "legend.fontsize": 8.5,
+        "figure.titlesize": 10.0,
         "savefig.dpi": 300,
         "figure.facecolor": "white",
         "axes.facecolor": "white",
@@ -52,11 +55,14 @@ def apply():
         "ytick.color": TEXT,
         "axes.grid": True,
         "grid.color": GRID,
-        "grid.linewidth": 0.6,
+        "grid.linestyle": "--",
+        "grid.linewidth": 0.5,
         "axes.linewidth": 0.7,
-        "lines.linewidth": 1.4,
-        "lines.markersize": 4,
+        "lines.linewidth": 1.5,
+        "lines.markersize": 5.0,
         "legend.frameon": False,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "figure.constrained_layout.use": True,
         "savefig.bbox": "tight",
     })

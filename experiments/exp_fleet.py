@@ -194,7 +194,8 @@ BASELINES = ["static_sweep", "threshold", "risk_graph", "genetic", "aco"]
 # ---------------------------------------------------------------------------
 # Scenario generation
 # ---------------------------------------------------------------------------
-def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
+def make_snapshot(rng: np.random.Generator, index: int,
+                  network=None, depot=None) -> Dict:
     """
     One dispatch instant: bin states, coordinates, deadlines and the fleet.
 
@@ -207,12 +208,17 @@ def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
     generated.  Everything the dataset does not publish, meaning the servicing
     windows, the service durations and the waiting times, is still drawn, and
     Section "what the transfer study does not show" in the paper says so.
+
+    ``network`` and ``depot`` replace the container set and the depot the active
+    study would use.  The draws are made in the same order either way, so the
+    primary sample produces the same snapshots whichever way it is requested.
     """
     if STUDY["area"] == "wyndham":
-        return _wyndham_snapshot(rng, index)
+        return _wyndham_snapshot(rng, index, depot=depot)
 
-    network = dhaka_network(index if STUDY.get("resample_per_snapshot") else 0)
-    coords = [depot_coord()]
+    if network is None:
+        network = dhaka_network(index if STUDY.get("resample_per_snapshot") else 0)
+    coords = [depot if depot is not None else depot_coord()]
     node_ids: List[int] = []
     index_of = {}
     for row in network.itertuples():
@@ -268,13 +274,13 @@ def make_snapshot(rng: np.random.Generator, index: int) -> Dict:
     }
 
 
-def _wyndham_snapshot(rng: np.random.Generator, index: int) -> Dict:
+def _wyndham_snapshot(rng: np.random.Generator, index: int, depot=None) -> Dict:
     """One observed day of the Wyndham network as a routing instance."""
     containers, _ = WY.load()
     days = WY.snapshots(n_snapshots=64, seed=SEED)
     day = days[index % len(days)]
 
-    coords = [depot_coord()]
+    coords = [depot if depot is not None else depot_coord()]
     node_ids: List[int] = []
     index_of: Dict[int, int] = {}
     fills, prizes, hazards, tto, streams = {}, {}, {}, {}, {}
@@ -328,12 +334,20 @@ def _wyndham_snapshot(rng: np.random.Generator, index: int) -> Dict:
 
 
 def build_tasks(snapshot: Dict, gamma: float = AG.DEFAULT_GAMMA,
-                tau_h: float = AG.DEFAULT_TAU_H) -> List[VRP.BinTask]:
-    """Apply the equity term, then assemble the routing tasks."""
+                tau_h: float = AG.DEFAULT_TAU_H,
+                overdue_tier: bool = True,
+                escalating_price: bool = True) -> List[VRP.BinTask]:
+    """
+    Apply the equity term, then assemble the routing tasks.
+
+    The two switches remove one part of the method each, for the ablation; see
+    `aging.effective_priorities`.
+    """
     tiered = AG.effective_priorities(
         snapshot["prizes"], snapshot["waits"],
         {nid: (1.0 if snapshot["hazards"][nid] else 0.0) for nid in snapshot["node_ids"]},
         gamma=gamma, tau_h=tau_h,
+        overdue_tier=overdue_tier, escalating_price=escalating_price,
     )
     return SC.make_tasks(
         snapshot["node_ids"],
@@ -343,6 +357,8 @@ def build_tasks(snapshot: Dict, gamma: float = AG.DEFAULT_GAMMA,
         hazards=snapshot["hazards"],
         tiers={nid: tiered[nid].tier for nid in snapshot["node_ids"]},
         overdue_pressures={nid: tiered[nid].pressure for nid in snapshot["node_ids"]},
+        waits={nid: tiered[nid].wait_hours for nid in snapshot["node_ids"]},
+        overdue={nid: tiered[nid].overdue for nid in snapshot["node_ids"]},
         tto_hours=snapshot["tto"],
         streams=snapshot["streams"],
         capacities_l=snapshot["capacities"],

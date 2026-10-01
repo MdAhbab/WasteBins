@@ -1,48 +1,44 @@
 # Experiments
 
-Every quantitative result in *No Container Waits Forever* is produced here and
-written to `results/` as JSON. Nothing in the paper is typed by hand: the tables
-are generated from these files and a checker re-derives each quoted figure from
-them.
+Every quantitative result of *Bounded Waiting Time in Sensor-Driven Waste
+Collection* is produced here. Each solve is written once, as a JSON line under
+`results/raw/`, and every table, figure and quoted number in the paper is a
+function of those records. Nothing in the paper is typed by hand.
 
 Container positions are real in both study areas and both street graphs are
 compiled from OpenStreetMap. Demand is observed in Wyndham and simulated in
-Dhaka, which publishes no fill data. The forecast and fault layers are evaluated
-on a simulated network, because no public dataset pairs container telemetry with
-labelled sensor faults.
+Dhaka, which publishes no fill data.
 
 ## Requirements
 
-Python 3.11 or newer with `numpy pandas scikit-learn scipy matplotlib`.
-No GPU is used anywhere. `exp_censoring.py` additionally needs `xgboost` and a
-seeded database; nothing else does.
+Python 3.11 or newer with `numpy pandas scipy scikit-learn matplotlib` and
+`ortools`. No GPU is used. `exp_censoring.py` additionally needs `xgboost` and a
+seeded database; nothing in the paper pipeline does.
 
-## Regenerating the routing results
+## Running the paper's experiments
 
 ```bash
-bash run_all_routing.sh
+python -m experiments.run_queue --plan full --workers 5
 ```
 
-That runs the stages below in dependency order and logs to
-`results/run_all.log`. It takes several hours on twelve cores. Individual
-stages:
+The queue runs every study in order of importance, resumes after an
+interruption, and refuses to start while another runner holds its lock.
+Progress is in `results/logs/queue_status.json`; an empty file named `STOP` in
+`results/logs/` stops it after the running jobs. The full plan takes about a day
+on twelve logical cores.
 
-| Command | Writes | Roughly |
-|---|---|---|
-| `python -m experiments.exp_fleet --study wyndham --only comparison` | `fleet_wyndham.json` | 5 min |
-| `python -m experiments.exp_fleet --study dhaka --only comparison` | `fleet_dhaka.json` | 70 min |
-| `python -m experiments.exp_fleet --study dhaka_gc --only comparison` | `fleet_dhaka_gc.json` | 65 min |
-| `python -m experiments.exp_fleet --study dhaka --only sensitivity` | `fleet_dhaka_equity.json` | 65 min |
-| `python -m experiments.exp_fleet --study dhaka --only equity --resample` | `fleet_dhaka_equity.json` | 140 min |
-| `python -m experiments.exp_distance_model` | `distance_model.json` | 110 min |
-| `python -m experiments.exp_network` | `network.json` | 40 min |
-| `python -m experiments.exp_scale` | `scale.json` | 40 min |
-| `python -m experiments.exp_wait_bound` | `wait_bound.json` | seconds |
+Then, from the repository root:
 
-The stages are independent apart from the two that share
-`fleet_dhaka_equity.json`, so most of them can run at once. `exp_network`
-measures properties of the street graph rather than of any plan, so it does not
-need rerunning when the planner changes.
+```bash
+python -m experiments.analyze
+python -m experiments.make_tables
+python -m experiments.fig_results
+```
+
+`analyze` writes `results/summary.json` (intervals, Wilcoxon tests with Holm
+adjustment, Cliff's delta). `make_tables` writes every table and the macro file
+`numbers.tex` into the manuscript's `tables/` folder. `fig_results` draws the
+multi-cycle and weather figures.
 
 ## What each script does
 
@@ -51,42 +47,33 @@ need rerunning when the planner changes.
 | `build_roadnets.py` | Compiles both street graphs from Overpass into `data/roadnet/*.npz` |
 | `dhaka_containers.py` | Extracts the mapped Dhaka waste facilities into `data/dhaka/` |
 | `wyndham.py` | Parses the council feed into `data/wyndham/` |
-| `exp_fleet.py` | The routing comparison, the sensitivity sweeps and the wait-bound rollout |
-| `exp_distance_model.py` | Plans on a constant detour factor, then measures that plan on the street graph |
-| `exp_network.py` | Circuity, direction asymmetry, snap distance, the longest leg |
-| `exp_scale.py` | Cost and quality at four instance sizes |
-| `exp_wait_bound.py` | The controlled single-container sweep that tests the bound exactly |
-| `exp_model.py` | Forecast bake-off under a temporal split and group-by-bin CV |
-| `exp_censoring.py` | Whether a survival objective beats the censored squared loss. It does not |
-| `eval_sensor_health.py` | The nine-mode fault taxonomy, on held-out seeds |
-| `dataset.py`, `sim.py` | The simulator behind the forecast and fault evaluations |
-| `fig_*.py`, `make_figures.py` | Figures, from the result files just written |
+| `weather_data.py` | Fetches the historical weather series into `data/weather/` |
+| `instances.py` | The named container sets and snapshots |
+| `policies.py` | The dispatch rules and planners under one interface, and canonical scoring |
+| `store.py` | Append-only, resumable raw records, one file per shard |
+| `exp_tune.py` | Planner settings on T160; the prize weight on T60 |
+| `exp_compare.py` | Single-cycle comparisons at matched wall-clock time |
+| `exp_rollout.py` | Forty dispatch cycles with evolving demand; the bound check |
+| `exp_weather.py` | Adverse weather spells on the multi-cycle study |
+| `exp_weather_demand.py` | Fill rate against weather in the Wyndham record |
+| `exp_wait_bound.py` | The controlled price sweep and tightness instances |
+| `exp_network.py` | Circuity, constant-factor error, asymmetry, round-trip costs |
+| `exp_distance_model.py` | Plans on a constant detour factor, driven on the street graph |
+| `exp_scale.py` | Construction and improvement time by instance size |
+| `exp_emissions.py` | The emission model at stated settings |
+| `exp_fleet.py` | Shared fleet, snapshot and travel-model code used by the studies above |
+| `fig_bound.py`, `fig_results.py`, `figstyle.py` | Figures, from the result files |
 
-`exp_ablation.py`, `exp_continual.py`, `exp_equity.py`, `exp_realdata.py`,
-`exp_routing.py`, `routing.py` and `eval_xai_agreement.py` belong to an earlier
-version of this work. They still run, and their results are still in `results/`,
-but nothing in the current paper is drawn from them.
-
-## Checking the numbers
-
-The paper's build directory carries the checker:
-
-```bash
-cd ../../TITS_Submission
-python make_tables.py && python check_numbers.py && python build.py all
-```
-
-`check_numbers.py` re-derives every quoted figure from `results/` and reports
-anything the prose no longer matches. It also refuses to pass when the wait
-bound is violated in the rollout, because a paper that claims a guarantee must
-not build while its own experiment breaks it.
+`exp_model.py`, `exp_censoring.py`, `exp_continual.py`, `exp_realdata.py`,
+`eval_sensor_health.py` and `eval_xai_agreement.py`, with `dataset.py` and
+`sim.py`, evaluate the forecast, fault and explanation components of the
+software. The paper does not use them.
 
 ## A note on reproducibility
 
 The search budget is wall-clock, so a busier machine gives the metaheuristics
-fewer iterations in the same three seconds and their distances move by a few
-tenths of a percent between runs. Every conclusion in the paper rests on
-differences an order of magnitude larger.
+fewer iterations in the same time. The paper reports differences together with
+their intervals across instances.
 
 `build_roadnets.py` and `dhaka_containers.py` query Overpass live, so a rebuild
 picks up map edits and will not reproduce the committed extracts byte for byte.

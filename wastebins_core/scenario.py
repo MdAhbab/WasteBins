@@ -70,6 +70,8 @@ def make_tasks(node_ids: Sequence[int],
                hazards: Optional[Dict[int, bool]] = None,
                tiers: Optional[Dict[int, int]] = None,
                overdue_pressures: Optional[Dict[int, float]] = None,
+               waits: Optional[Dict[int, float]] = None,
+               overdue: Optional[Dict[int, bool]] = None,
                tto_hours: Optional[Dict[int, float]] = None,
                streams: Optional[Dict[int, str]] = None,
                capacities_l: Optional[Dict[int, float]] = None,
@@ -82,6 +84,8 @@ def make_tasks(node_ids: Sequence[int],
     hazards = hazards or {}
     tiers = tiers or {}
     overdue_pressures = overdue_pressures or {}
+    waits = waits or {}
+    overdue = overdue or {}
     tto_hours = tto_hours or {}
     streams = streams or {}
     capacities_l = capacities_l or {}
@@ -108,6 +112,8 @@ def make_tasks(node_ids: Sequence[int],
             tier=int(tiers.get(nid, aging.TIER_HAZARD if hazards.get(nid)
                                else aging.TIER_NORMAL)),
             overdue_pressure=float(overdue_pressures.get(nid, 0.0)),
+            wait_hours=float(waits.get(nid, 0.0)),
+            overdue=bool(overdue.get(nid, False)),
             time_to_overflow_h=float(tto_hours.get(nid, float("inf"))),
             density_kg_per_m3=float(densities.get(nid, 220.0)),
         ))
@@ -153,68 +159,84 @@ def make_fleet(n_vehicles: int = 2,
 
 def static_sweep_plan(tasks: Sequence[vrp.BinTask], vehicles: Sequence[vrp.VehicleSpec],
                       travel: vrp.TravelModel,
-                      weights: Optional[vrp.ObjectiveWeights] = None) -> vrp.FleetPlan:
+                      weights: Optional[vrp.ObjectiveWeights] = None,
+                      start_node: Optional[int] = None) -> vrp.FleetPlan:
     """
-    The traditional fixed-schedule baseline: visit *every* bin regardless of
-    fill, partitioned across the fleet by a geographic sweep about the depot and
-    ordered by nearest neighbour.  No priority information is used at all.
+    The traditional fixed-schedule baseline: a round of every container in the
+    order given, regardless of fill.  Callers pass the angular order about the
+    depot (`sweep_order`).  No fill, priority or waiting time is used.
+
+    The round is built as in the classic sweep heuristic.  Containers are taken
+    in order, and each is inserted where it adds least distance into the route
+    of the vehicle working that part of the round.  A container that vehicle may
+    not carry goes to the next vehicle licensed for its stream.  When the working
+    vehicle has no time or capacity left for a container it may carry, the next
+    vehicle takes over, so each route covers one arc of the round.
+
+    ``start_node`` continues a round from one shift to the next.  The order is
+    rotated to begin at that container.  A multi-cycle caller sets it to the
+    container the plan reports as ``metrics["round_next"]``, the first one the
+    previous shift did not reach, so the round goes on where it stopped instead
+    of beginning again at the same place every shift.  Without it the round
+    begins at the start of the order.
     """
     weights = weights or vrp.ObjectiveWeights()
-    depot = vehicles[0].depot_index
-    matrix = travel.distance_m
+    ordered = list(tasks)
+    if start_node is not None:
+        at = next((k for k, t in enumerate(ordered) if t.node_id == start_node), 0)
+        ordered = ordered[at:] + ordered[:at]
 
-    # Sweep: sort by polar angle about the depot, then split into equal arcs.
-    def angle(t: vrp.BinTask) -> float:
-        # Use matrix-free ordering when coordinates are unavailable: fall back to
-        # index order.  Callers that want a true sweep pass coordinates via
-        # ``sweep_angles``.
-        return float(t.index)
-
-    ordered = sorted(tasks, key=angle)
-    per_vehicle = max(1, int(np.ceil(len(ordered) / max(1, len(vehicles)))))
-    orders: Dict[int, List[vrp.BinTask]] = {}
+    orders: List[List[vrp.BinTask]] = [[] for _ in vehicles]
     unserved: List[vrp.BinTask] = []
-
-    for vi, vehicle in enumerate(vehicles):
-        chunk = ordered[vi * per_vehicle:(vi + 1) * per_vehicle]
-        # nearest-neighbour ordering on real distance
-        remaining = list(chunk)
-        seq: List[vrp.BinTask] = []
-        cur = depot
-        while remaining:
-            nxt = min(remaining, key=lambda t: matrix[cur][t.index])
-            seq.append(nxt)
-            remaining.remove(nxt)
-            cur = nxt.index
-        # Trim to the longest feasible prefix; the rest simply cannot be done.
-        feasible: List[vrp.BinTask] = []
-        for task in seq:
-            trial = feasible + [task]
-            if vrp.evaluate_route(trial, vehicle, travel) is not None:
-                feasible = trial
-            else:
-                unserved.append(task)
-        orders[vehicle.vehicle_id] = feasible
-
-    leftovers = ordered[len(vehicles) * per_vehicle:]
-    unserved.extend(leftovers)
+    working = 0
+    for task in ordered:
+        placed = False
+        for k in range(working, len(vehicles)):
+            vehicle = vehicles[k]
+            if not vehicle.accepts(task.stream):
+                continue
+            extended = _cheapest_feasible_insertion(orders[k], task, vehicle, travel)
+            if extended is not None:
+                orders[k] = extended
+                placed = True
+                break
+            if k == working:
+                # No time or capacity left on the working vehicle: its arc ends.
+                working += 1
+        if not placed:
+            unserved.append(task)
 
     routes = []
-    for vehicle in vehicles:
-        order = orders.get(vehicle.vehicle_id) or []
+    for vehicle, order in zip(vehicles, orders):
         if not order:
             continue
         evaluated = vrp.evaluate_route(order, vehicle, travel)
         if evaluated is not None:
             routes.append(evaluated)
 
+    metrics = vrp.summarise(routes, unserved, tasks, weights)
+    if ordered:
+        metrics["round_next"] = (unserved[0] if unserved else ordered[0]).node_id
     return vrp.FleetPlan(
         routes=routes,
         unserved=unserved,
         objective=vrp.plan_objective(routes, unserved, weights),
-        metrics=vrp.summarise(routes, unserved, tasks, weights),
+        metrics=metrics,
         algorithm="static_sweep",
     )
+
+
+def _cheapest_feasible_insertion(order: List[vrp.BinTask], task: vrp.BinTask,
+                                 vehicle: vrp.VehicleSpec,
+                                 travel: vrp.TravelModel) -> Optional[List[vrp.BinTask]]:
+    """``order`` with ``task`` at the feasible position of least distance, or None."""
+    best, best_m = None, float("inf")
+    for position in range(len(order) + 1):
+        trial = order[:position] + [task] + order[position:]
+        evaluated = vrp.evaluate_route(trial, vehicle, travel)
+        if evaluated is not None and evaluated.distance_m < best_m:
+            best, best_m = trial, evaluated.distance_m
+    return best
 
 
 def sweep_order(coords: Sequence[Coord], depot: Coord) -> List[int]:
@@ -229,12 +251,18 @@ def sweep_order(coords: Sequence[Coord], depot: Coord) -> List[int]:
 def threshold_plan(tasks: Sequence[vrp.BinTask], vehicles: Sequence[vrp.VehicleSpec],
                    travel: vrp.TravelModel, fill_threshold: float = 0.70,
                    fills: Optional[Dict[int, float]] = None,
-                   weights: Optional[vrp.ObjectiveWeights] = None) -> vrp.FleetPlan:
+                   weights: Optional[vrp.ObjectiveWeights] = None,
+                   time_budget_s: float = 6.0,
+                   improve_budget_s: Optional[float] = None) -> vrp.FleetPlan:
     """
     The common commercial baseline: collect only bins above a fill threshold,
     routed by the same construction+improvement machinery.  This isolates the
     benefit of *predictive* prioritisation from the benefit of simply not
     visiting empty bins.
+
+    No queue head is reserved.  A threshold policy is defined by ignoring
+    everything below the threshold, and reserving the longest-waiting bin among
+    the ones it kept would give it part of the method it is compared against.
     """
     fills = fills or {}
     selected = [t for t in tasks
@@ -242,6 +270,9 @@ def threshold_plan(tasks: Sequence[vrp.BinTask], vehicles: Sequence[vrp.VehicleS
                 or t.hazard]
     skipped = [t for t in tasks if t not in selected]
     plan = vrp.solve(selected, vehicles, travel, weights, improve=True,
+                     time_budget_s=time_budget_s,
+                     improve_budget_s=improve_budget_s,
+                     reserve_overdue=0,
                      algorithm=f"threshold_{fill_threshold:g}")
     plan.unserved = list(plan.unserved) + skipped
     weights = weights or vrp.ObjectiveWeights()

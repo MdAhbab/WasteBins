@@ -266,7 +266,14 @@ ML_SERVING = {
 # ---------------------------------------------------------------------------
 ROUTING_ALPHA = env_float("ROUTING_ALPHA", 0.5)
 ROUTING_REFINE = env_bool("ROUTING_REFINE", True)
-ROUTING_AGING_GAMMA = env_float("ROUTING_AGING_GAMMA", 0.5)   # anti-starvation weight (0 disables)
+# Weight of the saturating ageing term blended into the score of a bin that is
+# not yet overdue.  The dispatch rule does not need it: the overdue tier and the
+# reserved heads bound the wait on their own, and on the pilot networks the rule
+# served more bins with fewer overflows without the blend.  Zero is therefore
+# the default; a positive value turns the blend on.
+ROUTING_AGING_GAMMA = env_float("ROUTING_AGING_GAMMA", 0.0)
+# Overdue bins, longest wait first, that every plan must serve.
+ROUTING_RESERVED_HEADS = env_int("ROUTING_RESERVED_HEADS", 1)
 ROUTING_AGING_TAU_H = env_float("ROUTING_AGING_TAU_H", 48.0)  # hours at which the aging boost saturates
 
 FLEET_DEFAULTS = {
@@ -312,6 +319,32 @@ TRAFFIC = {
     "FREEFLOW_SPEED_KMH": env_float("TRAFFIC_FREEFLOW_KMH", 34.0),
     "MIN_SPEED_KMH": env_float("TRAFFIC_MIN_KMH", 5.0),
     "LIVE_VALIDITY_H": env_float("TRAFFIC_LIVE_VALIDITY_H", 0.5),
+}
+
+
+# ---------------------------------------------------------------------------
+# Weather.  "none" plans for nominal conditions.  "google" reads current
+# conditions from the Google Maps Platform Weather API with the key in
+# GOOGLE_MAPS_API_KEY, and "open-meteo" reads them from an open service that
+# needs no key.  Either one changes the travel speed and the service time a plan
+# is built on; see wastebins_core/weather.py for where each factor comes from.
+#
+# A reading from the Google feed is held in memory for at most one hour and is
+# never stored, which is what its terms require.  A stored plan records the
+# factors it was built on and not the reading.
+#
+# WEATHER_HORIZON is "current" to plan on the conditions at dispatch, or "shift"
+# to plan on the hourly forecast over the shift.  WEATHER_STANDING_WATER_MM is
+# an operator's report of water on the streets, which no feed supplies.
+# ---------------------------------------------------------------------------
+WEATHER = {
+    "PROVIDER": env("WEATHER_PROVIDER", "none"),
+    "API_KEY": env("GOOGLE_MAPS_API_KEY", ""),
+    "CACHE_SECONDS": env_float("WEATHER_CACHE_S", 900.0),
+    "TIMEOUT_SECONDS": env_float("WEATHER_TIMEOUT_S", 5.0),
+    "HORIZON": env("WEATHER_HORIZON", "current"),
+    "STANDING_WATER_MM": env_float("WEATHER_STANDING_WATER_MM", 0.0),
+    "LIVE_VALIDITY_H": env_float("WEATHER_LIVE_VALIDITY_H", 1.0),
 }
 
 

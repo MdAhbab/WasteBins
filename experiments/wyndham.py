@@ -4,7 +4,7 @@ The Wyndham open smart-bin dataset as a routing instance.
 
 Wyndham City Council publishes the position and daily fill reading of 33
 public-place compacting containers in Werribee and Point Cook, Victoria, under
-CC-BY 4.0.  Three properties make it usable here and one makes it limited, and
+the Creative Commons Attribution 2.5 Australia licence.  Three properties make it usable here and one makes it limited, and
 both halves are stated rather than glossed.
 
 What it gives us.  Real container positions, so the road distances are between

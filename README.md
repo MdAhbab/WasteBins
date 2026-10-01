@@ -1,13 +1,22 @@
 # No Container Waits Forever
 
-Research prototype and reproduction package for *No Container Waits Forever:
-Bounded Service Waits for Sensor-Driven Collection Fleets on Street Networks*.
+Research prototype and reproduction package for *Bounded Waiting Time in
+Sensor-Driven Waste Collection: A Reserved-Head Dispatch Rule for
+Prize-Collecting Vehicle Routing*.
 
 The system ingests container telemetry, judges whether that telemetry can be
 trusted, forecasts which containers will overflow, and plans a multi-vehicle
-collection round on a real street graph under real operating constraints. Its
-main claim is a worst-case waiting time that an operator can compute in advance
-and that no container exceeds.
+collection round on a real street graph under real operating constraints. The
+paper's claim concerns the dispatch rule: overdue containers form a queue
+ordered by wait, the first `r` are reserved in every cycle together with a plan
+that serves them, and every container is then collected within
+`Δ·ceil(τ/Δ) + (ceil(M/r) - 1)·Δ` hours, with `M ≤ n` known before operation.
+The bound holds for any planner placed under the rule. A fixed timetable also
+bounds the wait, but only by ignoring fill; under this rule hazardous and nearly
+full containers still come first, and the experiments measure overflow and
+hazard response next to the wait to show what the bound costs. The forecasting, sensor
+fault and explanation components below are part of the software and are not
+used in the paper's experiments.
 
 **Status:** research prototype. Every result below regenerates from this
 repository with the commands in
@@ -77,9 +86,17 @@ term for stop-and-go, idle burn, and power-take-off compaction, with IPCC 2006
 diesel factors and Euro-class multipliers. Traffic enters through a Bureau of
 Public Roads volume-delay function.
 
+**Weather as an operating condition.** Rain class, standing water, heat stress
+and UV index map to travel speed, a speed limit, service time and gas readings,
+with each rule taken from a published measurement. The response of fill rate to
+weather is estimated on the Wyndham record. The live input is the Google Maps
+Platform Weather API (key in `.env`, readings held in memory for at most one
+hour, never written to disk); archived ERA5 weather comes from Open-Meteo.
+
 **Governance.** KernelSHAP attributions with an exact efficiency constraint
-(validated against TreeSHAP), a convex aging term with a *provable* worst-case
-wait bound, and a SHA-256 hash-chained ledger with Merkle inclusion proofs.
+(validated against TreeSHAP), a reserved-head dispatch rule with a worst-case
+wait bound that holds for any planner, and a SHA-256 hash-chained ledger with
+Merkle inclusion proofs.
 
 ---
 
@@ -127,10 +144,49 @@ The dashboard is at `http://localhost:5173`. The map panel needs a Google Maps
 browser key in `frontend/.env.local` as `VITE_GOOGLE_MAPS_API_KEY`; every other
 page works without one, and the map panel says so rather than hanging.
 
-### The experiment suite
+### The paper's experiments
 
-Each script writes a JSON file to `experiments/results/`, which is the source of
-truth for the manuscript's tables:
+Every experiment writes one JSON record per solve or per policy chain to
+`experiments/results/raw/<study>.sNN.jsonl`, and skips any unit already stored,
+so an interrupted run resumes where it stopped. A queue runner starts them in
+order of importance on five workers, so that each wall-clock budget has a
+processor core to itself:
+
+```bash
+python -m experiments.run_queue --plan full --workers 5
+```
+
+The tables and every number quoted in the paper are then written from the raw
+records, never typed by hand:
+
+```bash
+python -m experiments.analyze
+```
+
+```bash
+python -m experiments.make_tables
+```
+
+| Module | Study | Answers |
+|---|---|---|
+| `exp_wait_bound.py` | controlled | Price sweep (Proposition 3) and tightness instances (Proposition 1) |
+| `exp_tune.py` | `tune-*` | Planner settings on T160; the prize weight checked on T60 |
+| `exp_compare.py` | `main`, `wyndham`, `ablation`, `weights-*`, `depot-*`, `budget-*` | Single-cycle planner and rule comparisons at matched wall-clock time |
+| `exp_rollout.py` | `rollout-moderate`, `-tight`, `-hazard` | Forty dispatch cycles with evolving demand; per-container waits and the bound check |
+| `exp_weather.py` | `weather-rain`, `-storm`, `-heat`, `-onset` | Six-day adverse spells; plans made blind, protected, on current conditions or on the forecast |
+| `exp_weather_demand.py` | `weather_demand.json` | Fill rate against weather in the Wyndham record |
+| `exp_distance_model.py` | `distance` | Plans made on a constant detour factor, driven on the street graph |
+| `exp_network.py` | `network.json` | Circuity, constant-factor error, asymmetry and round-trip costs |
+| `exp_scale.py` | `scale` | Construction and improvement time at seven instance sizes |
+| `exp_emissions.py` | `emissions.json` | The emission model at stated settings, beside in-use measurements |
+
+Named container sets (primary sample, tuning sets, rollout networks) are defined
+in `experiments/instances.py`, so "tuned on" and "evaluated on" are statements
+about named sets.
+
+### System evaluation scripts
+
+These evaluate the software components that the paper does not use:
 
 ```bash
 cd experiments && python eval_sensor_health.py
@@ -139,8 +195,6 @@ cd experiments && python eval_sensor_health.py
 | Script | Produces | Answers |
 |---|---|---|
 | `eval_sensor_health.py` | `sensor_health.json` | Detection across all nine fault modes; false-positive rate on a clean fleet; priority error under each trust policy |
-| `exp_fleet.py` | `fleet.json` | All seven policies on one objective; constraint-violation audit; gamma sweep; equity rollout in two backlog regimes |
-| `exp_wait_bound.py` | `wait_bound.json` | Is the worst-case wait bound tight? Sweeps one overdue bin from 10 to 100 km and compares the hour it is collected against the hour the bound predicts |
 | `eval_xai_agreement.py` | `xai_agreement.json` | Like-for-like agreement between the sampled and exact Shapley estimates, against the sampler's own seed-to-seed noise floor |
 | `exp_continual.py` | `continual.json` | Prequential error under seven drift scenarios; do-no-harm check; serving latency |
 | `exp_realdata.py` | `realdata.json` | Validation against public device telemetry, including leave-one-device-out transfer |
@@ -221,9 +275,9 @@ where the paper measures one implementation and the prototype ships another.
 
 ## Measured results
 
-Regenerate everything with the commands above. The two blocks below were
-verified in the current tree; the routing figures are the committed contents of
-`experiments/results/routing.json`.
+Regenerate everything with the commands above. The forecasting and fault
+blocks below were verified in the current tree; the routing results are
+generated from the raw records, as described under Routing.
 
 ### Forecasting (20 bins, 19,200 rows: 14,420 train / 3,840 test)
 
@@ -261,13 +315,16 @@ less evidence than a persistent bias.
 
 ### Routing
 
-Five solvers on one shared objective, lower is better: **proposed 279** < ant
-colony 323 < genetic 324 < risk-penalised graph 346 < OR-Tools 421. Ant colony
-and genetic are within one unit and should not be read as ordered. Zero
-constraint violations (capacity, shift, time window, stream licensing,
-double-service) on the live instance across all five solvers and on twelve
-adversarial instances, checked by an independent re-simulation that does not
-reuse the planner's own evaluator.
+The routing results of the paper are written by `experiments/make_tables.py`
+from the raw records into the manuscript's `tables/` folder; this file does not
+repeat them. Every planner receives the same wall-clock time on every instance,
+OR-Tools is given stream licences, overflow deadlines and the tipping time, and
+the genetic algorithm and ant colony decode with the option to skip. Under these
+conditions OR-Tools produces lower-cost single-cycle plans than the in-house
+insertion planner on the tuning instances, which is why the paper evaluates the
+dispatch rule under both. Every plan is checked against capacity, shift, time
+window, stream licence and double service by a re-simulation that does not reuse
+the planner's own evaluator.
 
 ---
 
@@ -459,51 +516,34 @@ corrected to match the constraint that actually binds, rather than redefining
 the constraint silently, but the underlying model is still wrong and it spans
 `vrp`, `scenario` and `dispatch`.
 
-**The wait bound is conditional on capacity, and the condition is stated.** The
-guarantee comes from the overdue tier, not from the equity weight: a bin reaching
-τ enters a strictly higher dispatch tier ordered by wait, longest first.
+**The wait bound rests on the reservation, and on one feasibility condition.**
+Overdue containers form a queue ordered by wait, ties broken by container id. In
+every cycle the dispatcher reserves the first `r` containers of that queue,
+certifies them by inserting them into empty routes, gives them a skip penalty no
+route can exceed, and rebuilds from the certificate any plan that drops one
+(`vrp.certify_heads`, `vrp.restore_heads`). The bound
 
-Ordering alone is not enough, and this was a real defect rather than a
-theoretical one. Ordering decides which bin the planner *tries* first; it does not
-decide whether the planner *accepts* any of them. Skipping used to be priced on
-the ordering score `w/(τ+w)`, which is bounded by 1, so the penalty had a ceiling
-of `λ·μ = 180`. A bin about 33 km out costs more than that to reach and was
-skipped at a wait of 48 h and still skipped at 10^6 h, with the tier ordering
-working correctly throughout. Skipping is now priced on `w/(2τ)`, which grows
-without bound. It equals the old penalty at τ and is never smaller past it, so no
-bin is served later than before. The bound is
+    W = Δ · ceil(τ / Δ) + (ceil(M / r) - 1) · Δ,    M ≤ n
 
-    w_max ≤ Δ · ceil(w_promote / Δ) + (ceil(m / c) - 1) · Δ
-    w_promote = max(τ, 2·τ·C / (λ·μ))
+follows from the queue order alone (`aging.queue_wait_bound`). It needs no price
+and no insertion cost, holds under ties and for any planner, and is attained on
+the star instances of `exp_wait_bound.py`. The condition is that every container
+can be served alone by some vehicle within the shift; a container that cannot is
+reported and skipped by the certificate rather than blocking the queue. The
+certificate is sound and not complete, so fewer than `r` heads may be reserved in
+a cycle, and the rollouts record the smallest number reserved.
 
-for backlog m, clearing rate c per cycle of length Δ, and largest marginal
-insertion cost C. It holds only while the fleet clears overdue bins at least as
-fast as they are promoted, and only for bins that are reachable inside their
-servicing window. When c is zero the function returns infinity rather than a
-number.
+The skip penalty plays a different part. A penalty priced on the bounded score
+`w/(τ+w)` has a ceiling of `λ·μ = 180`, so a container whose round trip costs
+more, about 33 km out at the defaults, is skipped at every wait. A penalty that
+grows as `w/(2τ)` makes a dedicated trip worth taking after
+`2·τ·C/(λ·μ)` hours when a vehicle is free, but gives no bound when every vehicle
+is busy. The reservation gives the bound with either penalty; the unbounded
+penalty keeps realised waits far below it.
 
-This form is tighter than the `τ + Δ·ceil(m/c)` it replaces, by exactly
-`τ + Δ - Δ·ceil(τ/Δ)`, or 12 h at the defaults. That gap explains an observation
-we could not previously account for: the rollout attained a worst wait of exactly
-48.0 h against a stated bound of 60.0 h. The 48.0 h was the tight bound being
-reached, and the slack sat in the formula rather than in the policy.
-
-Verified by rolling the policy forward from zero waits on a scarce fleet, so
-every wait measured is one the policy produced, in **two regimes**. At the default
-τ the fleet clears the whole overdue backlog every cycle, so `ceil(m/c) = 1`, the
-queueing term vanishes and the bound is close to trivial. A second regime lowers τ
-to 12 h, raising the promotion rate until the backlog genuinely spans more than
-one cycle. The bound holds in both.
-
-Scarcity must be applied through τ and **not** by shortening the shift. A shift
-shorter than a bin's window start makes that bin unservable by any policy, which
-turns an infeasible instance into what looks like a starvation result. The
-experiment now raises an error in that case rather than reporting the breach.
-
-An earlier closed-form bound in γ was wrong and has been removed. It assumed a
-starved bin competes against a bin that was just served, which fails whenever
-bins are deferred in numbers, and it was violated in 188 of 192 observations at
-γ=0.85. The module docstring records the refutation.
+Scarcity must be applied through demand or the fleet and **not** by a shift
+shorter than a container's window start, which makes that container unservable
+by any policy. The rollout raises an error in that case.
 
 **Additive attribution is a lossy summary of this model.** The Shapley values
 satisfy efficiency exactly — baseline plus contributions equals the prediction, and

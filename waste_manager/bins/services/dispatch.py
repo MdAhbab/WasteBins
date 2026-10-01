@@ -37,6 +37,7 @@ from wastebins_core import priority as CORE_PRIORITY
 from wastebins_core import scenario as CORE_SCENARIO
 from wastebins_core import traffic as CORE_TRAFFIC
 from wastebins_core import vrp as CORE_VRP
+from wastebins_core import weather as CORE_WEATHER
 
 from bins.models import (Depot, Node, RoutePlan, RouteStop, ServiceEvent,
                          Vehicle)
@@ -45,6 +46,7 @@ from bins.services import audit, models_registry, telemetry
 logger = logging.getLogger(__name__)
 
 _PROVIDER_CACHE: Dict[str, CORE_TRAFFIC.TrafficProvider] = {}
+_WEATHER_CACHE: Dict[str, CORE_WEATHER.WeatherProvider] = {}
 
 # Nominal hours between dispatch runs.  Used only to report the equity wait
 # bound, which is stated per cycle: a bin promoted to the overdue tier waits at
@@ -82,6 +84,70 @@ def traffic_provider() -> CORE_TRAFFIC.TrafficProvider:
         _PROVIDER_CACHE.clear()
         _PROVIDER_CACHE[key] = provider
     return provider
+
+
+# ---------------------------------------------------------------------------
+# Weather
+# ---------------------------------------------------------------------------
+def weather_provider() -> CORE_WEATHER.WeatherProvider:
+    """Provider built from settings, cached so its memory cache survives requests."""
+    config = getattr(settings, "WEATHER", {}) or {}
+    key = str(config.get("PROVIDER"))
+    provider = _WEATHER_CACHE.get(key)
+    if provider is None:
+        provider = CORE_WEATHER.make_provider(config)
+        _WEATHER_CACHE.clear()
+        _WEATHER_CACHE[key] = provider
+    return provider
+
+
+def operating_weather(depot: Depot, when: datetime, shift_minutes: float
+                      ) -> Tuple[CORE_WEATHER.Effects, Dict, List[CORE_WEATHER.Conditions]]:
+    """
+    The weather a plan dispatched at ``when`` is built on.
+
+    Returns the effects on travel and service, the record of them that is kept
+    with the plan, and the readings themselves for the reply to the caller.  The
+    readings are not kept: a stored plan holds the factors only.
+
+    A feed of current conditions describes the present.  A plan for an instant
+    further away than ``LIVE_VALIDITY_H`` is built on nominal conditions, and
+    the record says so, for the same reason the traffic adapter declines to
+    present a current reading as a forecast.
+    """
+    config = getattr(settings, "WEATHER", {}) or {}
+    provider = weather_provider()
+    lat, lng = float(depot.latitude), float(depot.longitude)
+    if timezone.is_naive(when):
+        when = timezone.make_aware(when)
+    lead_h = abs((when - timezone.now()).total_seconds()) / 3600.0
+    horizon = str(config.get("HORIZON", "current")).lower()
+
+    if isinstance(provider, CORE_WEATHER.StaticWeatherProvider):
+        readings, basis = [provider.current(lat, lng)], "nominal conditions"
+    elif lead_h > float(config.get("LIVE_VALIDITY_H", 1.0)):
+        readings, basis = [CORE_WEATHER.NOMINAL], (
+            f"nominal conditions: the plan is for {lead_h:.1f} h from now and a "
+            f"current reading does not describe that instant")
+    elif horizon == "shift":
+        hours = max(1, int(math.ceil(float(shift_minutes) / 60.0)))
+        readings, basis = provider.next_hours(lat, lng, hours), "hourly forecast over the shift"
+    else:
+        readings, basis = [provider.current(lat, lng)], "current conditions"
+
+    water = float(config.get("STANDING_WATER_MM", 0.0) or 0.0)
+    if water > 0.0:
+        readings = [CORE_WEATHER.Conditions(**{**asdict(r), "standing_water_mm": water})
+                    for r in readings]
+    effect = CORE_WEATHER.combine_effects([CORE_WEATHER.effects(r) for r in readings])
+    record = {
+        "provider": provider.describe(),
+        "basis": basis,
+        "attribution": provider.attribution,
+        "reported_standing_water_mm": water,
+        "effects": effect.summary(),
+    }
+    return effect, record, readings
 
 
 # ---------------------------------------------------------------------------
@@ -257,8 +323,14 @@ def apply_equity(scores: Dict[int, Dict], nodes: Sequence[Node], now=None,
 # ---------------------------------------------------------------------------
 def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Depot,
                   scores: Dict[int, Dict], tiered: Dict[int, CORE_AGING.TieredPriority],
-                  when: Optional[datetime] = None, use_traffic: bool = True):
-    """Assemble the routing instance from live state."""
+                  when: Optional[datetime] = None, use_traffic: bool = True,
+                  weather: CORE_WEATHER.Effects = CORE_WEATHER.NEUTRAL):
+    """
+    Assemble the routing instance from live state.
+
+    ``weather`` slows every leg and lengthens every stop by the factors it
+    carries.  Left neutral, the instance is the nominal one.
+    """
     when = when or timezone.now()
     usable = [n for n in nodes
               if n.latitude is not None and n.longitude is not None and n.id in scores]
@@ -274,10 +346,11 @@ def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Dep
         default_speed_kmh=float(getattr(settings, "FLEET_DEFAULTS", {}).get("AVG_SPEED_KMH", 20.0)),
         use_traffic=use_traffic,
     )
+    travel = CORE_WEATHER.travel_under(travel, weather)
 
     fills, prizes, hazards, tiers, tto, streams = {}, {}, {}, {}, {}, {}
     capacities, densities, service, windows = {}, {}, {}, {}
-    pressures = {}
+    pressures, waits, overdue = {}, {}, {}
 
     for node in usable:
         entry = scores[node.id]
@@ -290,6 +363,9 @@ def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Dep
         # the bounded ordering score, so an overdue bin far from the depot stops
         # being cheaper to abandon than to collect.
         pressures[node.id] = float(tp.pressure if tp else 0.0)
+        # The wait and the overdue flag order the queue the reservation reads.
+        waits[node.id] = float(tp.wait_hours if tp else 0.0)
+        overdue[node.id] = bool(tp.overdue if tp else False)
         model = entry.get("model") or {}
         # Plan against the pessimistic P10 bound rather than the median: at the
         # median, half of all overflow deadlines would be a coin flip.  A bin is
@@ -307,12 +383,12 @@ def build_problem(nodes: Sequence[Node], vehicles: Sequence[Vehicle], depot: Dep
         streams[node.id] = node.waste_stream
         capacities[node.id] = float(node.capacity_liters)
         densities[node.id] = float(node.waste_density_kg_per_m3)
-        service[node.id] = float(node.service_minutes)
+        service[node.id] = float(node.service_minutes) * weather.service_factor
         windows[node.id] = (float(node.window_start_min), float(node.window_end_min))
 
     tasks = CORE_SCENARIO.make_tasks(
         [n.id for n in usable], fills, prizes, index_of=index_of, hazards=hazards,
-        tiers=tiers, overdue_pressures=pressures,
+        tiers=tiers, overdue_pressures=pressures, waits=waits, overdue=overdue,
         tto_hours=tto, streams=streams, capacities_l=capacities,
         densities=densities, service_minutes=service, windows=windows,
     )
@@ -372,15 +448,23 @@ def generate_plan(user=None, algorithm: str = "proposed",
     scores = score_bins(nodes, user_lat=user_lat, user_lng=user_lng, now=when,
                         persist_health=True)
     tiered = apply_equity(scores, nodes, now=when, gamma=gamma, tau_h=tau_h)
+    shift = max([float(v.shift_minutes) for v in vehicles] or [480.0])
+    weather, weather_record, readings = operating_weather(depot, when, shift)
+    if not weather.passable:
+        return {"error": "standing water of 300 mm or more is reported: the streets "
+                         "are impassable and no plan is made",
+                "weather": weather_record}
     tasks, specs, travel, usable = build_problem(nodes, vehicles, depot, scores,
                                                  tiered, when=when,
-                                                 use_traffic=use_traffic)
+                                                 use_traffic=use_traffic,
+                                                 weather=weather)
     if not tasks:
         return {"error": "no bins have usable coordinates and telemetry"}
 
     weights = CORE_VRP.ObjectiveWeights()
+    reserve = max(0, int(getattr(settings, "ROUTING_RESERVED_HEADS", 1)))
     plan = CORE_META.solve_with(algorithm, tasks, specs, travel, weights,
-                                time_budget_s=time_budget_s)
+                                time_budget_s=time_budget_s, reserve=reserve)
     if plan is None:
         return {"error": f"solver '{algorithm}' is not available in this deployment"}
 
@@ -396,16 +480,20 @@ def generate_plan(user=None, algorithm: str = "proposed",
             "gamma": gamma_used,
             "tau_h": tau_used,
             "kappa": CORE_AGING.DEFAULT_KAPPA,
-            # The bound comes from the overdue tier, not from gamma.  It assumes
-            # the fleet clears overdue bins at least as fast as they are
-            # promoted; `equity_report` reports the observed overdue count so
-            # that assumption is visible rather than implied.
-            "worst_case_wait_bound_h": json_safe(CORE_AGING.worst_case_wait_bound(
-                tau_h=tau_used, cycle_h=DISPATCH_CYCLE_H)),
+            # The bound comes from the reservation.  The first `reserve` bins
+            # of the overdue queue are served in every cycle, so a bin waits at
+            # most the deadline plus the cycles needed to clear the queue ahead
+            # of it, and the queue holds at most every bin there is.
+            "reserved_heads": reserve,
+            "worst_case_wait_bound_h": json_safe(CORE_AGING.queue_wait_bound(
+                tau_h=tau_used, cycle_h=DISPATCH_CYCLE_H,
+                max_overdue=len(tasks), reserved_per_cycle=reserve)),
             "bound_assumes": (
-                f"one dispatch cycle of {DISPATCH_CYCLE_H:.0f} h and that the fleet "
-                f"clears overdue bins as fast as they are promoted"),
+                f"one dispatch cycle of {DISPATCH_CYCLE_H:.0f} h, {reserve} reserved "
+                f"head(s) served in every cycle, and at most {len(tasks)} bins overdue "
+                f"at once"),
         },
+        "weather": weather_record,
         "objective_weights": asdict(weights),
         "model_version": models_registry.get_model_version(),
         "planned_for": when.isoformat(),
@@ -428,6 +516,9 @@ def generate_plan(user=None, algorithm: str = "proposed",
         }
         for nid, entry in scores.items()
     }
+    # The readings go to the caller with their attribution and are not stored.
+    payload["weather"] = dict(weather_record,
+                              conditions=[r.as_dict() for r in readings])
     payload["total_ms"] = round((time.perf_counter() - started) * 1000.0, 2)
     payload = json_safe(payload)
 

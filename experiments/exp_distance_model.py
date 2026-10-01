@@ -8,31 +8,33 @@ measured in its own metric. That answers a narrow question: what an operator is
 told. It does not answer the question an operator cares about, which is what the
 vehicle actually drives.
 
-This script answers that one. For each snapshot it plans twice and scores three
-ways:
+This script answers that one. Each snapshot is planned on constant-factor
+distances and the plan is then measured three ways.
 
-``believed``
-    The round the constant-factor planner produces, measured with constant-factor
-    distances. This is the number that planner reports, and it is the number in
-    the two-study comparison.
+``reported``
+    The length of the constant-factor plan in constant-factor distances. This is
+    the number that planner reports.
 
-``actual``
-    The same plan, the same sequence of containers in the same order, measured on
-    the street graph. This is what the vehicle drives if it follows that plan.
-    The gap against ``believed`` is the operator's surprise.
+``driven``
+    The same plan, the same containers in the same order, measured on the street
+    graph. This is what the vehicle drives if it follows that plan. The gap
+    against ``reported`` is the reporting error.
 
-``road_planner``
-    The round a planner that knew the street graph produces, measured on the
-    street graph. The gap against ``actual`` is what optimising on the wrong
-    distances costs, as opposed to merely reporting them wrongly.
+``street``
+    The length of a plan built on the street graph by the same planner at the
+    same matched time, read from the main comparison. The gap between ``driven``
+    and ``street`` is the optimisation error: what choosing the sequence on the
+    wrong distances costs, as opposed to merely reporting it wrongly.
 
-Separating the two matters because they have different remedies. Reporting error
-is fixed by measuring the finished plan properly. Optimisation error is not: the
-planner has already chosen a worse sequence, and no amount of re-measurement
-recovers it.
+The driven length is the full length. A plan built on understated distances can
+overrun the shift once it is driven, and the first version of this experiment
+charged such a route only the legs between its containers, which left out the
+legs to and from the depot and made the driven total a lower bound. Here the
+sequence is simulated to the end with the shift limit recorded rather than
+enforced, so every leg is counted and the overrun is reported in minutes.
 
-Run:  python -m experiments.exp_distance_model [--snapshots 25]
-Out:  results/distance_model.json
+Run:  python -m experiments.exp_distance_model --shard 0 --of 4
+Out:  results/raw/distance.sNN.jsonl
 """
 from __future__ import annotations
 
@@ -40,172 +42,125 @@ import argparse
 import json
 import pathlib
 import sys
-from datetime import datetime, timezone
-from typing import Dict, List
-
-import numpy as np
+import time
+from typing import Dict
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from wastebins_core import stats as ST                # noqa: E402
 from wastebins_core import traffic as TR              # noqa: E402
 from wastebins_core import vrp as VRP                 # noqa: E402
 from wastebins_core.geo import dist_matrix            # noqa: E402
-from wastebins_core import roadnet as RN              # noqa: E402
 from experiments import exp_fleet as EF               # noqa: E402
+from experiments import instances as IN               # noqa: E402
+from experiments import policies as PO                # noqa: E402
+from experiments import store as ST                   # noqa: E402
+from experiments.exp_compare import IMPROVE_S         # noqa: E402
 
-RESULTS = pathlib.Path(__file__).parent / "results"
-RESULTS.mkdir(exist_ok=True)
-
-WHEN = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
+STUDY = "distance"
 CONSTANT_DETOUR = 1.30
+SNAPSHOTS = 25
+PLANNERS = ("insertion", "ortools", "aco")
 
 
-#: Shortest-path matrices, keyed by the stops they were built for.
-#:
-#: This experiment holds the container set fixed and varies only their state, so
-#: every snapshot asks for the same matrix: 161 Dijkstra searches over a graph of
-#: 134,437 nodes, repeated 25 times for an identical answer. That was most of the
-#: run time. `exp_fleet` already caches this; only this script did not.
-_MATRIX_CACHE: Dict[tuple, tuple] = {}
-
-
-def travel_models(coords, net):
-    """A street-graph model and a constant-factor model over the same stops."""
-    key = tuple(coords)
-    if key not in _MATRIX_CACHE:
-        _MATRIX_CACHE[key] = net.matrices(coords)
-    road, freeflow, _snap = _MATRIX_CACHE[key]
+def constant_factor_travel(coords) -> VRP.TravelModel:
+    """Great-circle distance times the constant, under the same congestion surface."""
     approx = dist_matrix(coords, detour_factor=CONSTANT_DETOUR)
     provider = TR.SyntheticTrafficProvider(seed=EF.SEED)
-    road_model = VRP.TravelModel(
-        road, travel_context=TR.build_travel_context(
-            coords, road, provider, WHEN, TR.FREEFLOW_KMH,
-            freeflow_matrix=freeflow),
-        default_speed_kmh=20.0, freeflow_kmh=TR.FREEFLOW_KMH)
-    approx_model = VRP.TravelModel(
+    return VRP.TravelModel(
         approx, travel_context=TR.build_travel_context(
-            coords, approx, provider, WHEN, TR.FREEFLOW_KMH),
+            coords, approx, provider, IN.WHEN, TR.FREEFLOW_KMH),
         default_speed_kmh=20.0, freeflow_kmh=TR.FREEFLOW_KMH)
-    return road_model, approx_model
 
 
-def measure(plan: VRP.FleetPlan, travel: VRP.TravelModel) -> float:
+def measure(plan: VRP.FleetPlan, travel: VRP.TravelModel) -> Dict:
     """
-    Kilometres the plan's sequences cover under ``travel``.
+    Length and timing of the plan's sequences under ``travel``, limits recorded.
 
-    The routes are re-simulated rather than re-summed, because arrival times and
-    loads change with the distances and a route that was feasible under one
-    model need not be under the other. A route that becomes infeasible is
-    reported rather than skipped: it is the sharpest form of the error.
+    Loads are re-simulated, so a tipping trip is inserted wherever the body
+    fills, exactly as a driver would have to make it.
     """
-    total = 0.0
-    infeasible = 0
+    km, over_routes, overrun, worst, late, routes = 0.0, 0, 0.0, 0.0, 0, 0
     for route in plan.routes:
         order = [stop.task for stop in route.stops]
         if not order:
             continue
-        evaluated = VRP.evaluate_route(order, route.vehicle, travel)
-        if evaluated is None:
-            infeasible += 1
-            # Charge the sequence's raw length, which is a lower bound on what
-            # a driver would cover before discovering the plan does not fit.
-            total += sum(travel.distance(a.index, b.index)
-                         for a, b in zip(order[:-1], order[1:])) / 1000.0
-            continue
-        total += evaluated.distance_m / 1000.0
-    return total, infeasible
+        routes += 1
+        driven = VRP.evaluate_route(order, route.vehicle, travel, enforce_time=False)
+        km += driven.distance_m / 1000.0
+        late += driven.late_arrivals
+        if driven.overrun_min > 1e-6:
+            over_routes += 1
+            overrun += driven.overrun_min
+            worst = max(worst, driven.overrun_min)
+    return {"km": km, "routes": routes, "routes_over_shift": over_routes,
+            "overrun_min_total": overrun, "overrun_min_worst": worst,
+            "late_arrivals": late}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--snapshots", type=int, default=25)
-    parser.add_argument("--budget", type=float, default=3.0)
+    parser.add_argument("--shard", type=int, default=0)
+    parser.add_argument("--of", type=int, default=1)
+    parser.add_argument("--snapshots", type=int, default=SNAPSHOTS)
     args = parser.parse_args()
 
-    EF.set_study("dhaka")
-    net = RN.load("dhaka")
-    rng = np.random.default_rng(EF.SEED)
+    ST.keep_awake()
+    ST.RAW.mkdir(parents=True, exist_ok=True)
+    (ST.RAW / f"{STUDY}.meta.json").write_text(json.dumps({
+        "study": STUDY, "constant_detour_factor": CONSTANT_DETOUR,
+        "network": "S0", "snapshots": args.snapshots, "planners": PLANNERS,
+        "improve_s": IMPROVE_S, "solver_config": PO.tuned_config(),
+        "environment": ST.environment(),
+    }, indent=2, default=str))
+
+    done = ST.index(STUDY)
     weights = VRP.ObjectiveWeights()
-
-    believed: List[float] = []
-    actual: List[float] = []
-    road_planner: List[float] = []
-    infeasible_total = 0
-
-    print(f"{'snap':>5}{'believed km':>13}{'actually km':>13}{'surprise':>11}"
-          f"{'road planner':>14}{'cost of error':>15}")
-    print("-" * 71)
-
-    for i in range(args.snapshots):
-        snapshot = EF.make_snapshot(rng, i)
-        road_model, approx_model = travel_models(snapshot["coords"], net)
-        tasks = EF.build_tasks(snapshot)
+    for index in ST.mine(range(args.snapshots), args.shard, args.of):
+        if all(f"{STUDY}|S0|{index}|{p}" in done for p in PLANNERS):
+            continue
+        snapshot = IN.snapshots("S0", SNAPSHOTS, 6)[index]
+        street = EF.travel_for(snapshot, IN.WHEN)
+        approx = constant_factor_travel(snapshot["coords"])
         fleet = EF.build_fleet(snapshot)
-
-        plan_approx = VRP.solve(tasks, fleet, approx_model, weights,
-                                time_budget_s=args.budget)
-        plan_road = VRP.solve(tasks, fleet, road_model, weights,
-                              time_budget_s=args.budget)
-
-        told, _ = measure(plan_approx, approx_model)
-        driven, bad = measure(plan_approx, road_model)
-        proper, _ = measure(plan_road, road_model)
-
-        believed.append(told)
-        actual.append(driven)
-        road_planner.append(proper)
-        infeasible_total += bad
-
-        print(f"{i:>5}{told:>13.1f}{driven:>13.1f}"
-              f"{100 * (driven - told) / told:>10.1f}%"
-              f"{proper:>14.1f}{100 * (driven - proper) / proper:>14.1f}%",
-              flush=True)
-
-    believed_a = np.array(believed)
-    actual_a = np.array(actual)
-    road_a = np.array(road_planner)
-
-    surprise = ST.compare_paired(list(believed_a), list(actual_a),
-                                 label="believed vs actually driven",
-                                 lower_is_better=True)
-    penalty = ST.compare_paired(list(road_a), list(actual_a),
-                                label="street-graph planner vs approximate planner",
-                                lower_is_better=True)
-
-    payload = {
-        "protocol": {
-            "n_snapshots": args.snapshots,
-            "n_bins": EF.STUDY["n_bins"],
-            "n_vehicles": EF.STUDY["n_vehicles"],
-            "constant_detour_factor": CONSTANT_DETOUR,
-            "search_budget_s": args.budget,
-            "note": "the same containers, fills, fleet and seeds throughout; "
-                    "only the distances the planner optimises on differ",
-        },
-        "believed_km": {"mean": float(believed_a.mean())},
-        "actually_driven_km": {"mean": float(actual_a.mean())},
-        "road_planner_km": {"mean": float(road_a.mean())},
-        "reporting_error_pct": float(
-            100 * np.mean((actual_a - believed_a) / believed_a)),
-        "optimisation_error_pct": float(
-            100 * np.mean((actual_a - road_a) / road_a)),
-        "infeasible_routes_under_road_model": infeasible_total,
-        "paired_reporting": surprise,
-        "paired_optimisation": penalty,
-    }
-    (RESULTS / "distance_model.json").write_text(json.dumps(payload, indent=2))
-
-    print()
-    print(f"  the approximate planner reports   {believed_a.mean():.1f} km")
-    print(f"  it would actually drive           {actual_a.mean():.1f} km"
-          f"   ({payload['reporting_error_pct']:+.1f} percent, reporting error)")
-    print(f"  a street-graph planner drives     {road_a.mean():.1f} km"
-          f"   ({payload['optimisation_error_pct']:+.1f} percent worse for the "
-          f"approximate planner, optimisation error)")
-    print(f"  routes infeasible once measured on the street graph: "
-          f"{infeasible_total}")
-    print(f"\nSaved {RESULTS / 'distance_model.json'}")
+        shift = float(fleet[0].shift_minutes)
+        matched = None
+        for planner in PLANNERS:
+            key = f"{STUDY}|S0|{index}|{planner}"
+            if key in done:
+                if planner == "insertion":
+                    matched = done[key]["elapsed_s"]
+                continue
+            wall = time.perf_counter()
+            plan = PO.plan_with(planner, PO.RULES["full"], snapshot, approx, fleet,
+                                weights, budget_s=matched, improve_s=IMPROVE_S)
+            elapsed = time.perf_counter() - wall
+            if planner == "insertion":
+                matched = elapsed
+            reported = measure(plan, approx)
+            driven = measure(plan, street)
+            record = {
+                "key": key, "study": STUDY, "network": "S0", "snapshot": index,
+                "planner": planner, "elapsed_s": round(elapsed, 3),
+                "budget_s": None if planner == "insertion" else round(matched, 3),
+                "served": int(plan.metrics["bins_served"]),
+                "reported_km": round(reported["km"], 4),
+                "driven_km": round(driven["km"], 4),
+                "routes": driven["routes"],
+                "routes_over_shift": driven["routes_over_shift"],
+                "overrun_min_total": round(driven["overrun_min_total"], 3),
+                "overrun_min_worst": round(driven["overrun_min_worst"], 3),
+                "late_arrivals": driven["late_arrivals"],
+                "shift_min": shift,
+                "reported_routes_over_shift": reported["routes_over_shift"],
+            }
+            ST.append(STUDY, args.shard, record)
+            done[key] = record
+            gap = 100.0 * (record["driven_km"] - record["reported_km"]) / record["driven_km"]
+            print(f"  S0 {index:>2} {planner:<10} reported {record['reported_km']:7.1f} km  "
+                  f"driven {record['driven_km']:7.1f} km  ({gap:+.1f} percent)  "
+                  f"over shift {record['routes_over_shift']} of {record['routes']}, "
+                  f"worst {record['overrun_min_worst']:.0f} min", flush=True)
+    print(f"[{STUDY}] shard {args.shard} finished", flush=True)
     return 0
 
 

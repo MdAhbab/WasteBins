@@ -1,31 +1,31 @@
 """
-How the planner behaves as the network grows.
+How the planners behave as the network grows.
 =============================================
 
 A dispatcher that only works at thirty containers is of no use to a city, so the
 cost of the method has to be stated as a function of instance size rather than at
 one operating point.  This script holds everything fixed except the number of
-containers and the fleet sized to match it, and reports three things per size.
+containers and the fleet sized to match it.
 
-``compute``
-    Wall-clock time to produce a plan, split into construction and improvement.
-    Construction dominates and grows faster than linearly, which is the honest
-    limit of the current implementation and is reported as such.
+For each size it records, per snapshot:
 
-``quality``
-    The objective, the distance and the share of containers served, so a reader
-    can see whether the planner degrades as well as slows.
+* the construction time and the improvement time of the insertion planner,
+  separately, because the first grows with the instance and the second is a
+  fixed allowance;
+* the objective, distance and share of containers served by that planner;
+* the same for OR-Tools given the insertion planner's total time.
 
-``margin``
-    The same quantities for the strongest baseline, so the comparison at the
-    headline size is not mistaken for a claim at every size.
+The fleet grows with the network at one vehicle per 25 containers, so the
+workload per vehicle stays roughly constant and the curve measures the planner
+rather than a change in how constrained the instance is.
 
-The fleet grows with the network at a fixed ratio of one vehicle per 25
-containers, so the per-vehicle workload stays roughly constant and the curve
-measures the planner rather than a change in how constrained the instance is.
+The growth exponent is fitted by `analyze.py` to the construction time over all
+sizes.  The earlier version fitted the whole solve time above 40 containers,
+because below that the solve was bounded by its budget; construction is not
+bounded by anything, so every size is a valid point.
 
-Run:  python -m experiments.exp_scale [--sizes 50,100,200,400] [--snapshots 5]
-Out:  results/scale.json
+Run:  python -m experiments.exp_scale --shard 0 --of 4
+Out:  results/raw/scale.sNN.jsonl
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ import json
 import pathlib
 import sys
 import time
-from typing import Dict, List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -42,144 +42,86 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from wastebins_core import vrp as VRP                 # noqa: E402
 from experiments import exp_fleet as EF               # noqa: E402
+from experiments import instances as IN               # noqa: E402
+from experiments import policies as PO                # noqa: E402
+from experiments import store as ST                   # noqa: E402
+from experiments.exp_compare import IMPROVE_S         # noqa: E402
 
-RESULTS = pathlib.Path(__file__).parent / "results"
-RESULTS.mkdir(exist_ok=True)
-
+STUDY = "scale"
 CONTAINERS_PER_VEHICLE = 25
-COMPARATOR = "aco"           # the strongest baseline at the headline size
+SIZES = (40, 60, 80, 120, 160, 240, 320)
+SNAPSHOTS = 3
 
 
-def growth_exponent(rows: List[Dict], field: str = "solve_s",
-                    min_bins: int = 80) -> float:
-    """
-    Slope of log solve time against log instance size, by least squares.
-
-    Reported rather than asserted, because "grows faster than linearly" is a
-    claim a reader can check and "is cubic" is a claim we have not earned.
-
-    Sizes below ``min_bins`` are excluded. At 40 containers the search finishes
-    inside its own three-second budget, so the measured time is the budget and
-    not the cost of the work, and including it would bend the fitted slope
-    upward for a reason that has nothing to do with how the method scales.
-    """
-    points = [(r["n_bins"], r["proposed"][field]) for r in rows
-              if r["n_bins"] >= min_bins and r["proposed"][field] > 0]
-    if len(points) < 2:
-        return float("nan")
-    x = np.log(np.array([p[0] for p in points], dtype=float))
-    y = np.log(np.array([p[1] for p in points], dtype=float))
-    return float(np.polyfit(x, y, 1)[0])
-
-
-def run_size(n_bins: int, n_snapshots: int, budget: float) -> Dict:
-    from datetime import datetime, timezone
-    when = datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc)
-
+def instance(n_bins: int, index: int):
     n_vehicles = max(2, round(n_bins / CONTAINERS_PER_VEHICLE))
     EF.set_study("dhaka", n_bins=n_bins, n_vehicles=n_vehicles)
     rng = np.random.default_rng(EF.SEED)
-    weights = VRP.ObjectiveWeights()
-
-    rows: Dict[str, List[Dict]] = {"proposed": [], COMPARATOR: []}
-    matrix_s: List[float] = []
-    violations: List[str] = []
-
-    for i in range(n_snapshots):
+    snapshot = None
+    for i in range(index + 1):
         snapshot = EF.make_snapshot(rng, i)
-        t0 = time.perf_counter()
-        travel = EF.travel_for(snapshot, when)
-        matrix_s.append(time.perf_counter() - t0)
-        tasks = EF.build_tasks(snapshot)
-        fleet = EF.build_fleet(snapshot)
-
-        for policy in rows:
-            started = time.perf_counter()
-            plan = EF.run_policy(policy, tasks, fleet, travel, weights, snapshot,
-                                 budget)
-            elapsed = time.perf_counter() - started
-            if plan is None:
-                continue
-            violations.extend(EF.audit_plan(plan, f"{policy}@{n_bins}:{i}"))
-            rows[policy].append({
-                "solve_s": elapsed,
-                "objective": float(plan.objective),
-                "distance_km": float(plan.metrics["distance_km"]),
-                "co2_kg": float(plan.metrics["co2_kg"]),
-                "served": float(plan.metrics["bins_served"]),
-                "served_share": float(plan.metrics["bins_served"]) / n_bins,
-            })
-
-    def mean(policy: str, field: str) -> float:
-        values = [r[field] for r in rows[policy]]
-        return float(np.mean(values)) if values else float("nan")
-
-    proposed_obj = np.array([r["objective"] for r in rows["proposed"]])
-    baseline_obj = np.array([r["objective"] for r in rows[COMPARATOR]])
-    gap = float(np.mean((baseline_obj - proposed_obj) / baseline_obj) * 100.0)
-
-    return {
-        "n_bins": n_bins,
-        "n_vehicles": n_vehicles,
-        "n_snapshots": n_snapshots,
-        "search_budget_s": budget,
-        "matrix_build_s": float(np.mean(matrix_s)),
-        "proposed": {f: mean("proposed", f) for f in
-                     ("solve_s", "objective", "distance_km", "co2_kg",
-                      "served", "served_share")},
-        COMPARATOR: {f: mean(COMPARATOR, f) for f in
-                     ("solve_s", "objective", "distance_km", "co2_kg",
-                      "served", "served_share")},
-        "objective_gap_pct": gap,
-        "feasible": len(violations) == 0,
-        "violations": violations[:20],
-    }
+    t0 = time.perf_counter()
+    travel = EF.travel_for(snapshot, IN.WHEN)
+    matrix_s = time.perf_counter() - t0
+    return snapshot, travel, EF.build_fleet(snapshot), matrix_s
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sizes", default="50,100,200,400")
-    parser.add_argument("--snapshots", type=int, default=5)
-    parser.add_argument("--budget", type=float, default=3.0)
+    parser.add_argument("--sizes", default=",".join(str(s) for s in SIZES))
+    parser.add_argument("--snapshots", type=int, default=SNAPSHOTS)
+    parser.add_argument("--shard", type=int, default=0)
+    parser.add_argument("--of", type=int, default=1)
     args = parser.parse_args()
 
+    ST.keep_awake()
     sizes = [int(s) for s in args.sizes.split(",")]
-    rows = []
-    print(f"{'bins':>6}{'veh':>5}{'matrix s':>10}{'solve s':>10}{'served':>9}"
-          f"{'km':>9}{'objective':>12}{'gap vs ' + COMPARATOR:>16}")
-    print("-" * 77)
-    for n_bins in sizes:
-        row = run_size(n_bins, args.snapshots, args.budget)
-        rows.append(row)
-        p = row["proposed"]
-        print(f"{n_bins:>6}{row['n_vehicles']:>5}{row['matrix_build_s']:>10.2f}"
-              f"{p['solve_s']:>10.2f}{100 * p['served_share']:>8.1f}%"
-              f"{p['distance_km']:>9.1f}{p['objective']:>12.1f}"
-              f"{row['objective_gap_pct']:>15.1f}%", flush=True)
-
-    exponent = growth_exponent(rows)
-    print(f"\nsearch time grows as n^{exponent:.2f} over the sizes above 40 "
-          f"containers, where the search no longer finishes inside its budget")
-
-    payload = {
+    # Largest first, so the shards finish at about the same time.
+    units: List[Tuple[int, int]] = [(n, i) for n in sorted(sizes, reverse=True)
+                                    for i in range(args.snapshots)]
+    ST.RAW.mkdir(parents=True, exist_ok=True)
+    (ST.RAW / f"{STUDY}.meta.json").write_text(json.dumps({
+        "study": STUDY, "sizes": sizes, "snapshots": args.snapshots,
         "containers_per_vehicle": CONTAINERS_PER_VEHICLE,
-        "comparator": COMPARATOR,
-        "growth_exponent": exponent,
-        "growth_exponent_note": "least-squares slope of log search time against "
-                                "log container count, fitted above 40 containers "
-                                "because at 40 the search finishes inside its "
-                                "three-second budget and the measured time is "
-                                "the budget",
-        "sizes": rows,
-        "note": "the fleet grows with the network so the per-vehicle workload "
-                "stays roughly constant; the curve measures the planner and not "
-                "a change in how constrained the instance is",
-    }
-    (RESULTS / "scale.json").write_text(json.dumps(payload, indent=2))
-    print(f"\nSaved {RESULTS / 'scale.json'}")
-    if not all(r["feasible"] for r in rows):
-        print("FAILED: infeasible plans produced")
-        return 1
+        "improve_s": IMPROVE_S, "solver_config": PO.tuned_config(),
+        "environment": ST.environment(),
+    }, indent=2, default=str))
+
+    done = ST.index(STUDY)
+    weights = VRP.ObjectiveWeights()
+    for n_bins, index in ST.mine(units, args.shard, args.of):
+        keys = {p: f"{STUDY}|{n_bins}|{index}|{p}" for p in ("insertion", "ortools")}
+        if all(k in done for k in keys.values()):
+            continue
+        snapshot, travel, fleet, matrix_s = instance(n_bins, index)
+        canonical = PO.canonical_tasks(snapshot)
+        if keys["insertion"] not in done:
+            record = PO.solve_and_record("insertion", "full", snapshot, travel, fleet,
+                                         weights, budget_s=None, improve_s=IMPROVE_S,
+                                         canonical=canonical)
+            record.update({"key": keys["insertion"], "study": STUDY,
+                           "n_containers": n_bins, "n_vehicles": len(fleet),
+                           "snapshot": index, "matrix_s": round(matrix_s, 3)})
+            record.pop("served_ids", None)
+            ST.append(STUDY, args.shard, record)
+            done[keys["insertion"]] = record
+        reference = done[keys["insertion"]]
+        if keys["ortools"] not in done:
+            record = PO.solve_and_record("ortools", "full", snapshot, travel, fleet,
+                                         weights, budget_s=reference["elapsed_s"],
+                                         improve_s=IMPROVE_S, canonical=canonical)
+            record.update({"key": keys["ortools"], "study": STUDY,
+                           "n_containers": n_bins, "n_vehicles": len(fleet),
+                           "snapshot": index, "matrix_s": round(matrix_s, 3)})
+            record.pop("served_ids", None)
+            ST.append(STUDY, args.shard, record)
+            done[keys["ortools"]] = record
+        other = done[keys["ortools"]]
+        print(f"  n={n_bins:>4} snapshot {index}: construction "
+              f"{reference['search']['construct_s']:7.1f}s  insertion "
+              f"{reference['objective']:9.1f}  ortools {other['objective']:9.1f}",
+              flush=True)
+    print(f"[{STUDY}] shard {args.shard} finished", flush=True)
     return 0
 
 

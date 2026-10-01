@@ -392,3 +392,104 @@ class DijkstraTests(TestCase):
         w_ab_swapped = next(w for v, w in g2[n1.id] if v == n2.id)
         # When B has higher priority (0.9), A->B should be cheaper than when B has lower (0.2)
         self.assertLess(w_ab, w_ab_swapped)
+
+
+class WeatherDispatchTests(SimpleTestCase):
+    """
+    The weather a plan is built on, as the dispatch service resolves it.
+
+    No reading is fetched: the provider is replaced by one that returns fixed
+    conditions, which is also how a failed feed behaves.
+    """
+
+    class _Depot:
+        latitude, longitude = 23.7504, 90.3785
+
+    class _Feed:
+        """Stands in for a live provider: any class that is not the static one."""
+        name = "google"
+        attribution = "Source: Includes weather data from Google"
+
+        def __init__(self, conditions):
+            self.conditions = conditions
+            self.hours_asked = None
+
+        def current(self, lat, lng):
+            return self.conditions
+
+        def next_hours(self, lat, lng, hours):
+            self.hours_asked = hours
+            return [self.conditions] * hours
+
+        def describe(self):
+            return {"provider": self.name, "attribution": self.attribution}
+
+    def _resolve(self, conditions, config=None, lead_h=0.0, shift=240.0):
+        from datetime import timedelta
+        from unittest import mock
+        from django.utils import timezone
+        from bins.services import dispatch
+        from wastebins_core import weather as WX
+
+        feed = (WX.StaticWeatherProvider(WX.NOMINAL) if conditions is None
+                else self._Feed(conditions))
+        settings_block = {"PROVIDER": "google", "HORIZON": "current",
+                          "STANDING_WATER_MM": 0.0, "LIVE_VALIDITY_H": 1.0}
+        settings_block.update(config or {})
+        with override_settings(WEATHER=settings_block), \
+                mock.patch.object(dispatch, "weather_provider", return_value=feed):
+            when = timezone.now() + timedelta(hours=lead_h)
+            return dispatch.operating_weather(self._Depot(), when, shift) + (feed,)
+
+    def test_no_provider_means_nominal_conditions(self):
+        effect, record, readings, _feed = self._resolve(None)
+        self.assertTrue(effect.neutral)
+        self.assertEqual(record["basis"], "nominal conditions")
+
+    def test_current_conditions_slow_the_plan(self):
+        from wastebins_core import weather as WX
+        rain = WX.Conditions(temperature_c=28.0, relative_humidity=88.0, rain_mm_h=20.0)
+        effect, record, readings, _feed = self._resolve(rain)
+        self.assertEqual(record["basis"], "current conditions")
+        self.assertEqual(record["effects"]["rain_class"], "heavy")
+        self.assertEqual(effect.speed_factor, 0.88)
+        self.assertGreater(effect.service_factor, 1.0)
+        self.assertEqual(readings, [rain])
+
+    def test_the_stored_record_holds_factors_and_no_reading(self):
+        from wastebins_core import weather as WX
+        hot = WX.Conditions(temperature_c=38.0, relative_humidity=45.0, uv_index=9.0)
+        _effect, record, _readings, _feed = self._resolve(hot)
+        text = str(record)
+        for banned in ("temperature", "humidity", "rain_mm_h", "uv_index", "wbgt",
+                       "wet_bulb", "38.0", "45.0"):
+            self.assertNotIn(banned, text)
+        self.assertEqual(record["attribution"], "Source: Includes weather data from Google")
+        self.assertEqual(record["effects"]["uv_category"], "very high")
+
+    def test_a_plan_for_a_later_instant_is_not_built_on_a_current_reading(self):
+        from wastebins_core import weather as WX
+        rain = WX.Conditions(rain_mm_h=20.0)
+        effect, record, _readings, _feed = self._resolve(rain, lead_h=6.0)
+        self.assertTrue(effect.neutral)
+        self.assertIn("does not describe that instant", record["basis"])
+
+    def test_the_shift_horizon_asks_for_every_hour_of_the_shift(self):
+        from wastebins_core import weather as WX
+        rain = WX.Conditions(rain_mm_h=4.0)
+        effect, record, readings, feed = self._resolve(rain, {"HORIZON": "shift"},
+                                                       shift=250.0)
+        self.assertEqual(feed.hours_asked, 5)
+        self.assertEqual(len(readings), 5)
+        self.assertEqual(record["basis"], "hourly forecast over the shift")
+        self.assertAlmostEqual(effect.speed_factor, 0.95, places=12)
+
+    def test_reported_standing_water_caps_the_speed_and_can_close_the_streets(self):
+        from wastebins_core import weather as WX
+        dry = WX.Conditions()
+        effect, record, _r, _f = self._resolve(dry, {"STANDING_WATER_MM": 150.0})
+        self.assertAlmostEqual(effect.speed_cap_kmh, 24.2598, places=4)
+        self.assertTrue(record["effects"]["passable"])
+        closed, record, _r, _f = self._resolve(dry, {"STANDING_WATER_MM": 320.0})
+        self.assertFalse(closed.passable)
+        self.assertFalse(record["effects"]["passable"])

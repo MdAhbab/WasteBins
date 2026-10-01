@@ -32,6 +32,7 @@ from wastebins_core import scenario as SC
 from wastebins_core import stats as ST
 from wastebins_core import traffic as TR
 from wastebins_core import vrp as VRP
+from wastebins_core import weather as WX
 
 
 class LedgerTests(SimpleTestCase):
@@ -802,6 +803,244 @@ class EquityGuaranteeTests(SimpleTestCase):
         self.assertEqual(len(set(scores)), len(scores), "two waits tied")
 
 
+class ReservedHeadTests(SimpleTestCase):
+    """
+    The reservation is what the wait bound rests on, so it is pinned directly.
+
+    A price is a preference and a search can always decline it.  These cases
+    check the three things the proof needs and nothing else supplies: the queue
+    has one order wherever it is read, the reserved bins are served in every
+    plan, and the bound they give is attained on an instance built to attain it.
+    """
+
+    WEIGHTS = VRP.ObjectiveWeights()
+    TAU, CYCLE = 48.0, 12.0
+
+    def _tasks(self, waits, priority=0.30, hazards=None, windows=None,
+               escalating_price=True):
+        """Bins 1..n at matrix rows 1..n, built through the production path."""
+        ids = sorted(waits)
+        hazards = hazards or {}
+        tiered = AG.effective_priorities(
+            {i: priority for i in ids}, waits,
+            {i: (1.0 if hazards.get(i) else 0.0) for i in ids},
+            tau_h=self.TAU, escalating_price=escalating_price)
+        return SC.make_tasks(
+            ids, {i: 0.5 for i in ids}, {i: tiered[i].score for i in ids},
+            index_of={i: i for i in ids},
+            hazards={i: bool(hazards.get(i)) for i in ids},
+            tiers={i: tiered[i].tier for i in ids},
+            overdue_pressures={i: tiered[i].pressure for i in ids},
+            waits={i: tiered[i].wait_hours for i in ids},
+            overdue={i: tiered[i].overdue for i in ids},
+            tto_hours={i: (2.0 if hazards.get(i) else float("inf")) for i in ids},
+            densities={i: 220.0 for i in ids},
+            capacities_l={i: 1100.0 for i in ids},
+            windows=windows or {},
+        )
+
+    def _star(self, n, spoke_km=10.0):
+        """
+        A depot with ``n`` bins, each on its own spoke.
+
+        Travel between two bins passes the depot, so a round serving ``k`` bins
+        is as long as ``k`` separate round trips and the shift length alone
+        decides how many fit.
+        """
+        size = n + 1
+        matrix = np.full((size, size), 2.0 * spoke_km * 1000.0)
+        matrix[0, :] = matrix[:, 0] = spoke_km * 1000.0
+        np.fill_diagonal(matrix, 0.0)
+        return VRP.TravelModel(matrix, default_speed_kmh=20.0)
+
+    def _shift_for(self, k, spoke_km=10.0):
+        """Shift that fits exactly ``k`` spokes: legs, service and one tip."""
+        leg = 60.0 * spoke_km / 20.0
+        return 2.0 * k * leg + 4.0 * k + 15.0 + 2.0
+
+    def test_queue_is_ordered_by_wait_then_by_id(self):
+        tasks = self._tasks({3: 60.0, 1: 60.0, 2: 72.0, 4: 24.0})
+        queue = VRP.overdue_queue(list(reversed(tasks)))
+        self.assertEqual([t.node_id for t in queue], [2, 1, 3],
+                         "the queue must not depend on the order of the list")
+
+    def test_queue_order_survives_the_bounded_price(self):
+        """With the price switched off the queue must still know who waited."""
+        tasks = self._tasks({1: 60.0, 2: 96.0, 3: 49.0}, escalating_price=False)
+        self.assertTrue(all(t.overdue_pressure == 0.0 for t in tasks))
+        self.assertEqual([t.node_id for t in VRP.overdue_queue(tasks)], [2, 1, 3])
+
+    def test_a_lone_overdue_bin_is_served_at_the_deadline(self):
+        """
+        The case the controlled sweep cannot show, because it switches this off.
+
+        Forty kilometres out a round trip costs about 218 units against a skip
+        penalty of 90 at the deadline, so the price alone declines it.  Reserved,
+        it is served in the first cycle it is overdue.
+        """
+        travel = VRP.TravelModel(np.array([[0.0, 40000.0], [40000.0, 0.0]]),
+                                 default_speed_kmh=20.0)
+        vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0, shift_minutes=1200.0)
+        priced = VRP.solve(self._tasks({1: self.TAU}), [vehicle], travel,
+                           self.WEIGHTS, time_budget_s=0.2, reserve_overdue=0)
+        self.assertEqual(priced.metrics["bins_served"], 0)
+        reserved = VRP.solve(self._tasks({1: self.TAU}), [vehicle], travel,
+                             self.WEIGHTS, time_budget_s=0.2, reserve_overdue=1)
+        self.assertEqual(reserved.metrics["bins_served"], 1)
+        self.assertEqual(reserved.metrics["heads_reserved"], 1)
+        self.assertEqual(reserved.metrics["head_repairs"], 0)
+
+    def test_the_certificate_is_a_feasible_prefix_of_the_queue(self):
+        tasks = self._tasks({i: 48.0 + 12.0 * i for i in range(1, 7)})
+        travel = self._star(6)
+        vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0,
+                                  shift_minutes=self._shift_for(3))
+        queue = VRP.overdue_queue(tasks)
+        heads, routes, unservable = VRP.certify_heads(
+            queue, [vehicle], travel, self.WEIGHTS, reserve=5)
+        # Five were asked for and three fit, so three are reserved.
+        self.assertEqual([t.node_id for t in heads],
+                         [t.node_id for t in queue[:3]])
+        self.assertEqual(unservable, [])
+        self.assertIsNotNone(VRP.evaluate_route(routes[0], vehicle, travel))
+        self.assertEqual(sorted(t.node_id for t in routes[0]),
+                         sorted(t.node_id for t in heads))
+
+    def test_every_reserved_head_is_served_and_the_marks_are_cleared(self):
+        rng = np.random.default_rng(11)
+        for reserve in (1, 2, 4):
+            waits = {i: float(rng.choice([0.0, 24.0, 48.0, 60.0, 72.0, 96.0]))
+                     for i in range(1, 19)}
+            tasks = self._tasks(waits, hazards={2: True, 5: True, 9: True})
+            coords = [(23.8069, 90.3687)] + [
+                (23.780 + float(rng.uniform(0, 0.055)),
+                 90.348 + float(rng.uniform(0, 0.042))) for _ in range(18)]
+            travel = SC.build_travel(
+                coords, datetime(2026, 3, 3, 7, 30, tzinfo=timezone.utc),
+                provider=TR.SyntheticTrafficProvider(seed=42))
+            vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0,
+                                      shift_minutes=150.0)
+            plan = VRP.solve(tasks, [vehicle], travel, self.WEIGHTS,
+                             time_budget_s=0.5, reserve_overdue=reserve)
+            served = {s.task.node_id for r in plan.routes for s in r.stops}
+            self.assertGreaterEqual(plan.metrics["heads_reserved"], 1)
+            self.assertLessEqual(plan.metrics["heads_reserved"], reserve)
+            self.assertTrue(set(plan.metrics["head_ids"]) <= served,
+                            "a reserved head was left out of the plan")
+            self.assertEqual(plan.metrics["heads_served"],
+                             plan.metrics["heads_reserved"])
+            self.assertEqual(plan.metrics["head_repairs"], 0)
+            self.assertFalse(any(t.mandatory for t in tasks),
+                             "a mandatory mark outlived the call that set it")
+            self.assertLess(plan.objective, VRP.MANDATORY_SKIP_COST / 2,
+                            "the mandatory cost leaked into the reported objective")
+
+    def test_a_reserved_head_outlasts_a_flood_of_hazards(self):
+        """
+        The hazard tier outranks the overdue tier in the ranking, and with a
+        short shift the hazards alone fill the round.  The head is still served,
+        because it is in the plan before the hazards are inserted.
+        """
+        waits = {i: 0.0 for i in range(1, 9)}
+        waits[9] = 120.0
+        tasks = self._tasks(waits, hazards={i: True for i in range(1, 9)})
+        travel = self._star(9, spoke_km=4.0)
+        vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0,
+                                  shift_minutes=self._shift_for(3, spoke_km=4.0))
+        plan = VRP.solve(tasks, [vehicle], travel, self.WEIGHTS,
+                         time_budget_s=0.3, reserve_overdue=1)
+        served = {s.task.node_id for r in plan.routes for s in r.stops}
+        self.assertIn(9, served)
+        self.assertEqual(plan.metrics["bins_served"], 3)
+
+    def test_a_bin_nobody_can_serve_does_not_block_the_queue(self):
+        """Its window opens after the shift ends, so no policy can collect it."""
+        tasks = self._tasks({1: 200.0, 2: 96.0, 3: 60.0},
+                            windows={1: (400.0, 480.0)})
+        travel = self._star(3, spoke_km=2.0)
+        vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0, shift_minutes=120.0)
+        heads, _routes, unservable = VRP.certify_heads(
+            VRP.overdue_queue(tasks), [vehicle], travel, self.WEIGHTS, reserve=1)
+        self.assertEqual([t.node_id for t in unservable], [1])
+        self.assertEqual([t.node_id for t in heads], [2])
+
+    def test_a_dropped_head_is_restored(self):
+        """A solver that ignores the reservation loses the head; the repair must not."""
+        tasks = self._tasks({i: 48.0 + 12.0 * i for i in range(1, 5)})
+        travel = self._star(4)
+        vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0,
+                                  shift_minutes=self._shift_for(2))
+        queue = VRP.overdue_queue(tasks)
+        heads, certificate, _ = VRP.certify_heads(queue, [vehicle], travel,
+                                                  self.WEIGHTS, reserve=2)
+        head_ids = [t.node_id for t in heads]
+        others = [t for t in tasks if t.node_id not in head_ids]
+        for head in heads:
+            head.mandatory = True
+        try:
+            orders, unserved = VRP.restore_heads(
+                heads, certificate, {0: others}, list(heads),
+                [vehicle], travel, self.WEIGHTS)
+        finally:
+            for head in heads:
+                head.mandatory = False
+        self.assertEqual(sorted(t.node_id for t in orders[0]), sorted(head_ids))
+        self.assertEqual(sorted(t.node_id for t in unserved),
+                         sorted(t.node_id for t in others))
+
+    def test_queue_bound_values(self):
+        bound = AG.queue_wait_bound
+        self.assertEqual(bound(48.0, 12.0, 9, 1), 144.0)
+        self.assertEqual(bound(48.0, 12.0, 60, 1), 756.0)
+        self.assertEqual(bound(48.0, 12.0, 60, 4), 216.0)
+        self.assertEqual(bound(48.0, 12.0, 60, 8), 132.0)
+        # A deadline that is not a multiple of the cycle is first seen late.
+        self.assertEqual(bound(50.0, 12.0, 1, 1), 60.0)
+        self.assertEqual(bound(48.0, 12.0, 5, 0), math.inf)
+        # It is the pricing form with the pricing delay left out.
+        self.assertEqual(
+            bound(48.0, 12.0, 17, 3),
+            AG.worst_case_wait_bound(tau_h=48.0, cycle_h=12.0, max_overdue=17,
+                                     served_overdue_per_cycle=3))
+
+    def test_the_bound_is_attained_on_a_star_network(self):
+        """
+        Tightness, by construction.
+
+        Six bins on six spokes and a shift that fits exactly ``r`` of them.
+        Every bin starts at zero, so all six reach the deadline together and the
+        backlog is the whole network.  The last bin of the first pass is then
+        served at exactly the bound, for one reserved head and for two.
+        """
+        n = 6
+        for reserve in (1, 2):
+            travel = self._star(n)
+            vehicle = VRP.VehicleSpec(vehicle_id=0, depot_index=0,
+                                      shift_minutes=self._shift_for(reserve))
+            waits = {i: 0.0 for i in range(1, n + 1)}
+            worst_served, worst_backlog = 0.0, 0
+            for _cycle in range(16):
+                tasks = self._tasks(waits)
+                worst_backlog = max(worst_backlog,
+                                    len(VRP.overdue_queue(tasks)))
+                plan = VRP.solve(tasks, [vehicle], travel, self.WEIGHTS,
+                                 time_budget_s=0.2, reserve_overdue=reserve)
+                served = {s.task.node_id for r in plan.routes for s in r.stops}
+                self.assertEqual(plan.metrics["heads_served"],
+                                 plan.metrics["heads_reserved"])
+                for node_id in waits:
+                    if node_id in served:
+                        worst_served = max(worst_served, waits[node_id])
+                        waits[node_id] = self.CYCLE
+                    else:
+                        waits[node_id] += self.CYCLE
+            self.assertEqual(worst_backlog, n)
+            self.assertEqual(
+                worst_served,
+                AG.queue_wait_bound(self.TAU, self.CYCLE, n, reserve),
+                f"bound not attained with {reserve} reserved")
+
+
 class RoadNetworkTests(SimpleTestCase):
     """
     The street-graph distance model.
@@ -1002,3 +1241,372 @@ class ConstructionCacheTests(SimpleTestCase):
             order = orders[vehicle.vehicle_id]
             if order:
                 self.assertIsNotNone(VRP.evaluate_route(order, vehicle, travel))
+
+
+class WeatherTests(SimpleTestCase):
+    """
+    Each mapping from weather to a model parameter against a hand-computed value.
+
+    The numbers come from published functions, so a wrong coefficient would not
+    fail anywhere else: the planner would simply plan for different weather.
+    The provider cases never touch the network, and the documents they parse are
+    written here to the published schema with invented values.
+    """
+
+    HOT = WX.Conditions(temperature_c=38.0, relative_humidity=45.0, uv_index=9.0)
+
+    def test_rain_classes_follow_the_published_bounds(self):
+        cases = [(0.0, "dry"), (0.09, "dry"), (0.1, "slight"), (2.49, "slight"),
+                 (2.5, "moderate"), (9.99, "moderate"), (10.0, "heavy"),
+                 (49.9, "heavy"), (50.0, "violent")]
+        for rate, expected in cases:
+            self.assertEqual(WX.rain_class(rate), expected, msg=f"{rate} mm/h")
+
+    def test_speed_factor_never_rises_with_rain(self):
+        order = ["dry", "slight", "moderate", "heavy", "violent"]
+        for table in (WX.RAIN_SPEED_FACTOR, WX.RAIN_SPEED_FACTOR_SEVERE):
+            values = [table[k] for k in order]
+            self.assertEqual(values, sorted(values, reverse=True))
+            self.assertEqual(table["dry"], 1.0)
+
+    def test_standing_water_caps_the_speed(self):
+        self.assertTrue(math.isinf(WX.flood_speed_cap_kmh(0.0)))
+        # 0.0009 * 150^2 - 0.5529 * 150 + 86.9448
+        self.assertAlmostEqual(WX.flood_speed_cap_kmh(150.0), 24.2598, places=4)
+        self.assertAlmostEqual(WX.flood_speed_cap_kmh(100.0), 40.6548, places=4)
+        self.assertEqual(WX.flood_speed_cap_kmh(300.0), 0.0)
+        self.assertFalse(WX.effects(WX.Conditions(standing_water_mm=300.0)).passable)
+
+    def test_wet_bulb_matches_the_worked_example(self):
+        """Stull gives 13.7 C for 20 C at 50 percent relative humidity."""
+        self.assertAlmostEqual(WX.wet_bulb_c(20.0, 50.0), 13.70, places=2)
+
+    def test_work_capacity_is_one_half_at_the_fitted_midpoint(self):
+        self.assertAlmostEqual(WX.work_capacity(33.63), 0.5, places=12)
+        self.assertAlmostEqual(WX.work_capacity(40.0), 0.2501, places=4)
+        values = [WX.work_capacity(w) for w in (15, 20, 25, 30, 35, 40)]
+        self.assertEqual(values, sorted(values, reverse=True))
+        # The function is fitted from 12 to 40 C and is held flat outside that.
+        self.assertEqual(WX.work_capacity(5.0), WX.work_capacity(12.0))
+        self.assertEqual(WX.work_capacity(48.0), WX.work_capacity(40.0))
+
+    def test_nominal_conditions_change_nothing(self):
+        effect = WX.effects(WX.NOMINAL)
+        self.assertTrue(effect.neutral)
+        self.assertEqual(effect.rain_class, "dry")
+        self.assertFalse(effect.sun_exposed)
+        # 0.7 * wet bulb + 0.3 * air temperature, in shade.
+        self.assertAlmostEqual(effect.wbgt_c, 0.7 * WX.wet_bulb_c(28.0, 60.0) + 8.4, places=9)
+
+    def test_heat_slows_service_and_sun_slows_it_further(self):
+        shade = WX.effects(replace_conditions(self.HOT, uv_index=2.0))
+        sun = WX.effects(self.HOT)
+        night = WX.effects(replace_conditions(self.HOT, is_daytime=False))
+        self.assertGreater(shade.service_factor, 1.0)
+        self.assertGreater(sun.service_factor, shade.service_factor)
+        self.assertAlmostEqual(sun.wbgt_c - shade.wbgt_c, 3.0, places=9)
+        self.assertEqual(night.service_factor, shade.service_factor,
+                         "a high index after dark carries no solar load")
+        self.assertEqual(sun.uv_category, "very high")
+        self.assertAlmostEqual(sun.service_factor,
+                               WX.work_capacity(WX.wbgt_c(WX.NOMINAL)) / sun.work_capacity,
+                               places=12)
+
+    def test_guideline_capacity_is_the_published_form(self):
+        self.assertEqual(WX.work_capacity_guideline(25.0), 1.0)
+        self.assertAlmostEqual(WX.work_capacity_guideline(26.0), 0.75, places=12)
+        # 100 - 25 * (33 - 25)^(2/3) = 100 - 25 * 4 = 0, held at the floor.
+        self.assertEqual(WX.work_capacity_guideline(33.0), 0.10)
+
+    def test_gas_follows_the_measured_ratio_inside_its_range(self):
+        self.assertAlmostEqual(WX.DECOMPOSITION_Q10 ** 2.5, 28.0, places=9)
+        self.assertEqual(WX.decomposition_factor(28.0), 1.0)
+        self.assertAlmostEqual(WX.decomposition_factor(35.0) / WX.decomposition_factor(10.0),
+                               28.0, places=9)
+        self.assertEqual(WX.decomposition_factor(42.0), WX.decomposition_factor(35.0))
+        self.assertEqual(WX.decomposition_factor(2.0), WX.decomposition_factor(10.0))
+
+    def test_litter_demand_uses_the_estimated_coefficients(self):
+        warm = WX.Conditions(temperature_c=33.0)
+        self.assertAlmostEqual(WX.litter_demand_factor(warm), math.exp(0.1025 * 0.5), places=12)
+        wet = WX.Conditions(temperature_c=28.0, rain_mm_h=4.0)
+        self.assertAlmostEqual(WX.litter_demand_factor(wet), math.exp(-0.0903), places=12)
+        # The daily maximum, when given, replaces the temperature of the hour.
+        evening = WX.Conditions(temperature_c=24.0, daily_max_c=33.0)
+        self.assertEqual(WX.litter_demand_factor(evening), WX.litter_demand_factor(warm))
+        # Held at the edge of the range the record covers.
+        self.assertEqual(WX.litter_demand_factor(WX.Conditions(temperature_c=45.0)),
+                         WX.litter_demand_factor(WX.Conditions(temperature_c=37.8)))
+
+    def _line(self):
+        """Depot and two bins on a line, 10 km apart, at 30 km/h."""
+        matrix = np.array([[0.0, 10e3, 20e3], [10e3, 0.0, 10e3], [20e3, 10e3, 0.0]])
+        return VRP.TravelModel(matrix, default_speed_kmh=30.0)
+
+    def test_travel_model_scales_speed_and_keeps_distance(self):
+        base = self._line()
+        rain = WX.travel_under(base, WX.effects(WX.Conditions(rain_mm_h=20.0)))
+        self.assertEqual(rain.distance(0, 1), base.distance(0, 1))
+        self.assertAlmostEqual(rain.speed_kmh(0, 1), 30.0 * 0.88, places=9)
+        self.assertAlmostEqual(rain.minutes(0, 1), base.minutes(0, 1) / 0.88, places=9)
+        self.assertEqual(rain.friction(0, 1), base.friction(0, 1))
+
+        flooded = WX.travel_under(
+            base, WX.effects(WX.Conditions(rain_mm_h=60.0, standing_water_mm=150.0)))
+        # 30 * 0.82 = 24.6 km/h, above the 24.26 km/h the water allows.
+        self.assertAlmostEqual(flooded.speed_kmh(0, 1), 24.2598, places=4)
+
+        self.assertIs(WX.travel_under(base, WX.NEUTRAL), base)
+        with self.assertRaises(ValueError):
+            WX.travel_under(
+                base, WX.effects(WX.Conditions(standing_water_mm=320.0))).minutes(0, 1)
+
+    def test_a_route_that_just_fits_no_longer_fits_in_rain(self):
+        base = self._line()
+        task = VRP.BinTask(node_id=1, index=1, load_kg=100.0, service_minutes=4.0)
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=60.0, tipping_minutes=15.0)
+        # 20 minutes out, 4 of service, 20 back and 15 to tip: 59 of 60 minutes.
+        self.assertIsNotNone(VRP.evaluate_route([task], vehicle, base))
+        rain = WX.travel_under(base, WX.effects(WX.Conditions(rain_mm_h=20.0)))
+        self.assertIsNone(VRP.evaluate_route([task], vehicle, rain))
+
+    def test_service_time_follows_the_work_capacity(self):
+        tasks = [VRP.BinTask(node_id=1, index=1, service_minutes=4.0)]
+        effect = WX.effects(self.HOT)
+        slowed = WX.tasks_under(tasks, effect)
+        self.assertAlmostEqual(slowed[0].service_minutes, 4.0 * effect.service_factor,
+                               places=12)
+        self.assertEqual(tasks[0].service_minutes, 4.0, "the caller's tasks are not altered")
+        self.assertEqual(WX.tasks_under(tasks, WX.NEUTRAL)[0].service_minutes, 4.0)
+
+    def _two_stops(self):
+        return [VRP.BinTask(node_id=1, index=1, load_kg=100.0, service_minutes=4.0),
+                VRP.BinTask(node_id=2, index=2, load_kg=100.0, service_minutes=4.0)]
+
+    def test_driving_in_nominal_weather_reproduces_the_plan(self):
+        base, tasks = self._line(), self._two_stops()
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=240.0)
+        planned = VRP.evaluate_route(tasks, vehicle, base)
+        driven, dropped, overrun = WX.drive_route(tasks, vehicle, base, [WX.NEUTRAL] * 4)
+        self.assertEqual(dropped, [])
+        self.assertEqual(overrun, 0.0)
+        for name in ("distance_m", "co2_kg", "duration_min", "load_kg", "trips"):
+            self.assertAlmostEqual(getattr(driven, name), getattr(planned, name),
+                                   places=9, msg=name)
+        self.assertEqual([s.start_service_min for s in driven.stops],
+                         [s.start_service_min for s in planned.stops])
+        # 20 + 4 + 20 + 4 + 40 minutes on the road and at stops, 15 to tip.
+        self.assertAlmostEqual(driven.duration_min, 103.0, places=9)
+
+    def test_a_route_driven_in_rain_is_cut_to_what_fits(self):
+        base, tasks = self._line(), self._two_stops()
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=104.0)
+        rain = WX.effects(WX.Conditions(rain_mm_h=20.0))
+        self.assertEqual(rain.service_factor, 1.0)
+        driven, dropped, overrun = WX.drive_route(tasks, vehicle, base, [rain] * 2)
+        self.assertEqual([s.task.node_id for s in driven.stops], [1])
+        self.assertEqual([t.node_id for t in dropped], [2])
+        # The whole plan: 80 minutes of driving at 0.88 of the speed, 8 of
+        # service and 15 to tip, against a shift of 104.
+        self.assertAlmostEqual(overrun, 80.0 / 0.88 + 8.0 + 15.0 - 104.0, places=9)
+        self.assertAlmostEqual(driven.duration_min, 40.0 / 0.88 + 4.0 + 15.0, places=9)
+        self.assertAlmostEqual(driven.distance_m, 20e3, places=6)
+        self.assertLessEqual(driven.duration_min, vehicle.shift_minutes)
+
+    def test_a_stop_that_does_not_fit_is_skipped_and_the_next_is_tried(self):
+        base = self._line()
+        far_first = list(reversed(self._two_stops()))
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=100.0)
+        rain = WX.effects(WX.Conditions(rain_mm_h=20.0))
+        # The far stop alone needs 80 / 0.88 + 4 + 15 = 109.9 minutes.  The near
+        # one, taken from the depot, needs 40 / 0.88 + 4 + 15 = 64.5.
+        driven, dropped, _overrun = WX.drive_route(far_first, vehicle, base, [rain] * 2)
+        self.assertEqual([s.task.node_id for s in driven.stops], [1])
+        self.assertEqual([t.node_id for t in dropped], [2])
+        self.assertAlmostEqual(driven.duration_min, 40.0 / 0.88 + 4.0 + 15.0, places=9)
+
+    def test_a_protected_stop_is_kept_at_the_cost_of_the_others(self):
+        base, tasks = self._line(), self._two_stops()
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=112.0)
+        rain = WX.effects(WX.Conditions(rain_mm_h=20.0))
+        # Both stops need 113.9 minutes in the rain, so one has to go.
+        plain, lost, _overrun = WX.drive_route(tasks, vehicle, base, [rain] * 2)
+        self.assertEqual([s.task.node_id for s in plain.stops], [1])
+        self.assertEqual([t.node_id for t in lost], [2])
+        kept, lost, _overrun = WX.drive_route(tasks, vehicle, base, [rain] * 2,
+                                              protect=[2])
+        self.assertEqual([s.task.node_id for s in kept.stops], [2])
+        self.assertEqual([t.node_id for t in lost], [1])
+        self.assertAlmostEqual(kept.duration_min, 80.0 / 0.88 + 4.0 + 15.0, places=9)
+        # When everything fits, protection changes nothing.
+        roomy = VRP.VehicleSpec(vehicle_id=1, shift_minutes=240.0)
+        both, lost, _overrun = WX.drive_route(tasks, roomy, base, [rain] * 4, protect=[2])
+        self.assertEqual([s.task.node_id for s in both.stops], [1, 2])
+        self.assertEqual(lost, [])
+
+    def test_a_protected_stop_that_cannot_be_reached_is_reported(self):
+        base, tasks = self._line(), self._two_stops()
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=90.0)
+        rain = WX.effects(WX.Conditions(rain_mm_h=20.0))
+        driven, lost, _overrun = WX.drive_route(tasks, vehicle, base, [rain] * 2,
+                                                protect=[2])
+        # The protected stop alone needs 109.9 minutes, so it cannot be reached
+        # at all.  It is lost, and the other stop is not held back for it.
+        self.assertEqual([t.node_id for t in lost], [2])
+        self.assertEqual([s.task.node_id for s in driven.stops], [1])
+
+    def test_a_leg_takes_the_weather_of_the_hour_it_starts_in(self):
+        base = self._line()
+        task = VRP.BinTask(node_id=2, index=2, load_kg=100.0, service_minutes=4.0,
+                           window_start_min=70.0)
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=240.0)
+        rain = WX.effects(WX.Conditions(rain_mm_h=20.0))
+        driven, _dropped, _overrun = WX.drive_route(
+            [task], vehicle, base, [WX.NEUTRAL, rain, rain, rain])
+        # Out in the dry first hour: 40 minutes.  Waits to minute 70, serves to
+        # minute 74, and drives home in the rain of the second hour.
+        self.assertAlmostEqual(driven.stops[0].arrival_min, 40.0, places=9)
+        self.assertAlmostEqual(driven.duration_min, 74.0 + 40.0 / 0.88 + 15.0, places=9)
+
+    def test_heat_lengthens_the_stop_and_not_the_drive(self):
+        base, tasks = self._line(), self._two_stops()
+        vehicle = VRP.VehicleSpec(vehicle_id=1, shift_minutes=240.0)
+        hot = WX.effects(self.HOT)
+        driven, _dropped, _overrun = WX.drive_route(tasks, vehicle, base, [hot] * 4)
+        self.assertAlmostEqual(driven.duration_min,
+                               80.0 + 8.0 * hot.service_factor + 15.0, places=9)
+
+    def test_hours_that_agree_combine_to_their_common_value(self):
+        rain = WX.effects(WX.Conditions(rain_mm_h=20.0))
+        self.assertEqual(WX.combine_effects([rain] * 3).speed_factor, 0.88)
+        mixed = WX.combine_effects([WX.NEUTRAL, rain, rain, rain])
+        # Travel time adds up, so the speed factor is the harmonic mean.
+        self.assertAlmostEqual(mixed.speed_factor, 4.0 / (1.0 + 3.0 / 0.88), places=12)
+        self.assertIs(WX.combine_effects([]), WX.NEUTRAL)
+
+    def test_mean_conditions_keep_the_worst_water(self):
+        hours = [WX.Conditions(temperature_c=30.0, rain_mm_h=0.0),
+                 WX.Conditions(temperature_c=34.0, rain_mm_h=12.0, standing_water_mm=120.0)]
+        mean = WX.mean_conditions(hours)
+        self.assertAlmostEqual(mean.temperature_c, 32.0)
+        self.assertAlmostEqual(mean.rain_mm_h, 6.0)
+        self.assertEqual(mean.standing_water_mm, 120.0)
+        self.assertIs(WX.mean_conditions([]), WX.NOMINAL)
+
+    # -- providers -----------------------------------------------------------
+    DOCUMENT = {
+        "currentTime": "2026-01-15T03:20:11.123456789Z",
+        "isDaytime": True,
+        "temperature": {"degrees": 31.5, "unit": "CELSIUS"},
+        "relativeHumidity": 70,
+        "uvIndex": 7,
+        "precipitation": {"probability": {"percent": 40, "type": "RAIN"},
+                          "qpf": {"quantity": 3.2, "unit": "MILLIMETERS"}},
+    }
+
+    def test_a_feed_document_is_read_into_conditions(self):
+        c = WX.parse_google(self.DOCUMENT)
+        self.assertEqual((c.temperature_c, c.relative_humidity, c.rain_mm_h, c.uv_index),
+                         (31.5, 70.0, 3.2, 7.0))
+        self.assertEqual(c.observed_at,
+                         datetime(2026, 1, 15, 3, 20, 11, 123456, tzinfo=timezone.utc))
+        self.assertEqual(c.source, "google")
+
+    def test_imperial_units_are_converted(self):
+        document = dict(self.DOCUMENT,
+                        temperature={"degrees": 86.0, "unit": "FAHRENHEIT"},
+                        precipitation={"qpf": {"quantity": 0.5, "unit": "INCHES"}})
+        c = WX.parse_google(document)
+        self.assertAlmostEqual(c.temperature_c, 30.0, places=9)
+        self.assertAlmostEqual(c.rain_mm_h, 12.7, places=9)
+
+    def test_a_document_without_temperature_is_rejected(self):
+        with self.assertRaises(ValueError):
+            WX.parse_google({"relativeHumidity": 50})
+
+    def test_a_reading_is_reused_inside_the_cache_period_only(self):
+        calls = []
+
+        def fetch(url):
+            calls.append(url)
+            return self.DOCUMENT
+
+        provider = WX.GoogleWeatherProvider(api_key="k", cache_seconds=600.0, fetch=fetch)
+        provider.current(23.75, 90.38)
+        provider.current(23.75, 90.38)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(provider.cache_hits, 1)
+
+        uncached = WX.GoogleWeatherProvider(api_key="k", cache_seconds=0.0, fetch=fetch)
+        uncached.current(23.75, 90.38)
+        uncached.current(23.75, 90.38)
+        self.assertEqual(uncached.requests, 2)
+        self.assertEqual(uncached._cache, {}, "an expired reading must be deleted")
+
+    def test_the_cache_period_cannot_exceed_one_hour(self):
+        provider = WX.GoogleWeatherProvider(api_key="k", cache_seconds=86400.0,
+                                            fetch=lambda url: self.DOCUMENT)
+        self.assertEqual(provider.cache_seconds, 3600.0)
+
+    def test_a_failed_request_falls_back_and_hides_the_key(self):
+        def fetch(url):
+            raise RuntimeError(f"HTTP 403 for {url}")
+
+        provider = WX.GoogleWeatherProvider(api_key="SECRET-KEY", fetch=fetch)
+        self.assertEqual(provider.current(23.75, 90.38), WX.NOMINAL)
+        self.assertEqual(provider.fallbacks, 1)
+        self.assertNotIn("SECRET-KEY", provider.last_error)
+        self.assertNotIn("SECRET-KEY", json.dumps(provider.describe()))
+
+    def test_no_key_means_no_request(self):
+        def fetch(url):
+            raise AssertionError("the service must not be called without a key")
+
+        with mock.patch.dict("os.environ", {WX.KEY_VARIABLE: ""}):
+            provider = WX.GoogleWeatherProvider(api_key="", fetch=fetch)
+        self.assertEqual(provider.current(23.75, 90.38), WX.NOMINAL)
+        self.assertEqual(provider.requests, 0)
+
+    def test_hourly_forecast_is_read_per_hour(self):
+        hour = dict(self.DOCUMENT)
+        hour.pop("currentTime")
+        hour["interval"] = {"startTime": "2026-01-15T04:00:00Z"}
+        provider = WX.GoogleWeatherProvider(
+            api_key="k", fetch=lambda url: {"forecastHours": [hour, hour, hour]})
+        hours = provider.next_hours(23.75, 90.38, 2)
+        self.assertEqual(len(hours), 2)
+        self.assertEqual(hours[0].observed_at,
+                         datetime(2026, 1, 15, 4, 0, tzinfo=timezone.utc))
+
+    def test_open_feed_turns_an_interval_total_into_a_rate(self):
+        document = {"current": {"time": "2026-01-15T03:15", "interval": 900,
+                                "temperature_2m": 29.0, "relative_humidity_2m": 80,
+                                "precipitation": 1.5, "uv_index": 4.0, "is_day": 1}}
+        provider = WX.OpenMeteoProvider(fetch=lambda url: document)
+        c = provider.current(23.75, 90.38)
+        self.assertAlmostEqual(c.rain_mm_h, 6.0, places=9)
+        self.assertEqual(c.source, "open-meteo")
+
+    def test_key_is_read_from_the_environment_then_the_file(self):
+        with mock.patch.dict("os.environ", {WX.KEY_VARIABLE: "from-env"}):
+            self.assertEqual(WX.api_key_from_environment(), "from-env")
+        import pathlib
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            path = pathlib.Path(folder) / ".env"
+            path.write_text(f"OTHER=1\n{WX.KEY_VARIABLE}='from-file'\n", encoding="utf-8")
+            with mock.patch.dict("os.environ", {WX.KEY_VARIABLE: ""}):
+                self.assertEqual(WX.api_key_from_environment(path), "from-file")
+                self.assertEqual(
+                    WX.api_key_from_environment(pathlib.Path(folder) / "absent"), "")
+
+    def test_default_configuration_is_nominal_weather(self):
+        provider = WX.make_provider({})
+        self.assertEqual(provider.current(0.0, 0.0), WX.NOMINAL)
+        self.assertIsInstance(WX.make_provider({"PROVIDER": "open-meteo"}),
+                              WX.OpenMeteoProvider)
+
+
+def replace_conditions(conditions, **changes):
+    from dataclasses import replace
+    return replace(conditions, **changes)

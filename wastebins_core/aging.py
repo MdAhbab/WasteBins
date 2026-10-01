@@ -61,28 +61,44 @@ lexicographic tiers are used, and a lower tier always outranks a higher one:
   saturating soft term lacks.
 * **tier 2, normal.** Ordered by the soft effective priority above.
 
-Let :math:`m` be the largest number of bins that are overdue at the same time,
-and :math:`c` the number of overdue bins the fleet clears per cycle.  A bin is
-promoted at :math:`w = \\tau` and, being ordered behind at most :math:`m` older
-overdue bins, is served within :math:`\\lceil m/c \\rceil` cycles.  Hence
+The tier orders the queue.  It does not, by itself, make the planner serve
+anyone in it, and neither does a price however fast it grows: a search that
+finds no room for a bin leaves it out whatever it is charged.  The guarantee
+comes from reservation.  In every cycle the dispatcher reserves the first
+:math:`r` bins of the overdue queue, longest wait first and equal waits by
+container id, and the planner must serve them (see
+:func:`wastebins_core.vrp.certify_heads`).
+
+Let :math:`M` be the largest number of bins overdue at the same time.  Waits
+are observed at dispatch instants, so a bin is first seen overdue at
+:math:`\\Delta \\lceil \\tau/\\Delta \\rceil`.  At that instant at most
+:math:`M - 1` bins are ahead of it.  No bin can join them, because a bin served
+later restarts from a shorter wait and a bin that becomes overdue later has
+waited less.  Each cycle removes :math:`r` of them until the bin is itself
+reserved.  Hence
 
 .. math::
 
-    w^{\\max} \\le \\tau + \\Delta \\left\\lceil m/c \\right\\rceil ,
-    \\qquad c \\ge 1 .
+    w^{\\max} \\le \\Delta \\left\\lceil \\tau/\\Delta \\right\\rceil
+    + \\left( \\left\\lceil M/r \\right\\rceil - 1 \\right) \\Delta ,
+    \\qquad r \\ge 1 .
 
-Two conditions are stated rather than assumed.  The fleet must clear overdue
-bins at least as fast as they are promoted (:math:`c \\ge r` for promotion rate
-:math:`r`), otherwise the overdue set grows without limit and no bound exists.
-And waits are observed in units of :math:`\\Delta`, so the attainable bound is
-the next multiple of :math:`\\Delta` at or above the expression.
-:func:`worst_case_wait_bound` returns ``inf`` when :math:`c \\le 0`.
+The argument uses no price, no insertion cost and no first-in-first-out service
+across the tier, and it holds under ties.  Since :math:`M \\le N`, the bound
+with :math:`N` in place of :math:`M` is known before operation.
+:func:`queue_wait_bound` evaluates it.
 
-The practical consequence is that :math:`\\tau` is now the tuning knob the
-operator sets directly: state the service-level objective in hours and
-:func:`tau_for_target_wait` returns the :math:`\\tau` that meets it.  The equity
-weight :math:`\\gamma` no longer carries the guarantee, and is free to be tuned
-for average fairness within the normal tier.
+What the escalating price does is separate and is stated separately.  Without a
+reservation, a penalty with a ceiling leaves every bin whose insertion cost
+exceeds the ceiling unserved at every wait, and a penalty that grows linearly
+makes a dedicated round trip of cost :math:`C` worth taking once the wait
+passes :math:`2 \\tau C / (\\lambda \\mu)` (:func:`wait_to_outprice`).  With a
+reservation, the escalating price is why far more than :math:`r` overdue bins
+are cleared per cycle, so realised waits sit well below the bound.
+
+The practical consequence is that :math:`\\tau` and :math:`r` are the knobs the
+operator sets directly.  The equity weight :math:`\\gamma` carries no part of
+the guarantee.
 """
 from __future__ import annotations
 
@@ -189,6 +205,43 @@ def wait_to_outprice(insertion_cost: float, tau_h: float = DEFAULT_TAU_H,
     return float(2.0 * max(0.0, float(tau_h)) * max(0.0, float(insertion_cost)) / denom)
 
 
+def queue_wait_bound(tau_h: float = DEFAULT_TAU_H,
+                     cycle_h: float = 12.0,
+                     max_overdue: int = 1,
+                     reserved_per_cycle: int = 1) -> float:
+    """
+    Worst-case wait under reserved queue heads, in hours.
+
+        Delta * ceil(tau / Delta) + (ceil(M / r) - 1) * Delta
+
+    ``max_overdue`` is ``M``, the largest number of bins overdue at one time.
+    Passing the number of bins in the network gives the bound that is known
+    before operation; passing an observed or forecast backlog gives a tighter
+    value that holds only while the backlog stays at or below it.
+
+    ``reserved_per_cycle`` is ``r``, the number of queue heads the dispatcher is
+    certain to serve in every cycle.  It is the reserved count, not the number
+    of overdue bins the fleet happens to clear: clearing eight arbitrary overdue
+    bins moves a particular bin forward by eight only under first-in-first-out
+    service, which the search does not provide.
+
+    Returns ``inf`` when nothing is reserved, because no bound then exists.
+    """
+    r = int(reserved_per_cycle)
+    if r <= 0:
+        return math.inf
+    tau = max(0.0, float(tau_h))
+    delta = max(0.0, float(cycle_h))
+    m = max(0, int(max_overdue))
+    if delta <= 0.0:
+        return float(tau)
+    # The tolerance stops a deadline that is already an exact multiple of the
+    # cycle from being pushed a cycle further by floating-point dust.
+    first_seen = delta * math.ceil(tau / delta - 1e-9)
+    cycles = math.ceil(m / r) if m > 0 else 1
+    return float(first_seen + delta * max(0, cycles - 1))
+
+
 def worst_case_wait_bound(tau_h: float = DEFAULT_TAU_H,
                           cycle_h: float = 12.0,
                           max_overdue: int = 1,
@@ -198,6 +251,20 @@ def worst_case_wait_bound(tau_h: float = DEFAULT_TAU_H,
                           overdue_multiplier: float = 4.0) -> float:
     """
     Upper bound on any bin's wait, in hours, from the overdue tier.
+
+    With ``max_insertion_cost`` left at zero this is :func:`queue_wait_bound`,
+    which is the guarantee the reserved heads deliver and the form to quote.
+
+    A positive ``max_insertion_cost`` adds the pricing delay, and that form
+    describes a different policy: the planner *without* a reservation, on a
+    fleet with room for a dedicated round trip.  There a bin is collected only
+    once its escalating penalty passes the cost of reaching it, which the
+    controlled sweep in ``experiments/exp_wait_bound.py`` verifies.  The two
+    must not be combined into one claim.  A reserved head is served whatever it
+    costs, so adding the pricing delay to its bound would loosen a true
+    statement for no reason.
+
+    The rest of this docstring describes the three delays of the pricing form.
 
     Three things have to happen before a starved bin is collected, and the bound
     is the sum of the three delays.
@@ -314,17 +381,26 @@ def effective_priorities(priorities: Mapping[int, float],
                          gamma: float = DEFAULT_GAMMA,
                          tau_h: float = DEFAULT_TAU_H,
                          kappa: float = DEFAULT_KAPPA,
-                         hazard_threshold: float = DEFAULT_HAZARD_THRESHOLD
+                         hazard_threshold: float = DEFAULT_HAZARD_THRESHOLD,
+                         overdue_tier: bool = True,
+                         escalating_price: bool = True
                          ) -> Dict[int, TieredPriority]:
     """
     Apply aging to a whole fleet and assign the lexicographic tier.
 
     Hazard first, then any bin whose wait has reached ``tau_h``, then the rest.
     Overdue bins are scored by wait rather than by the soft term, so the tier is
-    ordered longest-wait-first and cannot tie.  That ordering is what makes the
-    bound in :func:`worst_case_wait_bound` true; without it, bins past
-    ``tau_h`` all share the same saturated aging boost and the quietest one can be
-    passed over indefinitely.
+    ordered longest-wait-first.  Without it, bins past ``tau_h`` all share the
+    same saturated aging boost and the quietest one can be passed over
+    indefinitely.
+
+    The two switches exist so each part of the method can be removed and the
+    difference measured.  ``overdue_tier=False`` leaves an overdue bin in the
+    normal tier, ranked by the soft term alone, which is the saturating-ageing
+    dispatcher the tier replaced.  ``escalating_price=False`` keeps the tier but
+    prices a skip on the bounded ranking score, which is the form with a
+    ceiling.  ``overdue`` is reported either way, so a reservation can still
+    find the longest-waiting bin when the price says nothing about it.
     """
     hazard_probs = hazard_probs or {}
     out: Dict[int, TieredPriority] = {}
@@ -332,11 +408,12 @@ def effective_priorities(priorities: Mapping[int, float],
         wait = float(wait_hours.get(node_id, 0.0))
         hazard = float(hazard_probs.get(node_id, 0.0))
         is_overdue = wait >= float(tau_h)
+        promoted = is_overdue and overdue_tier
 
         if hazard >= hazard_threshold:
             tier = TIER_HAZARD
             score = effective_priority(base, wait, gamma, tau_h, kappa)
-        elif is_overdue:
+        elif promoted:
             tier = TIER_OVERDUE
             score = overdue_score(wait, tau_h)
         else:
@@ -347,7 +424,8 @@ def effective_priorities(priorities: Mapping[int, float],
             node_id=node_id,
             tier=tier,
             score=score,
-            pressure=overdue_pressure(wait, tau_h) if is_overdue else 0.0,
+            pressure=(overdue_pressure(wait, tau_h)
+                      if promoted and escalating_price else 0.0),
             base_priority=float(base),
             wait_hours=wait,
             hazard_prob=hazard,

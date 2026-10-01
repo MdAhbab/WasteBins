@@ -140,7 +140,15 @@ class BinTask:
     # point.  See `skip_cost` for why the two cannot be the same number.  Zero
     # means the caller supplied no wait, and pricing falls back to the prize.
     overdue_pressure: float = 0.0
-    # The head of the overdue queue, which the planner may not decline.
+    # Waiting time at this dispatch instant, in hours, and whether it has
+    # reached the deadline.  These two fields order the overdue queue.  They are
+    # kept apart from `overdue_pressure` on purpose: the pressure is a price, and
+    # a variant that prices skipping on the bounded score sets it to zero, yet
+    # the queue must still know which bin has waited longest.  A caller that
+    # supplies neither is ordered on the pressure, as before.
+    wait_hours: float = 0.0
+    overdue: bool = False
+    # A reserved head of the overdue queue, which the planner may not decline.
     #
     # Every other bin is governed by a price, and a price is a preference: the
     # search weighs it against travel and drops the bin when the arithmetic
@@ -151,8 +159,8 @@ class BinTask:
     #
     # `skip_cost` charges a mandatory bin a cost no route can outweigh, which
     # turns serving it into a constraint the search optimises around rather than
-    # a preference it can trade away. See `reserve_overdue_head` for the repair
-    # that catches the case where it is dropped anyway.
+    # a preference it can trade away. See `certify_heads` for how the reserved
+    # set is chosen and why it can always be served.
     mandatory: bool = False
     time_to_overflow_h: float = math.inf
     # Loose density of this bin's contents, in kilograms per cubic metre, used to
@@ -246,6 +254,15 @@ class VehicleRoute:
     duration_min: float = 0.0
     load_kg: float = 0.0            # raw mass collected, before compaction
     trips: int = 1
+    # Arrivals after a window closed.  Always zero for a route a planner built;
+    # it is only counted when a fixed sequence is measured with
+    # ``enforce_time=False``.
+    late_arrivals: int = 0
+
+    @property
+    def overrun_min(self) -> float:
+        """Minutes by which the route exceeds the shift, zero when it fits."""
+        return max(0.0, self.duration_min - float(self.vehicle.shift_minutes))
 
     @property
     def payload_kg(self) -> float:
@@ -348,7 +365,8 @@ class TravelModel:
 # ---------------------------------------------------------------------------
 def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
                    travel: TravelModel,
-                   allow_multi_trip: bool = True) -> Optional[VehicleRoute]:
+                   allow_multi_trip: bool = True,
+                   enforce_time: bool = True) -> Optional[VehicleRoute]:
     """
     Simulate a vehicle serving ``order`` and return the resulting route, or
     ``None`` when the sequence violates capacity, a time window or the shift.
@@ -356,6 +374,13 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
     The simulation is exact: it tracks clock time (including waiting for a bin's
     window to open), on-board load, and inserts a depot tipping trip whenever the
     next bin would overflow the body.
+
+    ``enforce_time=False`` measures a sequence that is already fixed.  The shift
+    limit and the closing time of each window are then recorded instead of
+    enforced, so the route comes back with its full length, every depot leg
+    included, and its duration can be compared with the shift.  This is what a
+    driver following a plan built on wrong distances would actually cover.  A
+    planner must never call it this way.
     """
     depot = vehicle.depot_index
     route = VehicleRoute(vehicle=vehicle, trips=1)
@@ -394,7 +419,7 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
             position = depot
             trip_index += 1
             route.trips = trip_index + 1
-            if clock > vehicle.shift_minutes:
+            if enforce_time and clock > vehicle.shift_minutes:
                 return None
 
         # --- drive to the bin -------------------------------------------
@@ -403,7 +428,9 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
         arrival = clock + leg_min
 
         if arrival > task.window_end_min + 1e-9:
-            return None                     # too late for this bin
+            if enforce_time:
+                return None                 # too late for this bin
+            route.late_arrivals += 1
 
         wait = max(0.0, task.window_start_min - arrival)
         start_service = arrival + wait
@@ -418,7 +445,7 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
 
         # --- shift feasibility must include getting home ------------------
         return_min = travel.minutes(task.index, depot)
-        if departure + return_min > vehicle.shift_minutes + 1e-9:
+        if enforce_time and departure + return_min > vehicle.shift_minutes + 1e-9:
             return None
 
         load += added_mass
@@ -445,7 +472,7 @@ def evaluate_route(order: Sequence[BinTask], vehicle: VehicleSpec,
         route.distance_m += travel.distance(position, depot)
         route.co2_kg += travel.leg_co2(position, depot, load, vehicle.profile)
         clock += back_min + vehicle.tipping_minutes
-        if clock > vehicle.shift_minutes + 1e-9:
+        if enforce_time and clock > vehicle.shift_minutes + 1e-9:
             return None
 
     route.duration_min = clock
@@ -559,7 +586,10 @@ def _best_insertion(task: BinTask, order: List[BinTask], vehicle: VehicleSpec,
 
 def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
                       travel: TravelModel, weights: ObjectiveWeights,
-                      use_cache: bool = True
+                      use_cache: bool = True,
+                      initial_orders: Optional[Dict[int, List[BinTask]]] = None,
+                      selection: str = "regret2",
+                      overdue_order: str = "wait"
                       ) -> Tuple[Dict[int, List[BinTask]], List[BinTask]]:
     """
     Regret-2 insertion.
@@ -574,18 +604,53 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     ``use_cache`` exists only so a test can run the same instance with the
     insertion table rebuilt from scratch every iteration and assert that the two
     produce the identical sequence of insertions.  Leave it on.
+
+    ``initial_orders`` starts the construction from routes that already hold
+    some bins, which is how the reserved queue heads enter the plan: they are
+    placed first, by `certify_heads`, and everything else is built around them.
+
+    ``selection`` is ``"regret2"`` or ``"cheapest"``.  The second drops the
+    regret term and inserts the bin whose best insertion pays most, which is the
+    plain cheapest-insertion rule.  It exists so the contribution of the regret
+    term can be measured rather than asserted.
+
+    ``overdue_order`` is ``"wait"`` or ``"merit"``, and decides the order in
+    which overdue bins are inserted.  ``"wait"`` inserts the longest-waiting
+    first, whatever it costs.  That order was once the whole of the guarantee,
+    and it is no longer any part of it: the reserved heads are already in the
+    plan when construction starts, and the bound is stated in them alone.
+    ``"merit"`` inserts overdue bins as every other bin is inserted, by what the
+    insertion is worth, so the route is built in an order that suits the
+    geometry.  An older bin still comes first when all else is equal, because
+    its skip penalty is larger.
     """
+    if selection not in ("regret2", "cheapest"):
+        raise ValueError(f"unknown selection rule {selection!r}")
+    if overdue_order not in ("wait", "merit"):
+        raise ValueError(f"unknown overdue order {overdue_order!r}")
     orders: Dict[int, List[BinTask]] = {v.vehicle_id: [] for v in vehicles}
     by_id = {v.vehicle_id: v for v in vehicles}
-    pending = list(tasks)
+    base_costs = {v.vehicle_id: 0.0 for v in vehicles}
+    placed: List[BinTask] = []
+    if initial_orders:
+        for vid, order in initial_orders.items():
+            if vid not in orders or not order:
+                continue
+            evaluated = evaluate_route(order, by_id[vid], travel)
+            if evaluated is None:
+                raise ValueError(
+                    f"initial route for vehicle {vid} is infeasible; a "
+                    f"construction cannot be seeded from a plan that does not fit")
+            orders[vid] = list(order)
+            base_costs[vid] = route_cost(evaluated, weights)
+            placed.extend(order)
+    pending = [t for t in tasks if not any(t is p for p in placed)]
     unserved: List[BinTask] = []
 
     # Hazard-tier bins are inserted first so they never lose a tie-break.  Inside
     # the overdue tier this is longest-wait-first, and the selection key below
     # keeps that order rather than overriding it with regret.
     pending.sort(key=lambda t: (t.tier, -t.prize))
-
-    base_costs = {v.vehicle_id: 0.0 for v in vehicles}
 
     # Cheapest insertion of each pending bin into each vehicle, kept between
     # iterations.  Inserting a bin changes exactly one vehicle's route, so every
@@ -642,11 +707,13 @@ def construct_regret2(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
             # Outside the overdue tier there is no ordering claim to keep, and
             # regret is the right criterion: it picks the bin that will become
             # most expensive if it is left for later.
-            if task.tier == TIER_OVERDUE:
-                key = (task.tier, -_finite(task.prize),
-                       -(regret + forgone - best_delta))
+            merit = forgone - best_delta
+            if selection == "regret2":
+                merit += regret
+            if task.tier == TIER_OVERDUE and overdue_order == "wait":
+                key = (task.tier, -_finite(task.prize), -merit)
             else:
-                key = (task.tier, 0.0, -(regret + forgone - best_delta))
+                key = (task.tier, 0.0, -merit)
             if best_choice is None or key < best_choice[0]:
                 best_choice = (key, task, vid, pos, best_delta)
 
@@ -980,117 +1047,157 @@ RUIN_PATIENCE = 30
 RUIN_FRACTIONS = (0.15, 0.25, 0.40, 0.25)
 
 
-#: What the planner is charged for declining the head of the overdue queue.
-#: Large enough that no route in this problem can outweigh it, finite so that
-#: sums and differences of objectives stay numbers.
+#: What the planner is charged for declining a reserved head of the overdue
+#: queue.  Large enough that no route in this problem can outweigh it, finite so
+#: that sums and differences of objectives stay numbers.
 MANDATORY_SKIP_COST = 1e9
 
 
-def mark_overdue_head(tasks: Sequence[BinTask]) -> Optional[BinTask]:
-    """
-    Mark the longest-waiting promoted bin as mandatory, and return it.
+def _is_overdue(task: BinTask) -> bool:
+    """Whether a bin has reached its deadline, on either channel a caller uses."""
+    return bool(task.overdue) or _finite(task.overdue_pressure) > 0.0
 
-    `overdue_pressure` is `wait/(2 tau)` for a promoted bin and zero otherwise,
-    so a positive value is the promotion test and its magnitude is the wait.
-    Selection ignores the tier on purpose: a bin that is both hazardous and
-    overdue is filed under the hazard tier, and keying on the tier would skip
-    exactly the bins that are most overdue.
+
+def overdue_queue(tasks: Sequence[BinTask]) -> List[BinTask]:
     """
-    promoted = [t for t in tasks if _finite(t.overdue_pressure) > 0.0]
+    The overdue bins in the order the guarantee is stated in.
+
+    Longest wait first, and equal waits by container id.  The second key is not
+    a detail.  A rollout that starts every bin at the same wait brings every bin
+    to the deadline in the same cycle, so they all tie, and an order that
+    depended on list position would differ between the step that reserves a
+    head and any later step that looks for it.  A total order that depends only
+    on the bin makes the queue the same object wherever it is read.
+
+    The tier is ignored on purpose.  A bin that is both hazardous and overdue is
+    filed under the hazard tier, and keying on the tier would drop exactly the
+    bins that are most overdue.
+    """
+    promoted = [t for t in tasks if _is_overdue(t)]
     if not promoted:
-        return None
-    head = max(promoted, key=lambda t: _finite(t.overdue_pressure))
-    head.mandatory = True
-    return head
+        return []
+    # `wait_hours` when the caller supplies it for every promoted bin, and the
+    # pricing pressure otherwise.  The pressure is `wait / (2 tau)`, so inside
+    # one call the two give the same order; they are never mixed.
+    by_wait = all(_finite(t.wait_hours) > 0.0 for t in promoted)
+
+    def key(task: BinTask):
+        wait = _finite(task.wait_hours) if by_wait else _finite(task.overdue_pressure)
+        return (-wait, task.node_id)
+
+    return sorted(promoted, key=key)
 
 
-def reserve_overdue_head(orders: Dict[int, List[BinTask]],
-                         unserved: List[BinTask],
-                         by_id: Dict[int, VehicleSpec],
-                         travel: TravelModel,
-                         weights: ObjectiveWeights
-                         ) -> Tuple[Dict[int, List[BinTask]], List[BinTask]]:
+def servable_alone(task: BinTask, vehicles: Sequence[VehicleSpec],
+                   travel: TravelModel) -> bool:
+    """Whether some vehicle can collect this bin on a dedicated round trip."""
+    for vehicle in vehicles:
+        if vehicle.accepts(task.stream) and \
+                evaluate_route([task], vehicle, travel) is not None:
+            return True
+    return False
+
+
+def certify_heads(queue: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
+                  travel: TravelModel, weights: ObjectiveWeights, reserve: int
+                  ) -> Tuple[List[BinTask], Dict[int, List[BinTask]], List[BinTask]]:
     """
-    Serve the oldest overdue bin, ejecting whatever is needed to make room.
+    Choose the reserved heads and prove they fit, before anything else is planned.
 
-    The wait bound needs the overdue tier served oldest first.  Construction
-    enforces that, and the descent that follows does not: every move the descent
-    makes is judged on the objective, and an objective is a preference rather
-    than a constraint.  Measured on the rollout, a younger overdue bin was served
-    ahead of an older one in 20 percent of contested cycles, and a bin reached
-    180 h against a bound of 144 h.  Pricing is not the defect.  The escalating
-    skip price does buy service: the farthest bin in the instance is collected at
-    every wait from 48 h upward while 32 others compete for the same shift.  What
-    fails is that nothing obliges the planner to take the *oldest* one.
+    The wait bound needs the first ``r`` bins of the overdue queue to be served
+    in every cycle.  A price cannot deliver that, however large: a search that
+    cannot find room for a bin leaves it out whatever it is charged.  So the
+    reserved set is fixed here, together with a plan that serves it.
 
-    So this makes the head of the tier a constraint.  The oldest overdue bin is
-    placed first and the rest of that vehicle's round is rebuilt around it, each
-    bin re-inserted at its cheapest feasible position and dropped when it no
-    longer fits.  The vehicle chosen is the one whose rebuilt round costs least.
+    The queue is read in order.  Each bin is inserted at its cheapest feasible
+    position into routes that hold only reserved bins, and the first bin that
+    does not fit ends the reservation.  The set returned is therefore a prefix
+    of the queue, and the routes returned are a feasible plan for exactly that
+    set.  `solve` starts its construction from those routes, so every later
+    step works on a plan that already contains the heads.
 
-    A bin that no vehicle can serve even alone is left where it is.  No dispatch
-    rule can collect it, and assumption (A2) of the bound excludes it already;
-    forcing the issue here would only produce an infeasible plan.
+    Two properties matter and they are different.  The procedure is *sound*: a
+    set it returns can be served, because the plan that serves it is returned
+    with it.  It is not *complete*: sequential insertion can miss a joint plan
+    that exists, and then it reserves fewer bins than ``reserve``.  The bound
+    survives that, because it is stated in the number actually reserved, and a
+    single bin that can be served alone is always reserved, so the count is at
+    least one.
 
-    The objective this gives up is the price of the guarantee, and it is measured
-    rather than assumed: `solve(..., reserve_overdue=False)` is the same planner
-    without the rule.
+    A bin that no vehicle can serve even alone is passed over and reported.  No
+    dispatch rule can collect it, the assumptions of the bound exclude it, and
+    letting it sit at the front would block every bin behind it for ever.
+
+    Returns ``(heads, routes, unservable)``.
     """
-    # Selection is on the wait, not on the tier, and the difference is not
-    # cosmetic.  A bin that is both hazardous and overdue is assigned
-    # `TIER_HAZARD` by `aging.effective_priorities`, so filtering on
-    # `TIER_OVERDUE` silently drops exactly the bins that are most overdue and
-    # most urgent.  That defect left the head of the queue unserved in 1 of 96
-    # contested cycles here, which is one more than a guarantee permits.
-    # `overdue_pressure` is `wait/(2 tau)` for a promoted bin and zero for every
-    # other, so a positive value *is* the promotion test, and it is strictly
-    # increasing in the wait.
-    promoted = [t for order in orders.values() for t in order
-                if _finite(t.overdue_pressure) > 0.0]
-    promoted += [t for t in unserved if _finite(t.overdue_pressure) > 0.0]
-    if not promoted:
-        return orders, unserved
-
-    oldest = max(promoted, key=lambda t: _finite(t.overdue_pressure))
-    if any(t is oldest for order in orders.values() for t in order):
-        return orders, unserved                      # already at the front
-
-    best: Optional[Tuple[float, int, List[BinTask], List[BinTask]]] = None
-    for vid, order in orders.items():
-        vehicle = by_id[vid]
-        if not vehicle.accepts(oldest.stream):
-            continue
-        if evaluate_route([oldest], vehicle, travel) is None:
-            continue                                 # (A2): unservable even alone
-
-        kept: List[BinTask] = [oldest]
-        base = route_cost(evaluate_route(kept, vehicle, travel), weights)
-        dropped: List[BinTask] = []
-        for task in order:
-            spot = _best_insertion(task, kept, vehicle, travel, weights, base)
-            if spot is None:
-                dropped.append(task)
+    orders: Dict[int, List[BinTask]] = {v.vehicle_id: [] for v in vehicles}
+    costs = {v.vehicle_id: 0.0 for v in vehicles}
+    heads: List[BinTask] = []
+    unservable: List[BinTask] = []
+    for task in queue:
+        if len(heads) >= reserve:
+            break
+        best: Optional[Tuple[float, int, int]] = None
+        for vehicle in vehicles:
+            if not vehicle.accepts(task.stream):
                 continue
-            delta, pos = spot
-            kept = kept[:pos] + [task] + kept[pos:]
-            base += delta
+            vid = vehicle.vehicle_id
+            found = _best_insertion(task, orders[vid], vehicle, travel, weights,
+                                    costs[vid])
+            if found is not None and (best is None or found[0] < best[0]):
+                best = (found[0], found[1], vid)
+        if best is None:
+            if not servable_alone(task, vehicles, travel):
+                unservable.append(task)
+                continue
+            break                # fits alone, but not beside the heads already reserved
+        delta, position, vid = best
+        orders[vid] = orders[vid][:position] + [task] + orders[vid][position:]
+        costs[vid] += delta
+        heads.append(task)
+    return heads, orders, unservable
 
-        # Score the whole change, not just this vehicle: the bins dropped here
-        # become unserved and are charged for it.
-        cost = base + sum(skip_cost(t, weights) for t in dropped)
-        previous = evaluate_route(order, vehicle, travel) if order else None
-        cost -= route_cost(previous, weights) if previous is not None else 0.0
-        cost -= skip_cost(oldest, weights)
-        if best is None or cost < best[0]:
-            best = (cost, vid, kept, dropped)
 
-    if best is None:
+def restore_heads(heads: Sequence[BinTask],
+                  certificate: Dict[int, List[BinTask]],
+                  orders: Dict[int, List[BinTask]],
+                  unserved: List[BinTask],
+                  vehicles: Sequence[VehicleSpec], travel: TravelModel,
+                  weights: ObjectiveWeights
+                  ) -> Tuple[Dict[int, List[BinTask]], List[BinTask]]:
+    """
+    Rebuild a plan around the certified heads when a search has dropped one.
+
+    The certificate is a feasible plan for the heads alone, so it is always a
+    valid place to start again.  Every other bin the search was serving is then
+    inserted back where that still pays, by the same construction the planner
+    uses.  The result serves every head, which is the whole point, and as much
+    of the previous plan as still fits around them.
+
+    `solve` seeds its own construction from the certificate and charges a head
+    a cost no move can outweigh, so its search has no way to lose one and this
+    is a safety net there.  A solver that knows nothing about the reservation,
+    such as a decoded permutation, can lose one freely, and for those this is
+    what turns the reservation into a guarantee.  The marks must still be set
+    when this is called.
+    """
+    if all(any(h is t for order in orders.values() for t in order) for h in heads):
         return orders, unserved
+    served = [t for order in orders.values() for t in order
+              if not any(t is h for h in heads)]
+    rebuilt, leftover = construct_regret2(list(heads) + served, vehicles, travel,
+                                          weights, initial_orders=certificate)
+    still_out = [t for t in unserved if not any(t is h for h in heads)] + leftover
+    return rebuilt, still_out
 
-    _cost, vid, kept, dropped = best
-    orders = {k: (list(kept) if k == vid else list(v)) for k, v in orders.items()}
-    unserved = [t for t in unserved if t is not oldest] + dropped
-    return orders, unserved
+
+def _reserve_count(reserve_overdue) -> int:
+    """`True` means one head, `False` none, and an integer means that many."""
+    if isinstance(reserve_overdue, bool):
+        return 1 if reserve_overdue else 0
+    if reserve_overdue is None:
+        return 0
+    return max(0, int(reserve_overdue))
 
 
 def _objective_now(orders: Dict[int, List[BinTask]], unserved: Sequence[BinTask],
@@ -1111,9 +1218,12 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
           travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
           improve: bool = True, time_budget_s: float = 6.0,
           algorithm: str = "regret2_ls",
-          reserve_overdue: bool = True) -> FleetPlan:
+          reserve_overdue=True,
+          improve_budget_s: Optional[float] = None,
+          construction: str = "regret2",
+          overdue_order: str = "wait") -> FleetPlan:
     """
-    Construct, then improve, then report a fully evaluated fleet plan.
+    Reserve, construct, then improve, then report a fully evaluated fleet plan.
 
     Improvement is a descent to a local optimum followed by bounded
     ruin-and-recreate: a slice of the served bins is torn out and the descent is
@@ -1123,142 +1233,229 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     live instance into a *worse* basin, because the starting point determines
     which local optimum is reachable and nothing else does.  Restarting keeps
     the best solution seen, so the reported number can never be worse than the
-    plain descent, and it uses time the planner already had (a descent converges
-    in ~50 ms against a 5 s budget).
+    plain descent.
+
+    ``reserve_overdue`` is how many heads of the overdue queue are reserved:
+    ``True`` or ``1`` for one, an integer ``r`` for up to ``r``, ``False`` or
+    ``0`` for none.  See `certify_heads`.
+
+    Two ways to bound the search, and they answer different questions.
+
+    ``time_budget_s`` counts from the start of the call, construction included.
+    Construction always runs to completion, because a plan cannot be returned
+    without one, so on a large instance it can use the whole budget and leave
+    the improvement nothing: at 160 containers it takes over two minutes against
+    a budget of seconds.  That is the right behaviour for an interactive request
+    and the wrong one for a comparison, where it silently turns the method into
+    its constructor.
+
+    ``improve_budget_s`` counts from the end of construction, so the improvement
+    always receives the time it is given.  A comparison uses this, records the
+    total in ``compute_ms``, and hands every competing method that same total.
     """
     weights = weights or ObjectiveWeights()
     started = time.perf_counter()
-    deadline = started + max(0.1, time_budget_s)
     by_id = {v.vehicle_id: v for v in vehicles}
 
-    # Mark the head before anything looks at the tasks, so construction, the
-    # descent and the ruin-and-recreate all price it the same way. Marking it
-    # afterwards would leave the search free to discard it and leave the repair
-    # to rebuild a round the search never evaluated.
-    head = mark_overdue_head(tasks) if reserve_overdue else None
-    orders, unserved = construct_regret2(tasks, vehicles, travel, weights)
-    if improve:
-        def descend(current_orders, current_unserved):
-            remaining = deadline - time.perf_counter()
-            return local_search(current_orders, vehicles, travel, weights,
-                                current_unserved,
-                                time_budget_s=max(0.05, remaining))
+    # The heads are fixed before anything looks at the tasks, so construction,
+    # the descent and the ruin-and-recreate all work on a plan that already
+    # holds them and all price them the same way.
+    reserve = _reserve_count(reserve_overdue)
+    queue = overdue_queue(tasks)
+    heads: List[BinTask] = []
+    certificate: Optional[Dict[int, List[BinTask]]] = None
+    unservable: List[BinTask] = []
+    if reserve > 0 and queue:
+        heads, certificate, unservable = certify_heads(queue, vehicles, travel,
+                                                       weights, reserve)
+    for head in heads:
+        head.mandatory = True
 
-        orders, unserved = descend(orders, unserved)
-        best_orders = {vid: list(order) for vid, order in orders.items()}
-        best_unserved = list(unserved)
-        best_objective = _objective_now(best_orders, best_unserved, by_id,
-                                        travel, weights)
+    stats = {"descents": 0, "ruin_rounds": 0, "ruin_accepted": 0}
+    try:
+        orders, unserved = construct_regret2(tasks, vehicles, travel, weights,
+                                             initial_orders=certificate,
+                                             selection=construction,
+                                             overdue_order=overdue_order)
+        construct_s = time.perf_counter() - started
 
-        rng = random.Random(RUIN_SEED)
-        served_total = sum(len(order) for order in best_orders.values())
-        # Give up once restarts stop paying, rather than burning the whole
-        # budget every time.  A plan request is an interactive action; spending
-        # five seconds to confirm a solution found in fifty milliseconds is a
-        # latency cost with no benefit.
-        stale = 0
-        iteration = 0
-        # A descent is not cheap at fleet scale (~0.8 s for 24 bins), so a round
-        # started near the deadline is abandoned half-finished and its budget is
-        # simply wasted.  Requiring room for a full round -- estimated from the
-        # rounds already timed -- is what keeps `time_budget_s` an honest bound
-        # rather than a target the solver always spends in full.
-        round_cost = time.perf_counter() - started
-        while (served_total > 1 and stale < RUIN_PATIENCE
-               and time.perf_counter() + round_cost < deadline):
-            iteration += 1
-            round_started = time.perf_counter()
-            trial_orders = {vid: list(order) for vid, order in best_orders.items()}
-            trial_unserved = list(best_unserved)
-
-            pool = [(vid, task) for vid, order in trial_orders.items() for task in order]
-            # The ruin size is cycled rather than fixed: a small tear intensifies
-            # around the incumbent, a large one is the only way out of a deep
-            # basin, and neither alone does both jobs.
-            fraction = RUIN_FRACTIONS[iteration % len(RUIN_FRACTIONS)]
-            k = max(1, min(len(pool) - 1, int(round(fraction * len(pool)))))
-
-            if iteration % 2 == 0:
-                victims = rng.sample(pool, k)
+        if improve:
+            if improve_budget_s is not None:
+                deadline = time.perf_counter() + max(0.0, float(improve_budget_s))
             else:
-                # Related ("Shaw") removal: tear out a geographic neighbourhood
-                # rather than a scatter.  Removing bins at random leaves the
-                # route's shape essentially intact, so the repair puts almost
-                # everything back where it was; removing a contiguous cluster
-                # lets the repair rebuild that part of the plan from scratch,
-                # which is what actually escapes a local optimum in a routing
-                # problem.
-                anchor = pool[rng.randrange(len(pool))]
-                victims = sorted(
-                    pool, key=lambda vt: travel.distance(anchor[1].index,
-                                                         vt[1].index))[:k]
+                deadline = started + max(0.1, time_budget_s)
 
-            for vid, task in victims:
-                trial_orders[vid] = [t for t in trial_orders[vid] if t is not task]
-                trial_unserved.append(task)
+            def descend(current_orders, current_unserved):
+                remaining = deadline - time.perf_counter()
+                stats["descents"] += 1
+                return local_search(current_orders, vehicles, travel, weights,
+                                    current_unserved,
+                                    time_budget_s=max(0.05, remaining))
 
-            trial_orders, trial_unserved = descend(trial_orders, trial_unserved)
-            trial_objective = _objective_now(trial_orders, trial_unserved, by_id,
-                                             travel, weights)
-            if trial_objective < best_objective - 1e-9:
-                best_orders = {vid: list(o) for vid, o in trial_orders.items()}
-                best_unserved = list(trial_unserved)
-                best_objective = trial_objective
-                served_total = sum(len(o) for o in best_orders.values())
-                stale = 0
-            else:
-                stale += 1
-            # Track the worst round seen, so the guard above is conservative.
-            round_cost = max(round_cost, time.perf_counter() - round_started)
+            descent_started = time.perf_counter()
+            orders, unserved = descend(orders, unserved)
+            best_orders = {vid: list(order) for vid, order in orders.items()}
+            best_unserved = list(unserved)
+            best_objective = _objective_now(best_orders, best_unserved, by_id,
+                                            travel, weights)
 
-        orders, unserved = best_orders, best_unserved
+            rng = random.Random(RUIN_SEED)
+            served_total = sum(len(order) for order in best_orders.values())
+            # Give up once restarts stop paying, rather than burning the whole
+            # budget every time.  A plan request is an interactive action;
+            # spending five seconds to confirm a solution found in fifty
+            # milliseconds is a latency cost with no benefit.
+            stale = 0
+            iteration = 0
+            # A descent is not cheap at fleet scale, so a round started near the
+            # deadline is abandoned half-finished and its budget is simply
+            # wasted.  Requiring room for a full round -- estimated from the
+            # descents already timed -- is what keeps the budget an honest
+            # bound rather than a target the solver always spends in full.
+            # The estimate is the descent alone.  It used to be measured from
+            # the start of the call, which folded the construction into it and
+            # meant that on any instance large enough to matter the loop below
+            # never ran at all.
+            round_cost = max(1e-3, time.perf_counter() - descent_started)
+            while (served_total > 1 and stale < RUIN_PATIENCE
+                   and time.perf_counter() + round_cost < deadline):
+                iteration += 1
+                stats["ruin_rounds"] += 1
+                round_started = time.perf_counter()
+                trial_orders = {vid: list(order) for vid, order in best_orders.items()}
+                trial_unserved = list(best_unserved)
 
-    # The descent optimises the objective and does not consult the tier, so it
-    # can and does take the oldest overdue bin back out of the plan it was
-    # constructed into.  Restoring it here is what makes the wait bound a
-    # guarantee rather than a tendency; see `reserve_overdue_head`.
-    if reserve_overdue:
-        orders, unserved = reserve_overdue_head(orders, unserved, by_id,
-                                                travel, weights)
+                pool = [(vid, task) for vid, order in trial_orders.items() for task in order]
+                # The ruin size is cycled rather than fixed: a small tear
+                # intensifies around the incumbent, a large one is the only way
+                # out of a deep basin, and neither alone does both jobs.
+                fraction = RUIN_FRACTIONS[iteration % len(RUIN_FRACTIONS)]
+                k = max(1, min(len(pool) - 1, int(round(fraction * len(pool)))))
 
-    routes: List[VehicleRoute] = []
-    for vid, order in orders.items():
-        if not order:
-            continue
-        evaluated = evaluate_route(order, by_id[vid], travel)
-        if evaluated is None:
-            # Defensive: never emit an infeasible plan; drop back to the prefix
-            # that is feasible and mark the remainder unserved.
-            feasible: List[BinTask] = []
-            for task in order:
-                trial = feasible + [task]
-                if evaluate_route(trial, by_id[vid], travel) is not None:
-                    feasible = trial
+                if iteration % 2 == 0:
+                    victims = rng.sample(pool, k)
                 else:
-                    unserved.append(task)
-            evaluated = evaluate_route(feasible, by_id[vid], travel) if feasible else None
-            if evaluated is None:
-                unserved.extend(t for t in order if t not in unserved)
+                    # Related ("Shaw") removal: tear out a geographic
+                    # neighbourhood rather than a scatter.  Removing bins at
+                    # random leaves the route's shape essentially intact, so the
+                    # repair puts almost everything back where it was; removing
+                    # a contiguous cluster lets the repair rebuild that part of
+                    # the plan from scratch, which is what actually escapes a
+                    # local optimum in a routing problem.
+                    anchor = pool[rng.randrange(len(pool))]
+                    victims = sorted(
+                        pool, key=lambda vt: travel.distance(anchor[1].index,
+                                                             vt[1].index))[:k]
+
+                for vid, task in victims:
+                    trial_orders[vid] = [t for t in trial_orders[vid] if t is not task]
+                    trial_unserved.append(task)
+
+                trial_orders, trial_unserved = descend(trial_orders, trial_unserved)
+                trial_objective = _objective_now(trial_orders, trial_unserved, by_id,
+                                                 travel, weights)
+                # A trial that tore out a head and failed to put it back still
+                # carries the mandatory cost, so it can never be accepted here.
+                if trial_objective < best_objective - 1e-9:
+                    best_orders = {vid: list(o) for vid, o in trial_orders.items()}
+                    best_unserved = list(trial_unserved)
+                    best_objective = trial_objective
+                    served_total = sum(len(o) for o in best_orders.values())
+                    stats["ruin_accepted"] += 1
+                    stale = 0
+                else:
+                    stale += 1
+                # Track the worst round seen, so the guard above is conservative.
+                round_cost = max(round_cost, time.perf_counter() - round_started)
+
+            orders, unserved = best_orders, best_unserved
+        improve_s = time.perf_counter() - started - construct_s
+
+        # Nothing above can drop a head: construction starts from the plan that
+        # holds them and every move that removes one costs more than any route
+        # can save.  The check stays because a guarantee should not rest on an
+        # argument about a search, and the count is reported so that "never
+        # needed" is a measurement.
+        missing = [h for h in heads
+                   if not any(h is t for order in orders.values() for t in order)]
+        if missing:
+            orders, unserved = restore_heads(heads, certificate, orders, unserved,
+                                             vehicles, travel, weights)
+
+        routes: List[VehicleRoute] = []
+        for vid, order in orders.items():
+            if not order:
                 continue
-        routes.append(evaluated)
+            evaluated = evaluate_route(order, by_id[vid], travel)
+            if evaluated is None:
+                # Defensive: never emit an infeasible plan; drop back to the
+                # prefix that is feasible and mark the remainder unserved.
+                feasible: List[BinTask] = []
+                for task in order:
+                    trial = feasible + [task]
+                    if evaluate_route(trial, by_id[vid], travel) is not None:
+                        feasible = trial
+                    else:
+                        unserved.append(task)
+                evaluated = evaluate_route(feasible, by_id[vid], travel) if feasible else None
+                if evaluated is None:
+                    unserved.extend(t for t in order if t not in unserved)
+                    continue
+            routes.append(evaluated)
+    finally:
+        # The marks belong to this call.  Leaving one set would make the bin
+        # mandatory in every later plan built from the same task objects, and
+        # would put MANDATORY_SKIP_COST into the reported objective if the bin
+        # were still unserved, which would corrupt every comparison that reads
+        # it.  The `finally` matters because competing solvers are run on these
+        # same objects straight afterwards.
+        for head in heads:
+            head.mandatory = False
 
-    # The mark belongs to this call. Leaving it set would make the bin
-    # mandatory in every later plan built from the same task objects, and would
-    # put MANDATORY_SKIP_COST into the reported objective if it were still
-    # unserved, which would corrupt every comparison that reads it.
-    if head is not None:
-        head.mandatory = False
-
+    served_ids = {s.task.node_id for r in routes for s in r.stops}
     objective = plan_objective(routes, unserved, weights)
-    plan = FleetPlan(
+    metrics = summarise(routes, unserved, tasks, weights)
+    metrics.update(reservation_report(queue, heads, unservable, served_ids,
+                                      reserve, repaired=len(missing)))
+    metrics.update({
+        "construct_s": round(construct_s, 3),
+        "improve_s": round(improve_s, 3),
+        "descents": stats["descents"],
+        "ruin_rounds": stats["ruin_rounds"],
+        "ruin_accepted": stats["ruin_accepted"],
+        "construction": construction,
+        "overdue_order": overdue_order,
+    })
+    return FleetPlan(
         routes=routes,
         unserved=unserved,
         objective=objective,
-        metrics=summarise(routes, unserved, tasks, weights),
+        metrics=metrics,
         compute_ms=(time.perf_counter() - started) * 1000.0,
         algorithm=algorithm,
     )
-    return plan
+
+
+def reservation_report(queue: Sequence[BinTask], heads: Sequence[BinTask],
+                       unservable: Sequence[BinTask], served_ids,
+                       requested: int, repaired: int = 0) -> Dict:
+    """
+    What the reservation did in one plan, in the terms the bound is stated in.
+
+    ``heads_reserved`` is the ``r`` of that cycle and ``overdue_total`` its
+    backlog; a rollout takes the minimum of the first and the maximum of the
+    second.  ``heads_served`` must equal ``heads_reserved`` in every plan, and
+    a rollout fails loudly when it does not.
+    """
+    return {
+        "overdue_total": len(queue),
+        "heads_requested": int(requested),
+        "heads_reserved": len(heads),
+        "heads_served": sum(1 for h in heads if h.node_id in served_ids),
+        "head_repairs": int(repaired),
+        "unservable_overdue": len(unservable),
+        "head_ids": [h.node_id for h in heads],
+    }
 
 
 # ---------------------------------------------------------------------------

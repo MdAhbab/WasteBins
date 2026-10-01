@@ -37,6 +37,29 @@ Implemented
 
 Every solver honours a wall-clock ``time_budget_s`` and a seed, and returns a
 :class:`wastebins_core.vrp.FleetPlan` so downstream reporting is uniform.
+
+What a fair comparison needed
+-----------------------------
+A second review found three ways in which these comparators were weaker than
+their names suggested, and each was a property of this module rather than of
+the methods.
+
+* The decoder could not decline a container.  It skipped one only when nothing
+  fitted, so on a prize-collecting problem the genetic algorithm and the ant
+  colony were solving the visit-everything problem and being scored on the
+  other one.  `split_giant_tour` now declines a container whose marginal cost
+  exceeds its skip penalty.
+* The iteration caps were set for a three-second budget.  Given longer, the ant
+  colony stopped at sixty iterations and idled.  Both population methods now run
+  until the budget is spent.
+* OR-Tools was never told which vehicle may carry which stream, was not charged
+  for waiting or for the tipping stop, and knew nothing of overflow deadlines.
+  On a network with two streams it put every container on a vehicle licensed
+  for one of them and the decoder then dropped half the plan.  All four are now
+  in its model.
+
+Every one of these makes a baseline stronger.  None of them changes what a plan
+is scored on.
 """
 from __future__ import annotations
 
@@ -60,11 +83,34 @@ def EM_NOMINAL_CO2_PER_KM(profile: EM.VehicleProfile) -> float:
     return leg.co2_kg(profile)
 
 
+class FlatEmissionTravel(TravelModel):
+    """
+    The same distances and speeds, with emissions as one factor per kilometre.
+
+    This is the emission model a solver with fixed arc costs can represent
+    exactly.  Scoring every plan under it answers a specific question: how much
+    of a margin over such a solver comes from the solver being scored on a
+    model it cannot see.
+    """
+
+    def __init__(self, base: TravelModel, co2_per_km: float):
+        super().__init__(base.distance_m, travel_context=base.ctx,
+                         default_speed_kmh=base.default_speed_kmh,
+                         freeflow_kmh=base.freeflow_kmh)
+        self.co2_per_km = float(co2_per_km)
+
+    def leg_co2(self, i: int, j: int, payload_kg: float,
+                profile: EM.VehicleProfile, idle_minutes: float = 0.0,
+                lifts: int = 0, lifted_kg: float = 0.0) -> float:
+        return self.co2_per_km * self.distance(i, j) / 1000.0
+
+
 # ---------------------------------------------------------------------------
 # Shared decoding: giant tour -> feasible vehicle routes
 # ---------------------------------------------------------------------------
 def split_giant_tour(tour: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
-                     travel: TravelModel, weights: ObjectiveWeights
+                     travel: TravelModel, weights: ObjectiveWeights,
+                     prize_collecting: bool = False
                      ) -> Tuple[Dict[int, List[BinTask]], List[BinTask]]:
     """
     Decode a permutation into vehicle routes.
@@ -72,28 +118,44 @@ def split_giant_tour(tour: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     Bins are assigned to the current vehicle while the route stays feasible; when
     the next bin cannot be appended, the vehicle is closed and the next one
     opened.  A bin that no vehicle can take is left unserved and pays the prize
-    penalty, which is what makes the encoding prize-collecting rather than
-    all-or-nothing.
+    penalty.
+
+    With ``prize_collecting`` the decoder also makes the selection decision the
+    problem contains.  A bin is appended only where the cost it adds to that
+    route is no more than the penalty for skipping it, which is the test the
+    objective applies.  Without it a permutation method visits every bin that
+    fits, pays for the detours, and is then scored against planners that were
+    allowed to leave a bin out.
     """
     orders: Dict[int, List[BinTask]] = {v.vehicle_id: [] for v in vehicles}
+    costs: Dict[int, float] = {v.vehicle_id: 0.0 for v in vehicles}
     unserved: List[BinTask] = []
     vehicle_iter = list(vehicles)
     cursor = 0
 
     for task in tour:
         placed = False
+        forgone = vrp.skip_cost(task, weights) if prize_collecting else math.inf
         # Try the active vehicle first, then any later one, then any earlier one.
         order_of_attempt = list(range(cursor, len(vehicle_iter))) + list(range(0, cursor))
         for vi in order_of_attempt:
             vehicle = vehicle_iter[vi]
             if not vehicle.accepts(task.stream):
                 continue
-            trial = orders[vehicle.vehicle_id] + [task]
-            if vrp.evaluate_route(trial, vehicle, travel) is not None:
-                orders[vehicle.vehicle_id] = trial
-                cursor = vi
-                placed = True
-                break
+            vid = vehicle.vehicle_id
+            trial = orders[vid] + [task]
+            evaluated = vrp.evaluate_route(trial, vehicle, travel)
+            if evaluated is None:
+                continue
+            if prize_collecting:
+                cost = vrp.route_cost(evaluated, weights)
+                if cost - costs[vid] > forgone:
+                    continue                 # it fits here, but does not pay here
+                costs[vid] = cost
+            orders[vid] = trial
+            cursor = vi
+            placed = True
+            break
         if not placed:
             unserved.append(task)
 
@@ -146,28 +208,61 @@ def _objective_of(orders: Dict[int, List[BinTask]], unserved: List[BinTask],
     return total + vrp.unserved_cost(unserved, weights)
 
 
+def _polish(orders: Dict[int, List[BinTask]], unserved: List[BinTask],
+            vehicles: Sequence[VehicleSpec], travel: TravelModel,
+            weights: ObjectiveWeights, deadline: float
+            ) -> Tuple[Dict[int, List[BinTask]], List[BinTask]]:
+    """
+    Spend what is left of the budget on the shared local search.
+
+    A population method with no local search is the weak form of the method:
+    Prins's algorithm is memetic.  The descent used here is the one the proposed
+    planner uses, over the same neighbourhoods, so a hybrid baseline and the
+    proposed method differ in how they reach a starting point and in nothing
+    they are allowed to do afterwards.
+    """
+    remaining = deadline - time.perf_counter()
+    if remaining <= 0.1:
+        return orders, unserved
+    return vrp.local_search(orders, vehicles, travel, weights, list(unserved),
+                            time_budget_s=remaining)
+
+
 # ---------------------------------------------------------------------------
 # Genetic algorithm
 # ---------------------------------------------------------------------------
 def genetic_algorithm(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
                       travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
-                      population_size: int = 40, generations: int = 120,
+                      population_size: int = 40, generations: Optional[int] = None,
                       crossover_rate: float = 0.85, mutation_rate: float = 0.20,
                       elite: int = 4, tournament: int = 3,
-                      seed: int = 42, time_budget_s: float = 8.0) -> FleetPlan:
-    """Route-first cluster-second GA with order crossover."""
+                      seed: int = 42, time_budget_s: float = 8.0,
+                      prize_collecting: bool = True,
+                      polish_fraction: float = 0.0) -> FleetPlan:
+    """
+    Route-first cluster-second GA with order crossover.
+
+    ``generations`` caps the run when given; left at ``None`` the algorithm runs
+    until the budget is spent.  ``polish_fraction`` is the share of the budget
+    held back for a final descent on the best individual.
+    """
     weights = weights or ObjectiveWeights()
     rng = random.Random(seed)
     started = time.perf_counter()
     deadline = started + max(0.2, time_budget_s)
+    evolve_until = started + max(0.2, time_budget_s) * (1.0 - max(0.0, min(0.9, polish_fraction)))
     task_list = list(tasks)
     n = len(task_list)
     if n == 0:
         return _finalise({}, [], vehicles, travel, weights, tasks, "genetic", 0.0)
 
+    def decode(chromosome: List[int]):
+        return split_giant_tour([task_list[i] for i in chromosome],
+                                vehicles, travel, weights,
+                                prize_collecting=prize_collecting)
+
     def fitness(chromosome: List[int]) -> float:
-        orders, unserved = split_giant_tour([task_list[i] for i in chromosome],
-                                            vehicles, travel, weights)
+        orders, unserved = decode(chromosome)
         return _objective_of(orders, unserved, vehicles, travel, weights)
 
     # --- seed the population with informed and random individuals -------
@@ -214,7 +309,8 @@ def genetic_algorithm(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
         return c
 
     generation = 0
-    while generation < generations and time.perf_counter() < deadline:
+    while (generations is None or generation < generations) \
+            and time.perf_counter() < evolve_until:
         generation += 1
         next_pop = [c[:] for _, c in scored[:elite]]
         while len(next_pop) < population_size:
@@ -223,15 +319,16 @@ def genetic_algorithm(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
             if rng.random() < mutation_rate:
                 child = mutate(child)
             next_pop.append(child)
-            if time.perf_counter() > deadline:
+            if time.perf_counter() > evolve_until:
                 break
         scored = [(fitness(c), c) for c in next_pop]
         scored.sort(key=lambda s: s[0])
         if scored[0][0] < best_score:
             best_score, best = scored[0][0], scored[0][1][:]
 
-    orders, unserved = split_giant_tour([task_list[i] for i in best],
-                                        vehicles, travel, weights)
+    orders, unserved = decode(best)
+    if polish_fraction > 0.0:
+        orders, unserved = _polish(orders, unserved, vehicles, travel, weights, deadline)
     plan = _finalise(orders, unserved, vehicles, travel, weights, tasks,
                      "genetic", (time.perf_counter() - started) * 1000.0)
     plan.metrics["generations"] = generation
@@ -244,10 +341,12 @@ def genetic_algorithm(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
 # ---------------------------------------------------------------------------
 def ant_colony(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
                travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
-               n_ants: int = 16, iterations: int = 60,
+               n_ants: int = 16, iterations: Optional[int] = None,
                alpha: float = 1.0, beta: float = 2.5, rho: float = 0.10,
                q0: float = 0.25, seed: int = 42,
-               time_budget_s: float = 8.0) -> FleetPlan:
+               time_budget_s: float = 8.0,
+               prize_collecting: bool = True,
+               polish_fraction: float = 0.0) -> FleetPlan:
     """
     Max-Min Ant System over the bin graph.
 
@@ -256,12 +355,17 @@ def ant_colony(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     also cheap to reach.  Only the iteration-best ant reinforces, and pheromone
     is clamped, which is what distinguishes MMAS from classic AS and keeps it
     from collapsing onto one tour within a handful of iterations.
+
+    ``iterations`` caps the run when given; left at ``None`` the colony runs
+    until the budget is spent.  ``polish_fraction`` is the share of the budget
+    held back for a final descent on the best tour.
     """
     weights = weights or ObjectiveWeights()
     rng = random.Random(seed)
     np_rng = np.random.default_rng(seed)
     started = time.perf_counter()
     deadline = started + max(0.2, time_budget_s)
+    build_until = started + max(0.2, time_budget_s) * (1.0 - max(0.0, min(0.9, polish_fraction)))
 
     task_list = list(tasks)
     n = len(task_list)
@@ -269,7 +373,6 @@ def ant_colony(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
         return _finalise({}, [], vehicles, travel, weights, tasks, "aco", 0.0)
 
     depot = vehicles[0].depot_index
-    idx = [t.index for t in task_list]
 
     # Heuristic desirability: prize gained per metre travelled.
     eta = np.zeros((n + 1, n), dtype=float)
@@ -315,16 +418,18 @@ def ant_colony(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
         return tour
 
     iteration = 0
-    while iteration < iterations and time.perf_counter() < deadline:
+    while (iterations is None or iteration < iterations) \
+            and time.perf_counter() < build_until:
         iteration += 1
         iteration_best_score = math.inf
         iteration_best: List[int] = []
         for _ in range(n_ants):
-            if time.perf_counter() > deadline:
+            if time.perf_counter() > build_until:
                 break
             tour = build_tour()
             orders, unserved = split_giant_tour([task_list[i] for i in tour],
-                                                vehicles, travel, weights)
+                                                vehicles, travel, weights,
+                                                prize_collecting=prize_collecting)
             score = _objective_of(orders, unserved, vehicles, travel, weights)
             if score < iteration_best_score:
                 iteration_best_score, iteration_best = score, tour
@@ -345,7 +450,10 @@ def ant_colony(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     if not best_tour:
         best_tour = list(range(n))
     orders, unserved = split_giant_tour([task_list[i] for i in best_tour],
-                                        vehicles, travel, weights)
+                                        vehicles, travel, weights,
+                                        prize_collecting=prize_collecting)
+    if polish_fraction > 0.0:
+        orders, unserved = _polish(orders, unserved, vehicles, travel, weights, deadline)
     plan = _finalise(orders, unserved, vehicles, travel, weights, tasks,
                      "aco", (time.perf_counter() - started) * 1000.0)
     plan.metrics["iterations"] = iteration
@@ -366,7 +474,9 @@ def risk_penalised_graph(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpe
     Edge cost is ``distance / (1 + alpha * 10 * priority(destination))``, so
     urgent bins appear nearer.  No capacity, window or shift reasoning enters the
     *search*; feasibility is enforced only when the tour is decoded, which is
-    exactly the limitation the fleet model is meant to remove.
+    exactly the limitation the fleet model is meant to remove.  The decoder is
+    left without the selection test for the same reason: this rule visits what
+    fits, and that is the behaviour it is here to represent.
     """
     weights = weights or ObjectiveWeights()
     started = time.perf_counter()
@@ -410,14 +520,56 @@ def ortools_available() -> bool:
         return False
 
 
+#: Cost units are multiplied by this before rounding to the integers OR-Tools
+#: needs, so one unit of the shared objective is a thousand of the solver's.
+ORTOOLS_COST_SCALE = 1000.0
+#: Time is carried in tenths of a minute.  Whole minutes lose up to half a
+#: minute per leg, which over a thirty-stop round is a quarter of an hour of a
+#: shift, and the plan then fails the exact simulator at the last stop.
+ORTOOLS_TIME_SCALE = 10
+
+
 def ortools_solver(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
                    travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
-                   time_budget_s: float = 10.0) -> Optional[FleetPlan]:
+                   time_budget_s: float = 10.0,
+                   first_solution: str = "PATH_CHEAPEST_ARC",
+                   metaheuristic: str = "GUIDED_LOCAL_SEARCH",
+                   emission_model: str = "mean_load") -> Optional[FleetPlan]:
     """
     Reference solution from OR-Tools' routing library, when it is installed.
 
-    Models capacity, time windows, shift horizon and optional visits with the
-    same penalties as :class:`ObjectiveWeights`, so the objective is comparable.
+    The model is the shared objective, stated in the solver's own terms as far
+    as those terms reach.
+
+    *Skipping.*  Each bin is optional, at the penalty `vrp.skip_cost` charges.
+
+    *Licences.*  A bin may only be assigned to a vehicle that accepts its
+    stream.
+
+    *Time.*  Travel, service, waiting for a window and the tipping stop at the
+    end of the round all count against the shift, and the whole duration of a
+    round is charged at the objective's hourly rate through a span cost.  Travel
+    times are rounded up, so a round the solver believes fits does fit.
+
+    *Overflow deadlines.*  The objective charges a fixed penalty for reaching a
+    bin after it overflows.  A bin that can be reached either side of its
+    deadline is given two copies, one that must be served by the deadline and
+    one that carries the penalty, of which at most one is visited.  That
+    represents the step exactly.
+
+    *Emissions.*  The solver needs arc costs fixed before the search, and
+    emissions depend on the load carried, which is not known until a route
+    exists.  ``emission_model="mean_load"`` costs each arc with the full model
+    at the average load a vehicle carries, at that arc's own speed and
+    congestion, and adds the idling and lifting at the bin it leads to.
+    ``"flat"`` uses one factor per kilometre, which is the earlier behaviour and
+    is kept so the effect of the approximation can be measured.
+
+    Two things remain outside the model.  A vehicle may tip mid-shift and
+    continue in the simulator; here each vehicle makes one trip, so the solver
+    cannot use a second.  And the decoded routes are re-scored with the exact
+    evaluator, so the reported numbers are never the solver's own estimate.
+
     Returns ``None`` when OR-Tools is unavailable.
     """
     if not ortools_available():
@@ -429,49 +581,104 @@ def ortools_solver(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     task_list = list(tasks)
     if not task_list:
         return _finalise({}, [], vehicles, travel, weights, tasks, "ortools", 0.0)
+    if emission_model not in ("mean_load", "flat"):
+        raise ValueError(f"unknown emission model {emission_model!r}")
 
-    depot_local = 0
-    locals_to_matrix = [vehicles[0].depot_index] + [t.index for t in task_list]
-    n_nodes = len(locals_to_matrix)
+    cost_scale = ORTOOLS_COST_SCALE
+    time_scale = ORTOOLS_TIME_SCALE
+    depot_index = vehicles[0].depot_index
     n_vehicles = len(vehicles)
+    horizon_min = float(max(v.shift_minutes for v in vehicles))
+    tipping_min = float(max(v.tipping_minutes for v in vehicles))
 
-    manager = pywrapcp.RoutingIndexManager(n_nodes, n_vehicles, depot_local)
+    def ticks_up(minutes: float) -> int:
+        return int(math.ceil(minutes * time_scale - 1e-9))
+
+    # --- nodes: the depot, then one or two copies of each bin ---------------
+    node_task: List[Optional[BinTask]] = [None]
+    node_late: List[bool] = [False]
+    node_window: List[Tuple[int, int]] = [(0, ticks_up(horizon_min))]
+    groups: List[List[int]] = []
+    excluded: List[BinTask] = []
+    for task in task_list:
+        opens = int(math.ceil(task.window_start_min * time_scale - 1e-9))
+        closes = int(math.floor(min(task.window_end_min, horizon_min) * time_scale + 1e-9))
+        if opens > closes or not any(v.accepts(task.stream) for v in vehicles):
+            # Its window opens after every shift ends, or no vehicle is licensed
+            # for it.  No plan can serve it, so it never enters the model.
+            excluded.append(task)
+            continue
+        tto = task.time_to_overflow_h
+        deadline = int(math.floor(tto * 60.0 * time_scale + 1e-9)) if math.isfinite(tto) else None
+        if deadline is None or deadline >= closes:
+            copies = [(opens, closes, False)]              # cannot be reached late
+        elif deadline < opens:
+            copies = [(opens, closes, True)]               # late whenever it is served
+        else:
+            copies = [(opens, deadline, False), (deadline + 1, closes, True)]
+        group = []
+        for lo, hi, late in copies:
+            group.append(len(node_task))
+            node_task.append(task)
+            node_late.append(late)
+            node_window.append((lo, hi))
+        groups.append(group)
+
+    n_nodes = len(node_task)
+    if n_nodes == 1:
+        return _finalise({}, list(task_list), vehicles, travel, weights, tasks,
+                         "ortools", (time.perf_counter() - started) * 1000.0)
+
+    def matrix_index(node: int) -> int:
+        return depot_index if node == 0 else node_task[node].index
+
+    # --- arc costs and times, as matrices so the search makes no Python calls
+    profile = vehicles[0].profile
+    total_load = sum(max(0.0, vrp._finite(t.load_kg)) for t in task_list)
+    mean_payload = 0.5 * min(float(min(v.capacity_kg for v in vehicles)),
+                             total_load / max(1, n_vehicles))
+    flat_co2_per_km = EM_NOMINAL_CO2_PER_KM(profile)
+
+    cost_matrix = [[0] * n_nodes for _ in range(n_nodes)]
+    time_matrix = [[0] * n_nodes for _ in range(n_nodes)]
+    for a in range(n_nodes):
+        ia = matrix_index(a)
+        service_a = 0.0 if a == 0 else float(node_task[a].service_minutes)
+        for b in range(n_nodes):
+            if a == b:
+                continue
+            ib = matrix_index(b)
+            km = travel.distance(ia, ib) / 1000.0
+            target = node_task[b]
+            if emission_model == "flat":
+                co2 = flat_co2_per_km * km
+            elif target is None:
+                co2 = travel.leg_co2(ia, ib, mean_payload, profile)
+            else:
+                co2 = travel.leg_co2(ia, ib, mean_payload, profile,
+                                     idle_minutes=float(target.service_minutes),
+                                     lifts=1, lifted_kg=vrp._finite(target.load_kg))
+            cost = weights.distance_km * km + weights.co2_kg * co2
+            if node_late[b]:
+                cost += weights.missed_overflow_penalty
+            cost_matrix[a][b] = int(round(cost * cost_scale))
+            minutes = service_a + travel.minutes(ia, ib)
+            if b == 0:
+                minutes += tipping_min
+            time_matrix[a][b] = ticks_up(minutes)
+
+    manager = pywrapcp.RoutingIndexManager(n_nodes, n_vehicles, 0)
     routing = pywrapcp.RoutingModel(manager)
 
-    # OR-Tools needs integers, and every term must live in the SAME currency as
-    # ObjectiveWeights -- otherwise arc costs and drop penalties are on different
-    # scales and the solver either drops everything or visits everything.
-    # We therefore express costs in milli-units of the shared objective.
-    SCALE = 1000.0
-    # CO2 is not separately representable as an arc cost, so it enters through a
-    # nominal per-km factor at half payload.  The decoded routes are re-scored
-    # afterwards with the exact evaluator, so the reported numbers stay honest.
-    nominal_profile = vehicles[0].profile
-    nominal_co2_per_km = EM_NOMINAL_CO2_PER_KM(nominal_profile)
-
-    def arc_cost(from_index, to_index):
-        i = locals_to_matrix[manager.IndexToNode(from_index)]
-        j = locals_to_matrix[manager.IndexToNode(to_index)]
-        km = travel.distance(i, j) / 1000.0
-        hours = travel.minutes(i, j) / 60.0
-        cost = (weights.distance_km * km
-                + weights.co2_kg * nominal_co2_per_km * km
-                + weights.hours * hours)
-        return int(round(cost * SCALE))
-
-    transit = routing.RegisterTransitCallback(arc_cost)
+    transit = routing.RegisterTransitMatrix(cost_matrix)
     routing.SetArcCostEvaluatorOfAllVehicles(transit)
 
     # --- capacity ------------------------------------------------------
     # Mass, in kilograms, not divided by the compaction ratio: compacting waste
     # reduces the volume it occupies, not its mass.
-    def demand_cb(from_index):
-        node = manager.IndexToNode(from_index)
-        if node == depot_local:
-            return 0
-        return int(round(task_list[node - 1].load_kg))
-
-    demand = routing.RegisterUnaryTransitCallback(demand_cb)
+    demands = [0] + [int(round(vrp._finite(node_task[k].load_kg)))
+                     for k in range(1, n_nodes)]
+    demand = routing.RegisterUnaryTransitVector(demands)
     routing.AddDimensionWithVehicleCapacity(
         demand, 0, [int(v.capacity_kg) for v in vehicles], True, "Capacity")
 
@@ -480,60 +687,66 @@ def ortools_solver(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     # otherwise there is nothing to bound.
     if any(float(v.body_volume_m3) > 0.0 for v in vehicles):
         ratio = max(float(vehicles[0].compaction_ratio), 1e-9)
-
-        def volume_cb(from_index):
-            node = manager.IndexToNode(from_index)
-            if node == depot_local:
-                return 0
-            litres = task_list[node - 1].loose_volume_m3 * 1000.0 / ratio
-            return int(round(litres))
-
-        volume = routing.RegisterUnaryTransitCallback(volume_cb)
+        litres = [0] + [int(round(node_task[k].loose_volume_m3 * 1000.0 / ratio))
+                        for k in range(1, n_nodes)]
+        volume = routing.RegisterUnaryTransitVector(litres)
         routing.AddDimensionWithVehicleCapacity(
             volume, 0,
             [int(round(float(v.body_volume_m3) * 1000.0)) or 10 ** 9 for v in vehicles],
             True, "Volume")
 
-    # --- time windows + shift ------------------------------------------
-    def time_cb(from_index, to_index):
-        i_node = manager.IndexToNode(from_index)
-        j_node = manager.IndexToNode(to_index)
-        i = locals_to_matrix[i_node]
-        j = locals_to_matrix[j_node]
-        service = 0.0 if i_node == depot_local else task_list[i_node - 1].service_minutes
-        return int(round(travel.minutes(i, j) + service))
-
-    time_transit = routing.RegisterTransitCallback(time_cb)
-    horizon = int(max(v.shift_minutes for v in vehicles))
+    # --- time: windows, shift, and the hourly rate on the whole round ----
+    time_transit = routing.RegisterTransitMatrix(time_matrix)
+    horizon = ticks_up(horizon_min)
     routing.AddDimension(time_transit, horizon, horizon, True, "Time")
     time_dim = routing.GetDimensionOrDie("Time")
-    for k, t in enumerate(task_list, start=1):
-        index = manager.NodeToIndex(k)
-        time_dim.CumulVar(index).SetRange(int(t.window_start_min),
-                                          int(min(t.window_end_min, horizon)))
+    for k in range(1, n_nodes):
+        lo, hi = node_window[k]
+        time_dim.CumulVar(manager.NodeToIndex(k)).SetRange(lo, hi)
+    for vi, vehicle in enumerate(vehicles):
+        time_dim.CumulVar(routing.End(vi)).SetMax(
+            int(math.floor(float(vehicle.shift_minutes) * time_scale + 1e-9)))
+    time_dim.SetSpanCostCoefficientForAllVehicles(
+        int(round(weights.hours * cost_scale / (60.0 * time_scale))))
+
+    # --- stream licences -------------------------------------------------
+    # Removed from the vehicle variable one at a time.  The routing model has a
+    # call that takes the allowed list directly, but its Python binding rejects
+    # a list in this release, and removing values is equivalent.
+    for k in range(1, n_nodes):
+        vehicle_var = routing.VehicleVar(manager.NodeToIndex(k))
+        for vi, vehicle in enumerate(vehicles):
+            if not vehicle.accepts(node_task[k].stream):
+                vehicle_var.RemoveValue(vi)
 
     # --- optional visits with the prize penalty -------------------------
     # The penalty handed to the solver has to be the one the plan is scored
-    # against, or the comparison is unfair in a way that flatters us.  This block
-    # used to rebuild the penalty by hand and omitted the overdue branch, so for
-    # an overdue bin the objective charged `lambda * mu * w/(2 tau)`, which is at
-    # least four times the prize and unbounded in the wait, while OR-Tools was
-    # told the penalty was `lambda * prize`.  Re-scoring the decoded routes with
-    # the exact evaluator kept the reported numbers honest but left the baseline
-    # optimising a materially weaker objective than the one it was judged on.
+    # against, or the comparison is unfair in a way that flatters us.
     # `skip_cost` is the single definition, so it is what gets used here.
-    for k, t in enumerate(task_list, start=1):
-        penalty = vrp.skip_cost(t, weights)
-        routing.AddDisjunction([manager.NodeToIndex(k)], int(round(penalty * SCALE)))
+    for group in groups:
+        penalty = vrp.skip_cost(node_task[group[0]], weights)
+        routing.AddDisjunction([manager.NodeToIndex(k) for k in group],
+                               int(round(penalty * cost_scale)), 1)
 
     params = pywrapcp.DefaultRoutingSearchParameters()
-    params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-    params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-    params.time_limit.FromSeconds(int(max(1, time_budget_s)))
+    params.first_solution_strategy = getattr(
+        routing_enums_pb2.FirstSolutionStrategy, first_solution)
+    params.local_search_metaheuristic = getattr(
+        routing_enums_pb2.LocalSearchMetaheuristic, metaheuristic)
+    remaining = max(0.5, float(time_budget_s) - (time.perf_counter() - started))
+    params.time_limit.FromMilliseconds(int(remaining * 1000))
 
     solution = routing.SolveWithParameters(params)
+    status = int(routing.status())
+    build_and_solve_ms = (time.perf_counter() - started) * 1000.0
     if solution is None:
-        return None
+        # No plan at all is a result, not an absence: every bin is unserved and
+        # the comparison keeps the row instead of silently dropping it.
+        plan = _finalise({}, list(task_list), vehicles, travel, weights, tasks,
+                         "ortools", build_and_solve_ms)
+        plan.metrics.update({"ortools_status": status, "ortools_solved": False,
+                             "decode_dropped": 0})
+        return plan
 
     orders: Dict[int, List[BinTask]] = {v.vehicle_id: [] for v in vehicles}
     visited = set()
@@ -541,14 +754,27 @@ def ortools_solver(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
         index = routing.Start(vi)
         while not routing.IsEnd(index):
             node = manager.IndexToNode(index)
-            if node != depot_local:
-                orders[vehicle.vehicle_id].append(task_list[node - 1])
-                visited.add(node - 1)
+            if node != 0:
+                task = node_task[node]
+                orders[vehicle.vehicle_id].append(task)
+                visited.add(id(task))
             index = solution.Value(routing.NextVar(index))
-    unserved = [t for k, t in enumerate(task_list) if k not in visited]
+    unserved = [t for t in task_list if id(t) not in visited]
 
-    return _finalise(orders, unserved, vehicles, travel, weights, tasks,
+    plan = _finalise(orders, unserved, vehicles, travel, weights, tasks,
                      "ortools", (time.perf_counter() - started) * 1000.0)
+    plan.metrics.update({
+        "ortools_status": status,
+        "ortools_solved": True,
+        # Bins the solver routed and the exact simulator then refused.  Zero
+        # means the model and the simulator agree about what is feasible.
+        "decode_dropped": len(plan.unserved) - len(unserved),
+        "ortools_objective": solution.ObjectiveValue() / cost_scale,
+        "first_solution": first_solution,
+        "metaheuristic": metaheuristic,
+        "emission_model": emission_model,
+    })
+    return plan
 
 
 # ---------------------------------------------------------------------------
@@ -564,25 +790,85 @@ def available_solvers() -> Dict[str, bool]:
     }
 
 
-def solve_with(name: str, tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
-               travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
-               seed: int = 42, time_budget_s: float = 8.0) -> Optional[FleetPlan]:
-    """Dispatch by name; returns ``None`` only for an unavailable optional solver."""
-    name = name.lower()
-    if name in ("proposed", "regret2_ls", "cvrptw"):
-        return vrp.solve(tasks, vehicles, travel, weights, improve=True,
-                         time_budget_s=time_budget_s)
+def _run(name: str, tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
+         travel: TravelModel, weights: Optional[ObjectiveWeights],
+         seed: int, time_budget_s: float, config: Dict) -> Optional[FleetPlan]:
     if name == "genetic":
         return genetic_algorithm(tasks, vehicles, travel, weights, seed=seed,
-                                 time_budget_s=time_budget_s)
+                                 time_budget_s=time_budget_s, **config)
     if name == "aco":
         return ant_colony(tasks, vehicles, travel, weights, seed=seed,
-                          time_budget_s=time_budget_s)
+                          time_budget_s=time_budget_s, **config)
     if name == "risk_graph":
-        return risk_penalised_graph(tasks, vehicles, travel, weights)
+        return risk_penalised_graph(tasks, vehicles, travel, weights, **config)
     if name == "risk_graph_ls":
         return risk_penalised_graph(tasks, vehicles, travel, weights, refine=True)
     if name == "ortools":
         return ortools_solver(tasks, vehicles, travel, weights,
-                              time_budget_s=time_budget_s)
+                              time_budget_s=time_budget_s, **config)
     raise ValueError(f"unknown solver {name!r}")
+
+
+def solve_with(name: str, tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
+               travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
+               seed: int = 42, time_budget_s: float = 8.0,
+               config: Optional[Dict] = None,
+               reserve: int = 0) -> Optional[FleetPlan]:
+    """
+    Dispatch by name; returns ``None`` only for an unavailable optional solver.
+
+    ``config`` passes solver parameters through, so a tuned configuration is a
+    dictionary that can be stored beside the results it produced.
+
+    ``reserve`` puts the reservation rule around a solver that has none.  The
+    heads are certified and marked before the solver runs, so it sees them as
+    bins it cannot afford to skip, and any head it still leaves out is restored
+    afterwards.  The wait bound is a property of the rule and not of the planner
+    it sits on, and this is how that is shown rather than said.
+    """
+    name = name.lower()
+    config = dict(config or {})
+    weights = weights or ObjectiveWeights()
+    if name in ("proposed", "regret2_ls", "cvrptw"):
+        return vrp.solve(tasks, vehicles, travel, weights, improve=True,
+                         time_budget_s=time_budget_s,
+                         reserve_overdue=config.pop("reserve_overdue",
+                                                    reserve if reserve > 0 else True),
+                         **config)
+    if reserve <= 0:
+        return _run(name, tasks, vehicles, travel, weights, seed, time_budget_s, config)
+
+    started = time.perf_counter()
+    queue = vrp.overdue_queue(tasks)
+    heads, certificate, unservable = vrp.certify_heads(queue, vehicles, travel,
+                                                       weights, reserve)
+    for head in heads:
+        head.mandatory = True
+    try:
+        plan = _run(name, tasks, vehicles, travel, weights, seed,
+                    max(0.2, time_budget_s - (time.perf_counter() - started)), config)
+        if plan is None:
+            return None
+        orders: Dict[int, List[BinTask]] = {v.vehicle_id: [] for v in vehicles}
+        for route in plan.routes:
+            orders[route.vehicle.vehicle_id] = [s.task for s in route.stops]
+        served_before = {t.node_id for order in orders.values() for t in order}
+        missing = sum(1 for h in heads if h.node_id not in served_before)
+        orders, unserved = vrp.restore_heads(heads, certificate, orders,
+                                             list(plan.unserved), vehicles,
+                                             travel, weights)
+    finally:
+        for head in heads:
+            head.mandatory = False
+
+    extra = {k: v for k, v in plan.metrics.items()
+             if k not in vrp.summarise([], [], [], weights)}
+    rebuilt = _finalise(orders, unserved, vehicles, travel, weights, tasks,
+                        f"{plan.algorithm}+reserve",
+                        (time.perf_counter() - started) * 1000.0)
+    served_ids = {s.task.node_id for r in rebuilt.routes for s in r.stops}
+    rebuilt.metrics.update(extra)
+    rebuilt.metrics.update(vrp.reservation_report(queue, heads, unservable,
+                                                  served_ids, reserve,
+                                                  repaired=missing))
+    return rebuilt

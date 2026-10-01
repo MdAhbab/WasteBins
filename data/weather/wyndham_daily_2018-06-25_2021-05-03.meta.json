@@ -1,0 +1,26 @@
+{
+  "name": "wyndham_daily_2018-06-25_2021-05-03",
+  "request": {
+    "url": "https://archive-api.open-meteo.com/v1/archive",
+    "latitude": -37.89,
+    "longitude": 144.7,
+    "start_date": "2018-06-25",
+    "end_date": "2021-05-03",
+    "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,precipitation_hours",
+    "timezone": "Australia/Melbourne"
+  },
+  "rows": 1044,
+  "grid_latitude": -37.926186,
+  "grid_longitude": 144.72484,
+  "elevation_m": 26.0,
+  "units": {
+    "time": "iso8601",
+    "temperature_2m_max": "\u00b0C",
+    "temperature_2m_min": "\u00b0C",
+    "temperature_2m_mean": "\u00b0C",
+    "precipitation_sum": "mm",
+    "precipitation_hours": "h"
+  },
+  "retrieved_utc": "2026-10-01T08:36:53Z",
+  "attribution": "Weather data by Open-Meteo.com (CC BY 4.0); ERA5 reanalysis, Copernicus Climate Change Service; UV index, Copernicus Atmosphere Monitoring Service"
+}

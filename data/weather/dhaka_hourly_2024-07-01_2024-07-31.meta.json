@@ -1,0 +1,27 @@
+{
+  "name": "dhaka_hourly_2024-07-01_2024-07-31",
+  "request": {
+    "url": "https://archive-api.open-meteo.com/v1/archive",
+    "latitude": 23.7504,
+    "longitude": 90.3785,
+    "start_date": "2024-07-01",
+    "end_date": "2024-07-31",
+    "hourly": "temperature_2m,relative_humidity_2m,precipitation,shortwave_radiation,cloud_cover,wind_speed_10m",
+    "timezone": "Asia/Dhaka"
+  },
+  "rows": 744,
+  "grid_latitude": 23.725834,
+  "grid_longitude": 90.38015,
+  "elevation_m": 9.0,
+  "units": {
+    "time": "iso8601",
+    "temperature_2m": "\u00b0C",
+    "relative_humidity_2m": "%",
+    "precipitation": "mm",
+    "shortwave_radiation": "W/m\u00b2",
+    "cloud_cover": "%",
+    "wind_speed_10m": "km/h"
+  },
+  "retrieved_utc": "2026-10-01T08:52:58Z",
+  "attribution": "Weather data by Open-Meteo.com (CC BY 4.0); ERA5 reanalysis, Copernicus Climate Change Service; UV index, Copernicus Atmosphere Monitoring Service"
+}
