@@ -17,3 +17,16 @@
 
 === 2026-10-01 20:11:54 experiments.exp_weather --scenario heat --shard 0 --of 8
 [weather-heat] shard 0/8: networks ['R0']
+  R0 heat  blind    insertion full      served 34.8>32.2  dropped  3.0  max wait  144  breach False  heads lost 7  overflow 0.38>1.25   4.7 min
+  R0 heat  blind    insertion urgency   served 33.0>31.8  dropped  4.0  max wait  180  breach None  heads lost 0  overflow 0.50>1.00   4.7 min
+  R0 heat  blind    ortools   full      served 36.5>33.2  dropped  4.2  max wait  168  breach True  heads lost 10  overflow 0.38>1.08   4.7 min
+  R0 heat  protectedinsertion full      served 32.1>30.3  dropped  5.2  max wait   84  breach False  heads lost 0  overflow 0.38>1.58   4.6 min
+  R0 heat  protectedortools   full      served 35.4>32.0  dropped  6.0  max wait   96  breach False  heads lost 0  overflow 0.38>1.33   4.6 min
+  R0 heat  current  insertion full      served 32.1>31.4  dropped  1.8  max wait   72  breach False  heads lost 2  overflow 0.38>1.17   4.7 min
+  R0 heat  current  insertion urgency   served 35.1>31.9  dropped  1.9  max wait  156  breach None  heads lost 0  overflow 0.50>0.58   4.5 min
+  R0 heat  current  ortools   full      served 35.4>32.2  dropped  2.0  max wait   72  breach False  heads lost 4  overflow 0.38>0.67   4.7 min
+  R0 heat  forecast insertion full      served 32.1>30.6  dropped  0.8  max wait   60  breach False  heads lost 1  overflow 0.38>0.83   4.5 min
+  R0 heat  forecast insertion urgency   served 36.0>31.0  dropped  0.5  max wait  204  breach None  heads lost 0  overflow 0.25>0.75   4.4 min
+  R0 heat  forecast ortools   full      served 35.4>32.2  dropped  0.6  max wait   72  breach False  heads lost 0  overflow 0.38>0.67   4.5 min
+  R0: 11 chains, 50.6 min
+[weather-heat] shard 0 finished

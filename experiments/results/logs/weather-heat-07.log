@@ -1,0 +1,3 @@
+
+=== 2026-10-01 21:58:26 experiments.exp_weather --scenario heat --shard 7 --of 8
+[weather-heat] shard 7/8: networks ['R7']
