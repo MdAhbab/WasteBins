@@ -1,3 +1,8 @@
 
 === 2026-10-01 22:45:53 experiments.exp_weather --scenario storm --shard 2 --of 8
 [weather-storm] shard 2/8: networks ['R2']
+  R2 storm blind    insertion full      served 39.5>35.2  dropped  4.4  max wait  168  breach False  heads lost 9  overflow 0.38>1.25   5.0 min
+  R2 storm blind    insertion urgency   served 38.5>36.7  dropped  4.3  max wait  168  breach None  heads lost 0  overflow 0.25>1.25   5.0 min
+
+=== 2026-10-01 23:02:05 experiments.exp_weather --scenario storm --shard 2 --of 8
+[weather-storm] shard 2/8: networks ['R2']

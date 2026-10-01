@@ -14,3 +14,8 @@
   R7 heat  forecast ortools   full      served 38.4>32.2  dropped  0.6  max wait   84  breach False  heads lost 1  overflow 0.62>0.92   4.3 min
   R7: 11 chains, 47.4 min
 [weather-heat] shard 7 finished
+
+=== 2026-10-01 23:02:03 experiments.exp_weather --scenario heat --shard 7 --of 8
+[weather-heat] shard 7/8: networks ['R7']
+  R7: 0 chains, 0.0 min
+[weather-heat] shard 7 finished

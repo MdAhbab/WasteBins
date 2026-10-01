@@ -24,3 +24,8 @@
   R3 heat  forecast ortools   full      served 38.1>31.8  dropped  0.6  max wait   60  breach False  heads lost 0  overflow 0.12>0.42   4.3 min
   R3: 11 chains, 50.6 min
 [weather-heat] shard 3 finished
+
+=== 2026-10-01 23:02:00 experiments.exp_weather --scenario heat --shard 3 --of 8
+[weather-heat] shard 3/8: networks ['R3']
+  R3: 0 chains, 0.0 min
+[weather-heat] shard 3 finished

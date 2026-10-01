@@ -8,3 +8,11 @@
   R0 storm protectedortools   full      served 35.4>31.3  dropped  5.0  max wait   84  breach False  heads lost 0  overflow 0.38>0.92   4.8 min
   R0 storm current  insertion full      served 32.1>30.2  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.42   4.3 min
   R0 storm current  insertion urgency   served 35.0>31.6  dropped  0.0  max wait  156  breach None  heads lost 0  overflow 0.50>0.50   4.2 min
+  R0 storm current  ortools   full      served 35.4>32.0  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.67   4.3 min
+  R0: 8 chains, 35.8 min
+[weather-storm] shard 0 finished
+
+=== 2026-10-01 23:02:03 experiments.exp_weather --scenario storm --shard 0 --of 8
+[weather-storm] shard 0/8: networks ['R0']
+  R0: 0 chains, 0.0 min
+[weather-storm] shard 0 finished

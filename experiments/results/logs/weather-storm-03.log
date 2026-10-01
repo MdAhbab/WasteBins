@@ -1,0 +1,8 @@
+
+=== 2026-10-01 22:48:27 experiments.exp_weather --scenario storm --shard 3 --of 8
+[weather-storm] shard 3/8: networks ['R3']
+  R3 storm blind    insertion full      served 35.9>30.8  dropped  4.6  max wait  144  breach False  heads lost 7  overflow 0.12>1.33   4.3 min
+  R3 storm blind    insertion urgency   served 35.4>30.1  dropped  4.9  max wait  228  breach None  heads lost 0  overflow 0.00>1.67   4.3 min
+
+=== 2026-10-01 23:02:05 experiments.exp_weather --scenario storm --shard 3 --of 8
+[weather-storm] shard 3/8: networks ['R3']
