@@ -1,0 +1,119 @@
+{
+  "co2_kg_per_litre": 2.6528,
+  "co2_kg_per_mj": 0.0741,
+  "fuel_mj_per_litre": 35.8,
+  "freeflow_kmh": 34.0,
+  "profile": {
+    "kerb_mass_kg": 12000.0,
+    "capacity_kg": 6000.0,
+    "frontal_area_m2": 8.5,
+    "drag_coefficient": 0.7,
+    "rolling_resistance": 0.01,
+    "engine_efficiency": 0.4,
+    "driveline_efficiency": 0.9,
+    "idle_fuel_l_per_h": 2.6,
+    "pto_fuel_l_per_lift": 0.045,
+    "low_speed_penalty_ref_kmh": 18.0,
+    "low_speed_penalty_max": 0.28
+  },
+  "duty": {
+    "transfer_empty": {
+      "label": "Transfer leg, empty, no congestion",
+      "distance_km": 5.0,
+      "payload_kg": 0.0,
+      "congestion": 0.0,
+      "service_min": 0.0,
+      "lifts": 0,
+      "lifted_kg": 0.0,
+      "speed_kmh": 34.0,
+      "fuel_l": 1.0781,
+      "fuel_l_per_100km": 21.56,
+      "co2_kg": 2.85996,
+      "co2_kg_per_km": 0.572,
+      "share_cruise": 0.5504,
+      "share_stop_go": 0.4318,
+      "share_idle": 0.0177,
+      "share_compaction": 0.0
+    },
+    "transfer_full": {
+      "label": "Transfer leg, full, no congestion",
+      "distance_km": 5.0,
+      "payload_kg": 6000.0,
+      "congestion": 0.0,
+      "service_min": 0.0,
+      "lifts": 0,
+      "lifted_kg": 0.0,
+      "speed_kmh": 34.0,
+      "fuel_l": 1.53915,
+      "fuel_l_per_100km": 30.78,
+      "co2_kg": 4.08302,
+      "co2_kg_per_km": 0.817,
+      "share_cruise": 0.5339,
+      "share_stop_go": 0.4537,
+      "share_idle": 0.0124,
+      "share_compaction": 0.0
+    },
+    "collection_light": {
+      "label": "Collection leg, half load, light congestion",
+      "distance_km": 0.5,
+      "payload_kg": 3000.0,
+      "congestion": 0.2,
+      "service_min": 4.0,
+      "lifts": 1,
+      "lifted_kg": 150.0,
+      "speed_kmh": 33.71,
+      "fuel_l": 0.39856,
+      "fuel_l_per_100km": 79.71,
+      "co2_kg": 1.05729,
+      "co2_kg_per_km": 2.115,
+      "share_cruise": 0.18,
+      "share_stop_go": 0.2482,
+      "share_idle": 0.4436,
+      "share_compaction": 0.1281
+    },
+    "collection_heavy": {
+      "label": "Collection leg, half load, heavy congestion",
+      "distance_km": 0.5,
+      "payload_kg": 3000.0,
+      "congestion": 0.8,
+      "service_min": 4.0,
+      "lifts": 1,
+      "lifted_kg": 150.0,
+      "speed_kmh": 16.2,
+      "fuel_l": 0.54781,
+      "fuel_l_per_100km": 109.56,
+      "co2_kg": 1.45321,
+      "co2_kg_per_km": 2.906,
+      "share_cruise": 0.1205,
+      "share_stop_go": 0.4153,
+      "share_idle": 0.3709,
+      "share_compaction": 0.0932
+    }
+  },
+  "range": {
+    "legs": 25672,
+    "legs_excluded": "pairs less than 100 m apart by road",
+    "speed_kmh": {
+      "min": 10.2,
+      "median": 31.63,
+      "max": 60.39
+    },
+    "co2_kg_per_km": {
+      "min": 0.604,
+      "max": 1.929,
+      "empty_median": 0.641,
+      "full_median": 0.875,
+      "ratio_max_to_min": 3.19
+    }
+  },
+  "measured": {
+    "source": "Sandhu et al. (2015), doi:10.1080/10962247.2014.990587",
+    "vehicle": "roll-off refuse truck",
+    "fuel_economy_mpg": 4.4,
+    "mean_speed_mph": 16.0,
+    "idle_time_share": 0.5,
+    "fuel_l_per_100km": 53.46,
+    "co2_kg_per_km": 1.418,
+    "mean_speed_kmh": 25.7
+  }
+}

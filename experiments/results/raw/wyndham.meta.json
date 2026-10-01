@@ -1,0 +1,83 @@
+{
+  "study": "wyndham",
+  "config": {
+    "area": "wyndham",
+    "n_vehicles": 3,
+    "improve_s": 30.0,
+    "weights": {},
+    "depot": null,
+    "budget_factor": 1.0,
+    "flat": true,
+    "reference_from": null,
+    "networks": [
+      [
+        "W",
+        25
+      ]
+    ],
+    "specs": [
+      [
+        "ortools",
+        "full"
+      ],
+      [
+        "aco",
+        "full"
+      ],
+      [
+        "genetic",
+        "full"
+      ],
+      [
+        "risk_graph",
+        "tier_unbounded"
+      ],
+      [
+        "static_sweep",
+        "full"
+      ],
+      [
+        "threshold",
+        "full"
+      ]
+    ]
+  },
+  "improve_s": 30.0,
+  "solver_config": {
+    "ortools": {
+      "first_solution": "PARALLEL_CHEAPEST_INSERTION",
+      "metaheuristic": "GUIDED_LOCAL_SEARCH",
+      "emission_model": "mean_load"
+    },
+    "aco": {
+      "n_ants": 8,
+      "alpha": 1.0,
+      "beta": 2.5,
+      "rho": 0.1,
+      "q0": 0.25,
+      "polish_fraction": 0.3
+    },
+    "genetic": {
+      "population_size": 40,
+      "crossover_rate": 0.85,
+      "mutation_rate": 0.5,
+      "elite": 4,
+      "tournament": 3,
+      "polish_fraction": 0.3
+    }
+  },
+  "environment": {
+    "versions": {
+      "python": "3.13.7",
+      "numpy": "2.3.3",
+      "scipy": "1.18.0",
+      "pandas": "2.3.2",
+      "ortools": "9.15.6755",
+      "matplotlib": "3.10.8"
+    },
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 165 Stepping 5, GenuineIntel",
+    "logical_cpus": 12,
+    "utc": "2026-10-01T19:54:46Z"
+  }
+}

@@ -1,0 +1,5 @@
+2026-10-01 15:56:31  starter pid waiting for tuning pids [14244, 6164, 8024]
+2026-10-01 16:19:01  tuning processes have exited; resuming any unfinished tuning shard
+2026-10-01 16:19:08  tuning shards returned [0, 0, 0]
+2026-10-01 16:19:10  tuning complete: 66 grid records; starting the queue
+2026-10-02 01:51:14  queue runner exited with code 1073807364

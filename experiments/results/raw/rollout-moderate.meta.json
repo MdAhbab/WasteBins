@@ -1,0 +1,176 @@
+{
+  "study": "rollout-moderate",
+  "load": {
+    "fill_hours": 96.0,
+    "persistent_hazard_share": 0.0
+  },
+  "cycle_h": 12.0,
+  "n_cycles": 40,
+  "burn_in": 8,
+  "shift_min": 240.0,
+  "tau_h": 48.0,
+  "improve_s": 3.0,
+  "demand": {
+    "litter_bin_factor": 1.2,
+    "neighbourhoods": 6,
+    "neighbourhood_sigma": 0.3,
+    "day_factor": 1.3,
+    "night_factor": 0.7,
+    "rate_noise_sigma": 0.15,
+    "sudden_load_rate_per_h": 0.01,
+    "sudden_load_range": [
+      0.15,
+      0.45
+    ],
+    "fill_cap": 1.3,
+    "wyndham_relative_rates": [
+      0.2125,
+      0.2348,
+      0.3495,
+      0.5238,
+      0.5353,
+      0.651,
+      0.6782,
+      0.6786,
+      0.7478,
+      0.7656,
+      0.8535,
+      0.8948,
+      0.9196,
+      0.9515,
+      0.9898,
+      0.9985,
+      1.0015,
+      1.059,
+      1.0773,
+      1.1318,
+      1.1405,
+      1.1681,
+      1.2582,
+      1.2626,
+      1.2673,
+      1.3744,
+      1.4082,
+      1.4712,
+      1.6007,
+      1.7428,
+      1.8294,
+      1.8428
+    ]
+  },
+  "specs": [
+    [
+      "insertion",
+      "full"
+    ],
+    [
+      "insertion",
+      "urgency"
+    ],
+    [
+      "insertion",
+      "ageing"
+    ],
+    [
+      "insertion",
+      "tier_bounded"
+    ],
+    [
+      "insertion",
+      "tier_unbounded"
+    ],
+    [
+      "insertion",
+      "reserve_bounded"
+    ],
+    [
+      "insertion",
+      "full_r2"
+    ],
+    [
+      "insertion",
+      "full_r4"
+    ],
+    [
+      "insertion",
+      "full_r8"
+    ],
+    [
+      "insertion",
+      "full_ageing"
+    ],
+    [
+      "ortools",
+      "urgency"
+    ],
+    [
+      "ortools",
+      "tier_unbounded"
+    ],
+    [
+      "ortools",
+      "full"
+    ],
+    [
+      "ortools",
+      "full_r4"
+    ],
+    [
+      "aco",
+      "tier_unbounded"
+    ],
+    [
+      "genetic",
+      "tier_unbounded"
+    ],
+    [
+      "risk_graph",
+      "tier_unbounded"
+    ],
+    [
+      "static_sweep",
+      "full"
+    ],
+    [
+      "threshold",
+      "full"
+    ]
+  ],
+  "solver_config": {
+    "ortools": {
+      "first_solution": "PARALLEL_CHEAPEST_INSERTION",
+      "metaheuristic": "GUIDED_LOCAL_SEARCH",
+      "emission_model": "mean_load"
+    },
+    "aco": {
+      "n_ants": 8,
+      "alpha": 1.0,
+      "beta": 2.5,
+      "rho": 0.1,
+      "q0": 0.25,
+      "polish_fraction": 0.3
+    },
+    "genetic": {
+      "population_size": 40,
+      "crossover_rate": 0.85,
+      "mutation_rate": 0.5,
+      "elite": 4,
+      "tournament": 3,
+      "polish_fraction": 0.3
+    }
+  },
+  "environment": {
+    "versions": {
+      "python": "3.13.7",
+      "numpy": "2.3.3",
+      "scipy": "1.18.0",
+      "pandas": "2.3.2",
+      "ortools": "9.15.6755",
+      "matplotlib": "3.10.8"
+    },
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 165 Stepping 5, GenuineIntel",
+    "logical_cpus": 12,
+    "utc": "2026-10-01T19:54:56Z"
+  }
+}

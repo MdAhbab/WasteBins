@@ -1,0 +1,266 @@
+{
+  "retrieved_utc": "2026-10-01T10:22:20Z",
+  "site": {
+    "latitude": 23.750366,
+    "longitude": 90.378474,
+    "name": "main depot, Dhaka"
+  },
+  "planner": "ortools",
+  "rule": "full",
+  "budget_s": 30.0,
+  "sources": {
+    "google": {
+      "attribution": "Source: Includes weather data from Google",
+      "live": true,
+      "effects": {
+        "rain_class": "dry",
+        "uv_category": "low",
+        "sun_exposed": false,
+        "speed_factor": 1.0,
+        "service_factor": 1.14,
+        "gas_factor": 1.55,
+        "litter_demand_factor": 1.03
+      },
+      "snapshots": [
+        {
+          "snapshot": 0,
+          "nominal_plan": {
+            "planned": 159,
+            "served": 157,
+            "dropped": 2,
+            "overtime_to_finish_min": 0.0,
+            "km": 137.206,
+            "hours": 16.53,
+            "objective": 1153.1
+          },
+          "live_plan": {
+            "planned": 159,
+            "served": 159,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 143.167,
+            "hours": 16.49,
+            "objective": 920.2
+          }
+        },
+        {
+          "snapshot": 1,
+          "nominal_plan": {
+            "planned": 160,
+            "served": 160,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 138.335,
+            "hours": 17.18,
+            "objective": 1297.17
+          },
+          "live_plan": {
+            "planned": 160,
+            "served": 160,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 145.826,
+            "hours": 16.75,
+            "objective": 1157.05
+          }
+        },
+        {
+          "snapshot": 2,
+          "nominal_plan": {
+            "planned": 158,
+            "served": 157,
+            "dropped": 1,
+            "overtime_to_finish_min": 0.0,
+            "km": 124.42,
+            "hours": 16.82,
+            "objective": 966.7
+          },
+          "live_plan": {
+            "planned": 159,
+            "served": 159,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 136.836,
+            "hours": 16.32,
+            "objective": 974.66
+          }
+        },
+        {
+          "snapshot": 3,
+          "nominal_plan": {
+            "planned": 159,
+            "served": 159,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 141.331,
+            "hours": 18.58,
+            "objective": 1177.81
+          },
+          "live_plan": {
+            "planned": 159,
+            "served": 159,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 140.36,
+            "hours": 17.21,
+            "objective": 907.1
+          }
+        },
+        {
+          "snapshot": 4,
+          "nominal_plan": {
+            "planned": 158,
+            "served": 158,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 124.663,
+            "hours": 16.71,
+            "objective": 1036.38
+          },
+          "live_plan": {
+            "planned": 158,
+            "served": 158,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 129.931,
+            "hours": 17.02,
+            "objective": 1056.19
+          }
+        }
+      ]
+    },
+    "open-meteo": {
+      "attribution": "Weather data by Open-Meteo.com (CC BY 4.0)",
+      "live": true,
+      "effects": {
+        "rain_class": "dry",
+        "uv_category": "low",
+        "sun_exposed": false,
+        "speed_factor": 1.0,
+        "service_factor": 1.16,
+        "gas_factor": 2.14,
+        "litter_demand_factor": 1.06
+      },
+      "snapshots": [
+        {
+          "snapshot": 0,
+          "nominal_plan": {
+            "planned": 159,
+            "served": 157,
+            "dropped": 2,
+            "overtime_to_finish_min": 0.0,
+            "km": 137.206,
+            "hours": 16.68,
+            "objective": 1157.95
+          },
+          "live_plan": {
+            "planned": 159,
+            "served": 159,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 128.973,
+            "hours": 15.61,
+            "objective": 869.13
+          }
+        },
+        {
+          "snapshot": 1,
+          "nominal_plan": {
+            "planned": 160,
+            "served": 160,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 137.76,
+            "hours": 17.1,
+            "objective": 1216.59
+          },
+          "live_plan": {
+            "planned": 160,
+            "served": 160,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 146.23,
+            "hours": 17.95,
+            "objective": 1164.23
+          }
+        },
+        {
+          "snapshot": 2,
+          "nominal_plan": {
+            "planned": 158,
+            "served": 155,
+            "dropped": 3,
+            "overtime_to_finish_min": 0.0,
+            "km": 123.89,
+            "hours": 16.76,
+            "objective": 1194.74
+          },
+          "live_plan": {
+            "planned": 158,
+            "served": 158,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 148.632,
+            "hours": 15.74,
+            "objective": 1002.5
+          }
+        },
+        {
+          "snapshot": 3,
+          "nominal_plan": {
+            "planned": 159,
+            "served": 159,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 142.656,
+            "hours": 18.74,
+            "objective": 1186.69
+          },
+          "live_plan": {
+            "planned": 159,
+            "served": 159,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 132.394,
+            "hours": 17.83,
+            "objective": 901.75
+          }
+        },
+        {
+          "snapshot": 4,
+          "nominal_plan": {
+            "planned": 158,
+            "served": 158,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 124.663,
+            "hours": 16.93,
+            "objective": 1042.15
+          },
+          "live_plan": {
+            "planned": 158,
+            "served": 158,
+            "dropped": 0,
+            "overtime_to_finish_min": 0.0,
+            "km": 142.088,
+            "hours": 16.53,
+            "objective": 1076.9
+          }
+        }
+      ],
+      "conditions": {
+        "temperature_c": 33.7,
+        "relative_humidity": 49.0,
+        "rain_mm_h": 0.0,
+        "uv_index": 1.35,
+        "is_daytime": true,
+        "standing_water_mm": 0.0,
+        "daily_max_c": null,
+        "wet_day": null,
+        "observed_at": "2026-10-01T10:15:00+00:00",
+        "source": "open-meteo"
+      }
+    }
+  },
+  "google_requests": 1
+}

@@ -1,0 +1,449 @@
+{
+  "source": {
+    "fill": "Wyndham City Council smart-bin fill level, daily, Creative Commons Attribution 2.5 Australia",
+    "weather": "Weather data by Open-Meteo.com (CC BY 4.0); ERA5 reanalysis, Copernicus Climate Change Service; UV index, Copernicus Atmosphere Monitoring Service",
+    "weather_site": {
+      "latitude": -37.89,
+      "longitude": 144.7,
+      "timezone": "Australia/Melbourne"
+    }
+  },
+  "definition": {
+    "outcome": "rise in fill between two consecutive daily readings, share of container",
+    "kept": "pairs with no fall and a first reading of at most 0.6",
+    "temperature": "mean of the two daily maximum temperatures, per 10 C, centred at 20.0 C",
+    "wet": "the two days together received at least 2.0 mm",
+    "model": "Poisson pseudo maximum likelihood, log link, container fixed effects, day of week, restriction period; standard errors clustered by date",
+    "restrictions_from": "2020-03-16"
+  },
+  "variants": {
+    "primary": {
+      "observations": 24095,
+      "containers": 32,
+      "dates": 949,
+      "mean_rise_per_day": 0.14088400083004773,
+      "share_zero_rise": 0.6088815106868645,
+      "share_wet": 0.37709068271425605,
+      "temperature_range_C": [
+        9.5,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.1675092723466226,
+        "standard_error": 0.024993222579986086,
+        "z": 6.70218783554385,
+        "p": 2.053218666947247e-11,
+        "percent_change": 18.23562533511072,
+        "percent_change_ci95": [
+          12.583328116419445,
+          24.17169870772229
+        ]
+      },
+      "wet": {
+        "coefficient": -0.09457467988717269,
+        "standard_error": 0.026220182960024478,
+        "z": -3.606942027496989,
+        "p": 0.0003098268474237072,
+        "percent_change": -9.02402086695081,
+        "percent_change_ci95": [
+          -13.58123053235385,
+          -4.226491187014137
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.15427374709488378,
+        "standard_error": 0.025403150769477998,
+        "z": -6.073016237034833,
+        "p": 1.2552975702253138e-09,
+        "percent_change": -14.296262259585134,
+        "percent_change_ci95": [
+          -18.45890079202167,
+          -9.921122795470827
+        ]
+      }
+    },
+    "with_month_effects": {
+      "observations": 24095,
+      "containers": 32,
+      "dates": 949,
+      "mean_rise_per_day": 0.14088400083004773,
+      "share_zero_rise": 0.6088815106868645,
+      "share_wet": 0.37709068271425605,
+      "temperature_range_C": [
+        9.5,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.10249515919543918,
+        "standard_error": 0.038131148964257136,
+        "z": 2.6879640918115193,
+        "p": 0.007188912686145679,
+        "percent_change": 10.793193861484184,
+        "percent_change_ci95": [
+          2.8148364380663926,
+          19.390666087600227
+        ]
+      },
+      "wet": {
+        "coefficient": -0.09032550860117541,
+        "standard_error": 0.0261137861868635,
+        "z": -3.4589204320977984,
+        "p": 0.0005423450964476248,
+        "percent_change": -8.636625877753556,
+        "percent_change_ci95": [
+          -13.195141243507646,
+          -3.8387222722454095
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.16781652101113156,
+        "standard_error": 0.025384909129207763,
+        "z": -6.610877358550109,
+        "p": 3.820489073187269e-11,
+        "percent_change": -15.449104641842325,
+        "percent_change_ci95": [
+          -19.55287334094701,
+          -11.135994500287794
+        ]
+      }
+    },
+    "before_restrictions": {
+      "observations": 13551,
+      "containers": 32,
+      "dates": 539,
+      "mean_rise_per_day": 0.15058667257029004,
+      "share_zero_rise": 0.5973728876097705,
+      "share_wet": 0.37930780016234966,
+      "temperature_range_C": [
+        9.95,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.13523641238388526,
+        "standard_error": 0.031112940081459987,
+        "z": 4.346629152687239,
+        "p": 1.3824566306707801e-05,
+        "percent_change": 14.480739900801499,
+        "percent_change_ci95": [
+          7.70826863118772,
+          21.679050037575955
+        ]
+      },
+      "wet": {
+        "coefficient": -0.0631427563666045,
+        "standard_error": 0.03144037350185268,
+        "z": -2.008333532134525,
+        "p": 0.0446078608872417,
+        "percent_change": -6.119055690252983,
+        "percent_change_ci95": [
+          -11.729547140269858,
+          -0.15196003927281376
+        ]
+      }
+    },
+    "before_restrictions_month_effects": {
+      "observations": 13551,
+      "containers": 32,
+      "dates": 539,
+      "mean_rise_per_day": 0.15058667257029004,
+      "share_zero_rise": 0.5973728876097705,
+      "share_wet": 0.37930780016234966,
+      "temperature_range_C": [
+        9.95,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.08374549090540757,
+        "standard_error": 0.04750352213637543,
+        "z": 1.7629322445815054,
+        "p": 0.07791191791374091,
+        "percent_change": 8.73521175863372,
+        "percent_change_ci95": [
+          -0.9316036679769768,
+          19.34528784103393
+        ]
+      },
+      "wet": {
+        "coefficient": -0.06656172253033354,
+        "standard_error": 0.03165958100972051,
+        "z": -2.102419564867171,
+        "p": 0.03551653882581398,
+        "percent_change": -6.439483384412803,
+        "percent_change_ci95": [
+          -12.068612362844554,
+          -0.4499928342226678
+        ]
+      }
+    },
+    "general_stream": {
+      "observations": 11435,
+      "containers": 15,
+      "dates": 949,
+      "mean_rise_per_day": 0.14222999562745955,
+      "share_zero_rise": 0.5372977700043725,
+      "share_wet": 0.37621337997376475,
+      "temperature_range_C": [
+        9.5,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.037266002964713066,
+        "standard_error": 0.02528305744253882,
+        "z": 1.4739515997781545,
+        "p": 0.1404946232033547,
+        "percent_change": 3.7969086973739463,
+        "percent_change_ci95": [
+          -1.221269172305195,
+          9.070021095171965
+        ]
+      },
+      "wet": {
+        "coefficient": -0.07627521705094023,
+        "standard_error": 0.02730452400464799,
+        "z": -2.793501071029697,
+        "p": 0.005214085635171186,
+        "percent_change": -7.343883396639017,
+        "percent_change_ci95": [
+          -12.17211167816562,
+          -2.2502293057941825
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.15586299548725183,
+        "standard_error": 0.0272277942335823,
+        "z": -5.724407719190601,
+        "p": 1.0379520706538865e-08,
+        "percent_change": -14.432358612908669,
+        "percent_change_ci95": [
+          -18.879014048489275,
+          -9.741959288729396
+        ]
+      }
+    },
+    "recycling_stream": {
+      "observations": 12660,
+      "containers": 17,
+      "dates": 937,
+      "mean_rise_per_day": 0.13966824644549766,
+      "share_zero_rise": 0.6735387045813586,
+      "share_wet": 0.3778830963665087,
+      "temperature_range_C": [
+        9.5,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.294102697902019,
+        "standard_error": 0.03621110348816635,
+        "z": 8.121892722715026,
+        "p": 4.5896894051711e-16,
+        "percent_change": 34.19217091348858,
+        "percent_change_ci95": [
+          24.998335929917715,
+          44.062227712944456
+        ]
+      },
+      "wet": {
+        "coefficient": -0.10973865943284508,
+        "standard_error": 0.03995812657839155,
+        "z": -2.746341453660374,
+        "p": 0.006026400607233694,
+        "percent_change": -10.393171630757204,
+        "percent_change_ci95": [
+          -17.143098880787033,
+          -3.0933623882166583
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.14279156899044862,
+        "standard_error": 0.03704248690706854,
+        "z": -3.8548051416926,
+        "p": 0.00011582184203411783,
+        "percent_change": -13.30652538501812,
+        "percent_change_ci95": [
+          -19.377587934423513,
+          -6.778297147629919
+        ]
+      }
+    },
+    "werribee": {
+      "observations": 16827,
+      "containers": 22,
+      "dates": 949,
+      "mean_rise_per_day": 0.13201402507874246,
+      "share_zero_rise": 0.629583407618708,
+      "share_wet": 0.37689427705473344,
+      "temperature_range_C": [
+        9.5,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.15688912288754608,
+        "standard_error": 0.029607883744805358,
+        "z": 5.298896882999007,
+        "p": 1.1650440382463423e-07,
+        "percent_change": 16.98658953572021,
+        "percent_change_ci95": [
+          10.391034644989583,
+          23.976210343638215
+        ]
+      },
+      "wet": {
+        "coefficient": -0.10690818957658516,
+        "standard_error": 0.030940489027753964,
+        "z": -3.455284416503156,
+        "p": 0.0005497126067817767,
+        "percent_change": -10.139182920018664,
+        "percent_change_ci95": [
+          -15.426603771389747,
+          -4.521199261592468
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.18429442841590943,
+        "standard_error": 0.03035294422230858,
+        "z": -6.071715055584561,
+        "p": 1.2655133892471723e-09,
+        "percent_change": -16.83091056582622,
+        "percent_change_ci95": [
+          -21.63439811558685,
+          -11.732989079671697
+        ]
+      }
+    },
+    "point_cook": {
+      "observations": 7268,
+      "containers": 10,
+      "dates": 937,
+      "mean_rise_per_day": 0.16141992294991744,
+      "share_zero_rise": 0.5609521188772703,
+      "share_wet": 0.3775454045129334,
+      "temperature_range_C": [
+        9.5,
+        37.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.1860021568045842,
+        "standard_error": 0.03291418458557103,
+        "z": 5.651124557590411,
+        "p": 1.5940152815241856e-08,
+        "percent_change": 20.442485808388366,
+        "percent_change_ci95": [
+          12.917981294167657,
+          28.468399996565495
+        ]
+      },
+      "wet": {
+        "coefficient": -0.07023751366446687,
+        "standard_error": 0.037674848819558696,
+        "z": -1.8643077773414567,
+        "p": 0.06227849526852369,
+        "percent_change": -6.782761006958049,
+        "percent_change_ci95": [
+          -13.418053407076014,
+          0.3610335343980031
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.09869697197116328,
+        "standard_error": 0.03617958125021013,
+        "z": -2.727974414313876,
+        "p": 0.006372455051740519,
+        "percent_change": -9.398278495944634,
+        "percent_change_ci95": [
+          -15.600410551869148,
+          -2.740380691742794
+        ]
+      }
+    },
+    "alignment_first_day": {
+      "observations": 24095,
+      "containers": 32,
+      "dates": 949,
+      "mean_rise_per_day": 0.14088400083004773,
+      "share_zero_rise": 0.6088815106868645,
+      "share_wet": 0.2916372691429757,
+      "temperature_range_C": [
+        9.0,
+        43.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.12276740611657713,
+        "standard_error": 0.023554707331793007,
+        "z": 5.212011526497364,
+        "p": 1.8680393935783648e-07,
+        "percent_change": 13.062141473632249,
+        "percent_change_ci95": [
+          7.961125548678605,
+          18.40417344333709
+        ]
+      },
+      "wet": {
+        "coefficient": -0.1476891490326365,
+        "standard_error": 0.02902493724304509,
+        "z": -5.088353776476314,
+        "p": 3.611851129929741e-07,
+        "percent_change": -13.730075583963607,
+        "percent_change_ci95": [
+          -18.50079995035825,
+          -8.680086992076586
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.1560545091375014,
+        "standard_error": 0.02552812153838693,
+        "z": -6.113043174870523,
+        "p": 9.77489111146695e-10,
+        "percent_change": -14.44874441515147,
+        "percent_change_ci95": [
+          -18.623911429660943,
+          -10.059361899438834
+        ]
+      }
+    },
+    "alignment_second_day": {
+      "observations": 24095,
+      "containers": 32,
+      "dates": 949,
+      "mean_rise_per_day": 0.14088400083004773,
+      "share_zero_rise": 0.6088815106868645,
+      "share_wet": 0.28520439925295704,
+      "temperature_range_C": [
+        9.0,
+        43.8
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.1551639886132752,
+        "standard_error": 0.021255277410009446,
+        "z": 7.300021807299774,
+        "p": 2.8772109059813065e-13,
+        "percent_change": 16.78494594162885,
+        "percent_change_ci95": [
+          12.019682903871963,
+          21.75292096026591
+        ]
+      },
+      "wet": {
+        "coefficient": -0.03987605639596352,
+        "standard_error": 0.027954154406251885,
+        "z": -1.4264805086375758,
+        "p": 0.15372968922005203,
+        "percent_change": -3.909146976173128,
+        "percent_change_ci95": [
+          -9.032254984492083,
+          1.5024834711754753
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.15356973727854323,
+        "standard_error": 0.025679739280885547,
+        "z": -5.98019067089405,
+        "p": 2.2287658170473514e-09,
+        "percent_change": -14.235904743269733,
+        "percent_change_ci95": [
+          -18.44569770626865,
+          -9.808804338567933
+        ]
+      }
+    }
+  }
+}

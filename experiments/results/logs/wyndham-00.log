@@ -1,0 +1,258 @@
+
+=== 2026-10-01 18:31:12 experiments.exp_compare --study wyndham --shard 0 --of 1
+[wyndham] shard 0/1: 25 of 25 units
+  W snapshot 0
+    ortools             full            obj     139.5  served  30    29.4s
+    aco                 full            obj     140.0  served  29    22.7s
+    genetic             full            obj     139.7  served  30    24.6s
+    risk_graph          tier_unbounded  obj     150.2  served  32     0.0s
+    static_sweep        full            obj     647.3  served  22     0.0s
+    threshold           full            obj    2111.9  served   3     0.1s
+  W snapshot 0: 7 solves, 107s (total 1.8 min)
+  W snapshot 1
+    ortools             full            obj     141.0  served  30    25.7s
+    aco                 full            obj     141.4  served  29    22.6s
+    genetic             full            obj     141.2  served  29    22.8s
+    risk_graph          tier_unbounded  obj     159.6  served  32     0.0s
+    static_sweep        full            obj     960.0  served  22     0.0s
+    threshold           full            obj    1704.0  served   1     0.0s
+  W snapshot 1: 7 solves, 97s (total 3.4 min)
+  W snapshot 2
+    ortools             full            obj     138.0  served  30    30.2s
+    aco                 full            obj     138.0  served  30    24.9s
+    genetic             full            obj     138.0  served  30    25.2s
+    risk_graph          tier_unbounded  obj     145.7  served  32     0.0s
+    static_sweep        full            obj     645.8  served  22     0.0s
+    threshold           full            obj    1490.6  served   7     0.8s
+  W snapshot 2: 7 solves, 111s (total 5.2 min)
+  W snapshot 3
+    ortools             full            obj     142.7  served  32    29.5s
+    aco                 full            obj     142.7  served  32    26.2s
+    genetic             full            obj     142.7  served  32    26.4s
+    risk_graph          tier_unbounded  obj     199.5  served  32     0.0s
+    static_sweep        full            obj     695.2  served  22     0.0s
+    threshold           full            obj    1970.9  served   4     0.2s
+  W snapshot 3: 7 solves, 112s (total 7.1 min)
+  W snapshot 4
+    ortools             full            obj     140.8  served  32    24.7s
+    aco                 full            obj     140.8  served  32    21.4s
+    genetic             full            obj     141.1  served  32    21.6s
+    risk_graph          tier_unbounded  obj     214.0  served  32     0.0s
+    static_sweep        full            obj    1309.0  served  22     0.0s
+    threshold           full            obj    2316.2  served   5     0.4s
+  W snapshot 4: 7 solves, 93s (total 8.7 min)
+  W snapshot 5
+    ortools             full            obj     149.8  served  30    29.5s
+    aco                 full            obj     149.8  served  30    24.3s
+    genetic             full            obj     149.8  served  30    24.5s
+    risk_graph          tier_unbounded  obj     225.9  served  32     0.0s
+    static_sweep        full            obj    1134.1  served  22     0.0s
+    threshold           full            obj    2024.1  served   3     0.1s
+  W snapshot 5: 7 solves, 108s (total 10.5 min)
+  W snapshot 6
+    ortools             full            obj     133.8  served  30    31.3s
+    aco                 full            obj     136.7  served  30    24.4s
+    genetic             full            obj     134.1  served  30    25.9s
+    risk_graph          tier_unbounded  obj     212.1  served  32     0.0s
+    static_sweep        full            obj     722.9  served  22     0.0s
+    threshold           full            obj    1734.4  served   3     0.1s
+  W snapshot 6: 7 solves, 113s (total 12.4 min)
+  W snapshot 7
+    ortools             full            obj     144.4  served  32    28.6s
+    aco                 full            obj     144.5  served  32    25.8s
+    genetic             full            obj     144.3  served  32    25.8s
+    risk_graph          tier_unbounded  obj     195.3  served  32     0.0s
+    static_sweep        full            obj     958.2  served  22     0.0s
+    threshold           full            obj    2165.5  served   6     0.6s
+  W snapshot 7: 7 solves, 110s (total 14.2 min)
+  W snapshot 8
+    ortools             full            obj     136.9  served  31    26.4s
+    aco                 full            obj     137.5  served  31    21.1s
+    genetic             full            obj     136.9  served  31    24.2s
+    risk_graph          tier_unbounded  obj     156.1  served  32     0.0s
+    static_sweep        full            obj    1173.7  served  22     0.0s
+    threshold           full            obj    2662.3  served   4     0.2s
+  W snapshot 8: 7 solves, 98s (total 15.8 min)
+  W snapshot 9
+    ortools             full            obj     138.8  served  31    27.3s
+    aco                 full            obj     139.8  served  31    23.2s
+    genetic             full            obj     140.1  served  30    22.8s
+    risk_graph          tier_unbounded  obj     194.2  served  32     0.0s
+    static_sweep        full            obj    1109.2  served  22     0.0s
+    threshold           full            obj    1954.6  served   3     0.1s
+  W snapshot 9: 7 solves, 101s (total 17.5 min)
+  W snapshot 10
+    ortools             full            obj     137.8  served  31    26.2s
+    aco                 full            obj     141.6  served  32    22.7s
+    genetic             full            obj     137.9  served  31    22.4s
+    risk_graph          tier_unbounded  obj     152.1  served  32     0.0s
+    static_sweep        full            obj     897.7  served  22     0.0s
+    threshold           full            obj    1632.4  served   9     1.7s
+  W snapshot 10: 7 solves, 100s (total 19.2 min)
+  W snapshot 11
+    ortools             full            obj     220.1  served  32    31.4s
+    aco                 full            obj     220.5  served  32    26.3s
+    genetic             full            obj     220.1  served  32    24.9s
+    risk_graph          tier_unbounded  obj     296.3  served  32     0.0s
+    static_sweep        full            obj     957.0  served  22     0.0s
+    threshold           full            obj    1761.2  served   8     1.2s
+  W snapshot 11: 7 solves, 115s (total 21.1 min)
+  W snapshot 12
+    ortools             full            obj     141.5  served  32    26.3s
+    aco                 full            obj     143.0  served  32    21.4s
+    genetic             full            obj     145.5  served  32    22.8s
+    risk_graph          tier_unbounded  obj     192.9  served  32     0.0s
+    static_sweep        full            obj    1214.0  served  22     0.0s
+    threshold           full            obj    2197.8  served   6     0.8s
+  W snapshot 12: 7 solves, 98s (total 22.7 min)
+  W snapshot 13
+    ortools             full            obj     145.3  served  31    27.7s
+    aco                 full            obj     145.3  served  31    22.0s
+    genetic             full            obj     149.9  served  31    23.6s
+    risk_graph          tier_unbounded  obj     198.4  served  32     0.0s
+    static_sweep        full            obj     679.7  served  22     0.0s
+    threshold           full            obj    1831.6  served   6     0.4s
+  W snapshot 13: 7 solves, 102s (total 24.4 min)
+  W snapshot 14
+    ortools             full            obj     129.4  served  32    29.2s
+    aco                 full            obj     129.4  served  32    26.3s
+    genetic             full            obj     130.2  served  32    24.7s
+    risk_graph          tier_unbounded  obj     149.4  served  32     0.0s
+    static_sweep        full            obj    1050.8  served  22     0.0s
+    threshold           full            obj    1571.2  served   6     0.4s
+  W snapshot 14: 7 solves, 110s (total 26.2 min)
+  W snapshot 15
+    ortools             full            obj     140.1  served  31    28.6s
+    aco                 full            obj     140.1  served  31    25.2s
+    genetic             full            obj     140.4  served  31    25.2s
+    risk_graph          tier_unbounded  obj     229.6  served  32     0.0s
+    static_sweep        full            obj     709.2  served  22     0.0s
+    threshold           full            obj    1033.2  served   8     1.8s
+  W snapshot 15: 7 solves, 109s (total 28.1 min)
+  W snapshot 16
+    ortools             full            obj     135.0  served  32    26.1s
+    aco                 full            obj     135.0  served  32    24.1s
+    genetic             full            obj     135.6  served  32    22.7s
+    risk_graph          tier_unbounded  obj     155.7  served  32     0.0s
+    static_sweep        full            obj     695.6  served  22     0.0s
+    threshold           full            obj    1817.1  served   3     0.1s
+  W snapshot 16: 7 solves, 99s (total 29.7 min)
+  W snapshot 17
+    ortools             full            obj     135.5  served  31    27.2s
+    aco                 full            obj     135.9  served  31    22.9s
+    genetic             full            obj     135.7  served  31    23.1s
+    risk_graph          tier_unbounded  obj     155.0  served  32     0.0s
+    static_sweep        full            obj    1157.1  served  22     0.0s
+    threshold           full            obj    1856.1  served   6     0.5s
+  W snapshot 17: 7 solves, 101s (total 31.4 min)
+  W snapshot 18
+    ortools             full            obj     299.0  served  31    26.5s
+    aco                 full            obj     299.0  served  31    24.0s
+    genetic             full            obj     299.0  served  31    22.8s
+    risk_graph          tier_unbounded  obj     312.7  served  32     0.0s
+    static_sweep        full            obj    1297.2  served  22     0.0s
+    threshold           full            obj    1918.8  served   9     2.0s
+  W snapshot 18: 7 solves, 102s (total 33.1 min)
+  W snapshot 19
+    ortools             full            obj     140.2  served  31    28.2s
+    aco                 full            obj     140.5  served  31    24.1s
+    genetic             full            obj     140.5  served  31    24.0s
+    risk_graph          tier_unbounded  obj     152.5  served  32     0.0s
+    static_sweep        full            obj    1184.0  served  22     0.0s
+    threshold           full            obj    2822.8  served   2     0.0s
+  W snapshot 19: 7 solves, 105s (total 34.9 min)
+  W snapshot 20
+    ortools             full            obj     139.0  served  30    27.7s
+    aco                 full            obj     140.8  served  28    22.8s
+    genetic             full            obj     139.3  served  30    21.8s
+    risk_graph          tier_unbounded  obj     194.8  served  32     0.0s
+    static_sweep        full            obj     910.9  served  22     0.0s
+    threshold           full            obj    1635.8  served   0     0.0s
+  W snapshot 20: 7 solves, 100s (total 36.5 min)
+  W snapshot 21
+    ortools             full            obj     137.8  served  32    25.8s
+    aco                 full            obj     138.0  served  32    22.4s
+    genetic             full            obj     138.1  served  32    24.3s
+    risk_graph          tier_unbounded  obj     276.6  served  32     0.0s
+    static_sweep        full            obj     933.3  served  22     0.0s
+    threshold           full            obj    2075.1  served   4     0.2s
+  W snapshot 21: 7 solves, 99s (total 38.2 min)
+  W snapshot 22
+    ortools             full            obj     139.6  served  32    28.1s
+    aco                 full            obj     139.6  served  32    24.1s
+    genetic             full            obj     139.8  served  32    24.3s
+    risk_graph          tier_unbounded  obj     152.2  served  32     0.0s
+    static_sweep        full            obj     769.5  served  22     0.0s
+    threshold           full            obj    1444.4  served   9     2.5s
+  W snapshot 22: 7 solves, 107s (total 40.0 min)
+  W snapshot 23
+    ortools             full            obj     136.3  served  31    27.9s
+    aco                 full            obj     137.1  served  30    24.5s
+    genetic             full            obj     137.1  served  30    24.7s
+    risk_graph          tier_unbounded  obj     156.1  served  32     0.0s
+    static_sweep        full            obj     835.6  served  22     0.0s
+    threshold           full            obj    1344.0  served   6     0.5s
+  W snapshot 23: 7 solves, 106s (total 41.7 min)
+  W snapshot 24
+    ortools             full            obj     138.4  served  32    29.7s
+    aco                 full            obj     138.4  served  32    25.1s
+    genetic             full            obj     138.4  served  32    25.2s
+    risk_graph          tier_unbounded  obj     374.8  served  32     0.0s
+    static_sweep        full            obj     801.1  served  22     0.0s
+    threshold           full            obj    1093.2  served   6     0.5s
+  W snapshot 24: 7 solves, 110s (total 43.6 min)
+[wyndham] shard 0 finished
+
+=== 2026-10-02 01:54:43 experiments.exp_compare --study wyndham --shard 0 --of 1
+[wyndham] shard 0/1: 25 of 25 units
+  W snapshot 0
+  W snapshot 0: 0 solves, 0s (total 0.0 min)
+  W snapshot 1
+  W snapshot 1: 0 solves, 0s (total 0.0 min)
+  W snapshot 2
+  W snapshot 2: 0 solves, 0s (total 0.0 min)
+  W snapshot 3
+  W snapshot 3: 0 solves, 0s (total 0.0 min)
+  W snapshot 4
+  W snapshot 4: 0 solves, 0s (total 0.0 min)
+  W snapshot 5
+  W snapshot 5: 0 solves, 0s (total 0.0 min)
+  W snapshot 6
+  W snapshot 6: 0 solves, 0s (total 0.0 min)
+  W snapshot 7
+  W snapshot 7: 0 solves, 0s (total 0.0 min)
+  W snapshot 8
+  W snapshot 8: 0 solves, 0s (total 0.0 min)
+  W snapshot 9
+  W snapshot 9: 0 solves, 0s (total 0.0 min)
+  W snapshot 10
+  W snapshot 10: 0 solves, 0s (total 0.0 min)
+  W snapshot 11
+  W snapshot 11: 0 solves, 0s (total 0.0 min)
+  W snapshot 12
+  W snapshot 12: 0 solves, 0s (total 0.0 min)
+  W snapshot 13
+  W snapshot 13: 0 solves, 0s (total 0.0 min)
+  W snapshot 14
+  W snapshot 14: 0 solves, 0s (total 0.0 min)
+  W snapshot 15
+  W snapshot 15: 0 solves, 0s (total 0.0 min)
+  W snapshot 16
+  W snapshot 16: 0 solves, 0s (total 0.0 min)
+  W snapshot 17
+  W snapshot 17: 0 solves, 0s (total 0.0 min)
+  W snapshot 18
+  W snapshot 18: 0 solves, 0s (total 0.0 min)
+  W snapshot 19
+  W snapshot 19: 0 solves, 0s (total 0.0 min)
+  W snapshot 20
+  W snapshot 20: 0 solves, 0s (total 0.0 min)
+  W snapshot 21
+  W snapshot 21: 0 solves, 0s (total 0.0 min)
+  W snapshot 22
+  W snapshot 22: 0 solves, 0s (total 0.0 min)
+  W snapshot 23
+  W snapshot 23: 0 solves, 0s (total 0.0 min)
+  W snapshot 24
+  W snapshot 24: 0 solves, 0s (total 0.0 min)
+[wyndham] shard 0 finished

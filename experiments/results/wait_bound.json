@@ -1,47 +1,4 @@
 {
-  "retired_pricing_saturation": {
-    "ceiling": 180.0,
-    "note": "the retired skip cost approaches the ceiling from below and never reaches it, so a bin whose insertion cost exceeds the ceiling is skipped at every wait, however large; this is an analytic property, and the table below evaluates it to 1e6 hours",
-    "by_wait": [
-      {
-        "wait_h": 48.0,
-        "ordering_score": 0.5,
-        "retired_skip_cost": 90.0,
-        "current_skip_cost": 90.0
-      },
-      {
-        "wait_h": 96.0,
-        "ordering_score": 0.666666667,
-        "retired_skip_cost": 120.0,
-        "current_skip_cost": 180.0
-      },
-      {
-        "wait_h": 240.0,
-        "ordering_score": 0.833333333,
-        "retired_skip_cost": 150.0,
-        "current_skip_cost": 450.0
-      },
-      {
-        "wait_h": 1000.0,
-        "ordering_score": 0.954198473,
-        "retired_skip_cost": 171.755725,
-        "current_skip_cost": 1875.0
-      },
-      {
-        "wait_h": 10000.0,
-        "ordering_score": 0.99522293,
-        "retired_skip_cost": 179.140127,
-        "current_skip_cost": 18750.0
-      },
-      {
-        "wait_h": 1000000.0,
-        "ordering_score": 0.999952002,
-        "retired_skip_cost": 179.99136,
-        "current_skip_cost": 1875000.0
-      }
-    ],
-    "first_unaffordable_km": 33.0
-  },
   "protocol": {
     "cycle_h": 12.0,
     "tau_h": 48.0,
@@ -49,78 +6,349 @@
     "max_wait_searched_h": 4800.0,
     "weights": {
       "lambda_prize": 45.0,
-      "overdue_multiplier": 4.0
+      "overdue_multiplier": 4.0,
+      "distance_km": 1.0,
+      "co2_kg": 2.0,
+      "hours": 12.0
     },
-    "retired_penalty_ceiling": 180.0,
-    "note": "the container is built through effective_priorities and make_tasks so the wiring under test is the one the service uses, not a reconstruction of it"
+    "price_sweep_instance": "synthetic: depot and one container on a two-node symmetric distance matrix, constant 20 km/h, no congestion, 1100 L container half full at 220 kg per cubic metre, 4 min service, 15 min tipping, no overflow deadline, shift 1200 min",
+    "tightness_instance": "synthetic: n containers each 10 km from the depot on its own spoke, travel between containers through the depot, shift sized to fit exactly r spokes, all waits start at zero"
   },
-  "sweep": [
+  "price_sweep": [
     {
       "distance_km": 10.0,
-      "insertion_cost": 58.347,
-      "predicted_bound_h": 48.0,
-      "served_at_h": 48.0,
-      "tight": true,
-      "holds": true
+      "round_trip_cost": 58.347,
+      "cost_terms": {
+        "distance_term": 20.0,
+        "co2_term": 22.5469,
+        "time_term": 15.8,
+        "co2_kg": 11.2735,
+        "duration_min": 79.0
+      },
+      "price_threshold_h": 31.118,
+      "predicted_h": 48.0,
+      "served_at_h_price_only": 48.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
     },
     {
       "distance_km": 20.0,
-      "insertion_cost": 111.709,
-      "predicted_bound_h": 60.0,
-      "served_at_h": 60.0,
-      "tight": true,
-      "holds": true
+      "round_trip_cost": 111.709,
+      "cost_terms": {
+        "distance_term": 40.0,
+        "co2_term": 43.9095,
+        "time_term": 27.8,
+        "co2_kg": 21.9547,
+        "duration_min": 139.0
+      },
+      "price_threshold_h": 59.578,
+      "predicted_h": 60.0,
+      "served_at_h_price_only": 60.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
     },
     {
       "distance_km": 25.0,
-      "insertion_cost": 138.391,
-      "predicted_bound_h": 84.0,
-      "served_at_h": 84.0,
-      "tight": true,
-      "holds": true
+      "round_trip_cost": 138.391,
+      "cost_terms": {
+        "distance_term": 50.0,
+        "co2_term": 54.5908,
+        "time_term": 33.8,
+        "co2_kg": 27.2954,
+        "duration_min": 169.0
+      },
+      "price_threshold_h": 73.808,
+      "predicted_h": 84.0,
+      "served_at_h_price_only": 84.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
     },
     {
       "distance_km": 30.0,
-      "insertion_cost": 165.072,
-      "predicted_bound_h": 96.0,
-      "served_at_h": 96.0,
-      "tight": true,
-      "holds": true
+      "round_trip_cost": 165.072,
+      "cost_terms": {
+        "distance_term": 60.0,
+        "co2_term": 65.272,
+        "time_term": 39.8,
+        "co2_kg": 32.636,
+        "duration_min": 199.0
+      },
+      "price_threshold_h": 88.038,
+      "predicted_h": 96.0,
+      "served_at_h_price_only": 96.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
     },
     {
       "distance_km": 35.0,
-      "insertion_cost": 191.753,
-      "predicted_bound_h": 108.0,
-      "served_at_h": 108.0,
-      "tight": true,
-      "holds": true
+      "round_trip_cost": 191.753,
+      "cost_terms": {
+        "distance_term": 70.0,
+        "co2_term": 75.9533,
+        "time_term": 45.8,
+        "co2_kg": 37.9767,
+        "duration_min": 229.0
+      },
+      "price_threshold_h": 102.268,
+      "predicted_h": 108.0,
+      "served_at_h_price_only": 108.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
     },
     {
       "distance_km": 40.0,
-      "insertion_cost": 218.435,
-      "predicted_bound_h": 120.0,
-      "served_at_h": 120.0,
-      "tight": true,
-      "holds": true
+      "round_trip_cost": 218.435,
+      "cost_terms": {
+        "distance_term": 80.0,
+        "co2_term": 86.6346,
+        "time_term": 51.8,
+        "co2_kg": 43.3173,
+        "duration_min": 259.0
+      },
+      "price_threshold_h": 116.498,
+      "predicted_h": 120.0,
+      "served_at_h_price_only": 120.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
     },
     {
       "distance_km": 60.0,
-      "insertion_cost": 325.16,
-      "predicted_bound_h": 180.0,
-      "served_at_h": 180.0,
-      "tight": true,
-      "holds": true
+      "round_trip_cost": 325.16,
+      "cost_terms": {
+        "distance_term": 120.0,
+        "co2_term": 129.3597,
+        "time_term": 75.8,
+        "co2_kg": 64.6798,
+        "duration_min": 379.0
+      },
+      "price_threshold_h": 173.419,
+      "predicted_h": 180.0,
+      "served_at_h_price_only": 180.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
     },
     {
       "distance_km": 100.0,
-      "insertion_cost": 538.61,
-      "predicted_bound_h": 288.0,
-      "served_at_h": 288.0,
-      "tight": true,
+      "round_trip_cost": 538.61,
+      "cost_terms": {
+        "distance_term": 200.0,
+        "co2_term": 214.8099,
+        "time_term": 123.8,
+        "co2_kg": 107.4049,
+        "duration_min": 619.0
+      },
+      "price_threshold_h": 287.259,
+      "predicted_h": 288.0,
+      "served_at_h_price_only": 288.0,
+      "served_at_h_reserved": 48.0,
+      "price_prediction_exact": true
+    }
+  ],
+  "bounded_penalty": {
+    "ceiling": 180.0,
+    "by_wait": [
+      {
+        "wait_h": 48.0,
+        "ranking_score": 0.5,
+        "bounded_penalty": 90.0,
+        "unbounded_penalty": 90.0
+      },
+      {
+        "wait_h": 96.0,
+        "ranking_score": 0.666666667,
+        "bounded_penalty": 120.0,
+        "unbounded_penalty": 180.0
+      },
+      {
+        "wait_h": 240.0,
+        "ranking_score": 0.833333333,
+        "bounded_penalty": 150.0,
+        "unbounded_penalty": 450.0
+      },
+      {
+        "wait_h": 1000.0,
+        "ranking_score": 0.954198473,
+        "bounded_penalty": 171.755725,
+        "unbounded_penalty": 1875.0
+      },
+      {
+        "wait_h": 10000.0,
+        "ranking_score": 0.99522293,
+        "bounded_penalty": 179.140127,
+        "unbounded_penalty": 18750.0
+      },
+      {
+        "wait_h": 1000000.0,
+        "ranking_score": 0.999952002,
+        "bounded_penalty": 179.99136,
+        "unbounded_penalty": 1875000.0
+      }
+    ],
+    "first_unaffordable_km": 33.0,
+    "checked_km": 35.0,
+    "never_served_at_checked_km": true
+  },
+  "tightness": [
+    {
+      "containers": 6,
+      "reserved_per_cycle": 1,
+      "shift_min": 81.0,
+      "cycles": 20,
+      "max_backlog": 6,
+      "min_reserved": 1,
+      "all_heads_served": true,
+      "bound_h": 108.0,
+      "worst_wait_at_service_h": 108.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 6,
+      "reserved_per_cycle": 2,
+      "shift_min": 145.0,
+      "cycles": 14,
+      "max_backlog": 6,
+      "min_reserved": 2,
+      "all_heads_served": true,
+      "bound_h": 72.0,
+      "worst_wait_at_service_h": 72.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 6,
+      "reserved_per_cycle": 3,
+      "shift_min": 209.0,
+      "cycles": 12,
+      "max_backlog": 6,
+      "min_reserved": 3,
+      "all_heads_served": true,
+      "bound_h": 60.0,
+      "worst_wait_at_service_h": 60.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 6,
+      "reserved_per_cycle": 4,
+      "shift_min": 273.0,
+      "cycles": 12,
+      "max_backlog": 6,
+      "min_reserved": 2,
+      "all_heads_served": true,
+      "bound_h": 60.0,
+      "worst_wait_at_service_h": 60.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 1,
+      "shift_min": 81.0,
+      "cycles": 32,
+      "max_backlog": 12,
+      "min_reserved": 1,
+      "all_heads_served": true,
+      "bound_h": 180.0,
+      "worst_wait_at_service_h": 180.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 2,
+      "shift_min": 145.0,
+      "cycles": 20,
+      "max_backlog": 12,
+      "min_reserved": 2,
+      "all_heads_served": true,
+      "bound_h": 108.0,
+      "worst_wait_at_service_h": 108.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 3,
+      "shift_min": 209.0,
+      "cycles": 16,
+      "max_backlog": 12,
+      "min_reserved": 3,
+      "all_heads_served": true,
+      "bound_h": 84.0,
+      "worst_wait_at_service_h": 84.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 4,
+      "shift_min": 273.0,
+      "cycles": 14,
+      "max_backlog": 12,
+      "min_reserved": 4,
+      "all_heads_served": true,
+      "bound_h": 72.0,
+      "worst_wait_at_service_h": 72.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 1,
+      "shift_min": 81.0,
+      "cycles": 56,
+      "max_backlog": 24,
+      "min_reserved": 1,
+      "all_heads_served": true,
+      "bound_h": 324.0,
+      "worst_wait_at_service_h": 324.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 2,
+      "shift_min": 145.0,
+      "cycles": 32,
+      "max_backlog": 24,
+      "min_reserved": 2,
+      "all_heads_served": true,
+      "bound_h": 180.0,
+      "worst_wait_at_service_h": 180.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 3,
+      "shift_min": 209.0,
+      "cycles": 24,
+      "max_backlog": 24,
+      "min_reserved": 3,
+      "all_heads_served": true,
+      "bound_h": 132.0,
+      "worst_wait_at_service_h": 132.0,
+      "attained": true,
+      "holds": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 4,
+      "shift_min": 273.0,
+      "cycles": 20,
+      "max_backlog": 24,
+      "min_reserved": 4,
+      "all_heads_served": true,
+      "bound_h": 108.0,
+      "worst_wait_at_service_h": 108.0,
+      "attained": true,
       "holds": true
     }
   ],
-  "n_holds": 8,
-  "n_tight": 8,
-  "n_cases": 8
+  "n_price_exact": 8,
+  "n_price_cases": 8,
+  "n_tight": 12,
+  "n_tight_cases": 12,
+  "n_breaches": 0
 }

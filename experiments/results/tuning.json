@@ -1,0 +1,380 @@
+{
+  "tuning_set": "T160",
+  "snapshots": 3,
+  "matched_budget_s": [
+    233.97,
+    199.576,
+    192.247
+  ],
+  "insertion_objective": [
+    1005.8756,
+    1152.0558,
+    1151.46
+  ],
+  "selected": {
+    "ortools": {
+      "first_solution": "PARALLEL_CHEAPEST_INSERTION",
+      "metaheuristic": "GUIDED_LOCAL_SEARCH",
+      "emission_model": "mean_load"
+    },
+    "aco": {
+      "n_ants": 8,
+      "alpha": 1.0,
+      "beta": 2.5,
+      "rho": 0.1,
+      "q0": 0.25,
+      "polish_fraction": 0.3
+    },
+    "genetic": {
+      "population_size": 40,
+      "crossover_rate": 0.85,
+      "mutation_rate": 0.5,
+      "elite": 4,
+      "tournament": 3,
+      "polish_fraction": 0.3
+    }
+  },
+  "grid": {
+    "ortools": [
+      {
+        "config": {
+          "first_solution": "PARALLEL_CHEAPEST_INSERTION",
+          "metaheuristic": "GUIDED_LOCAL_SEARCH",
+          "emission_model": "mean_load"
+        },
+        "mean_objective": 861.8546333333334,
+        "objectives": [
+          749.7047,
+          927.9769,
+          907.8823
+        ]
+      },
+      {
+        "config": {
+          "first_solution": "PARALLEL_CHEAPEST_INSERTION",
+          "metaheuristic": "TABU_SEARCH",
+          "emission_model": "mean_load"
+        },
+        "mean_objective": 869.2079,
+        "objectives": [
+          749.6744,
+          934.0465,
+          923.9028
+        ]
+      },
+      {
+        "config": {
+          "first_solution": "PATH_CHEAPEST_ARC",
+          "metaheuristic": "GUIDED_LOCAL_SEARCH",
+          "emission_model": "mean_load"
+        },
+        "mean_objective": 881.0521666666667,
+        "objectives": [
+          759.0714,
+          944.6221,
+          939.463
+        ]
+      },
+      {
+        "config": {
+          "first_solution": "PATH_CHEAPEST_ARC",
+          "metaheuristic": "TABU_SEARCH",
+          "emission_model": "mean_load"
+        },
+        "mean_objective": 889.0455000000001,
+        "objectives": [
+          761.003,
+          995.6093,
+          910.5242
+        ]
+      },
+      {
+        "config": {
+          "first_solution": "PARALLEL_CHEAPEST_INSERTION",
+          "metaheuristic": "SIMULATED_ANNEALING",
+          "emission_model": "mean_load"
+        },
+        "mean_objective": 891.4097333333333,
+        "objectives": [
+          765.7829,
+          963.3756,
+          945.0707
+        ]
+      },
+      {
+        "config": {
+          "first_solution": "PATH_CHEAPEST_ARC",
+          "metaheuristic": "SIMULATED_ANNEALING",
+          "emission_model": "mean_load"
+        },
+        "mean_objective": 944.6516666666666,
+        "objectives": [
+          846.8692,
+          1035.1752,
+          951.9106
+        ]
+      }
+    ],
+    "aco": [
+      {
+        "config": {
+          "n_ants": 8,
+          "alpha": 1.0,
+          "beta": 2.5,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 937.9521666666666,
+        "objectives": [
+          812.4746,
+          1050.9435,
+          950.4384
+        ]
+      },
+      {
+        "config": {
+          "n_ants": 16,
+          "alpha": 1.0,
+          "beta": 4.0,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 944.4501,
+        "objectives": [
+          794.609,
+          1030.2798,
+          1008.4615
+        ]
+      },
+      {
+        "config": {
+          "n_ants": 8,
+          "alpha": 1.0,
+          "beta": 4.0,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 978.0862999999999,
+        "objectives": [
+          812.5998,
+          1038.2438,
+          1083.4153
+        ]
+      },
+      {
+        "config": {
+          "n_ants": 16,
+          "alpha": 1.0,
+          "beta": 2.5,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 1012.3962333333334,
+        "objectives": [
+          893.5682,
+          1083.3883,
+          1060.2322
+        ]
+      },
+      {
+        "config": {
+          "n_ants": 8,
+          "alpha": 1.0,
+          "beta": 4.0,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1330.7093,
+        "objectives": [
+          1263.4607,
+          1519.1115,
+          1209.5557
+        ]
+      },
+      {
+        "config": {
+          "n_ants": 16,
+          "alpha": 1.0,
+          "beta": 4.0,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1358.4713,
+        "objectives": [
+          1305.4966,
+          1488.0106,
+          1281.9067
+        ]
+      },
+      {
+        "config": {
+          "n_ants": 16,
+          "alpha": 1.0,
+          "beta": 2.5,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1392.1528999999998,
+        "objectives": [
+          1262.1108,
+          1573.0806,
+          1341.2673
+        ]
+      },
+      {
+        "config": {
+          "n_ants": 8,
+          "alpha": 1.0,
+          "beta": 2.5,
+          "rho": 0.1,
+          "q0": 0.25,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1403.4633666666668,
+        "objectives": [
+          1324.4077,
+          1549.765,
+          1336.2174
+        ]
+      }
+    ],
+    "genetic": [
+      {
+        "config": {
+          "population_size": 40,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.5,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 1001.5264333333333,
+        "objectives": [
+          882.4112,
+          1095.7576,
+          1026.4105
+        ]
+      },
+      {
+        "config": {
+          "population_size": 40,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.2,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 1022.3021333333332,
+        "objectives": [
+          845.4804,
+          1081.3798,
+          1140.0462
+        ]
+      },
+      {
+        "config": {
+          "population_size": 20,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.5,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 1028.0257666666666,
+        "objectives": [
+          907.2797,
+          1053.0119,
+          1123.7857
+        ]
+      },
+      {
+        "config": {
+          "population_size": 20,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.2,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.3
+        },
+        "mean_objective": 1033.6593333333333,
+        "objectives": [
+          909.8952,
+          1043.8264,
+          1147.2564
+        ]
+      },
+      {
+        "config": {
+          "population_size": 20,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.5,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1807.7279666666666,
+        "objectives": [
+          1635.2823,
+          1888.119,
+          1899.7826
+        ]
+      },
+      {
+        "config": {
+          "population_size": 40,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.5,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1878.4641,
+        "objectives": [
+          1778.5529,
+          1876.5379,
+          1980.3015
+        ]
+      },
+      {
+        "config": {
+          "population_size": 20,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.2,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1934.3533,
+        "objectives": [
+          1771.5055,
+          1949.3553,
+          2082.1991
+        ]
+      },
+      {
+        "config": {
+          "population_size": 40,
+          "crossover_rate": 0.85,
+          "mutation_rate": 0.2,
+          "elite": 4,
+          "tournament": 3,
+          "polish_fraction": 0.0
+        },
+        "mean_objective": 1945.8251,
+        "objectives": [
+          1779.854,
+          2047.3297,
+          2010.2916
+        ]
+      }
+    ]
+  },
+  "note": "each solver was run under every setting of its grid on the same tuning instances at the same matched time; the setting with the lowest mean objective is kept"
+}

@@ -1,0 +1,420 @@
+
+=== 2026-10-01 20:22:57 ['main', 'wyndham', 'rollout-moderate:0']
+main s00: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 0 --of 13
+[main] shard 0/13: 5 of 65 units
+  S0 snapshot 0
+    static_sweep        full            obj    1660.7  served 160     3.7s
+  S0 snapshot 0: 1 solves, 9s (total 0.2 min)
+  S0 snapshot 13
+    static_sweep        full            obj    2272.0  served 160     3.3s
+  S0 snapshot 13: 1 solves, 8s (total 0.3 min)
+  S1 snapshot 1
+    static_sweep        full            obj    1865.8  served 160     3.8s
+  S1 snapshot 1: 1 solves, 9s (total 0.4 min)
+  S2 snapshot 4
+    static_sweep        full            obj    1592.0  served 160     3.1s
+  S2 snapshot 4: 1 solves, 8s (total 0.6 min)
+  S3 snapshot 7
+    static_sweep        full            obj    2073.1  served 160     3.1s
+  S3 snapshot 7: 1 solves, 8s (total 0.7 min)
+[main] shard 0 finished
+main s00: rc 0
+main s01: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 1 --of 13
+[main] shard 1/13: 5 of 65 units
+  S0 snapshot 1
+    static_sweep        full            obj    1945.0  served 160     4.1s
+  S0 snapshot 1: 1 solves, 10s (total 0.2 min)
+  S0 snapshot 14
+    static_sweep        full            obj    1768.9  served 160     3.6s
+  S0 snapshot 14: 1 solves, 9s (total 0.3 min)
+  S1 snapshot 2
+    static_sweep        full            obj    1697.0  served 160     3.0s
+  S1 snapshot 2: 1 solves, 8s (total 0.4 min)
+  S2 snapshot 5
+    static_sweep        full            obj    2020.6  served 160     3.8s
+  S2 snapshot 5: 1 solves, 9s (total 0.6 min)
+  S3 snapshot 8
+    static_sweep        full            obj    1304.0  served 160     3.2s
+  S3 snapshot 8: 1 solves, 8s (total 0.7 min)
+[main] shard 1 finished
+main s01: rc 0
+main s02: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 2 --of 13
+[main] shard 2/13: 5 of 65 units
+  S0 snapshot 2
+    static_sweep        full            obj    1891.9  served 160     2.9s
+  S0 snapshot 2: 1 solves, 9s (total 0.1 min)
+  S0 snapshot 15
+    static_sweep        full            obj    2027.5  served 160     3.7s
+  S0 snapshot 15: 1 solves, 9s (total 0.3 min)
+  S1 snapshot 3
+    static_sweep        full            obj    1710.9  served 160     3.1s
+  S1 snapshot 3: 1 solves, 8s (total 0.4 min)
+  S2 snapshot 6
+    static_sweep        full            obj    2048.2  served 160     2.9s
+  S2 snapshot 6: 1 solves, 8s (total 0.6 min)
+  S3 snapshot 9
+    static_sweep        full            obj    1699.5  served 160     2.6s
+  S3 snapshot 9: 1 solves, 7s (total 0.7 min)
+[main] shard 2 finished
+main s02: rc 0
+main s03: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 3 --of 13
+[main] shard 3/13: 5 of 65 units
+  S0 snapshot 3
+    static_sweep        full            obj    1775.0  served 160     3.5s
+  S0 snapshot 3: 1 solves, 9s (total 0.2 min)
+  S0 snapshot 16
+    static_sweep        full            obj    1943.4  served 160     3.7s
+  S0 snapshot 16: 1 solves, 9s (total 0.3 min)
+  S1 snapshot 4
+    static_sweep        full            obj    1705.5  served 160     3.8s
+  S1 snapshot 4: 1 solves, 9s (total 0.4 min)
+  S2 snapshot 7
+    static_sweep        full            obj    1566.7  served 160     3.3s
+  S2 snapshot 7: 1 solves, 9s (total 0.6 min)
+  S4 snapshot 0
+    static_sweep        full            obj    2380.6  served 160     2.8s
+  S4 snapshot 0: 1 solves, 8s (total 0.7 min)
+[main] shard 3 finished
+main s03: rc 0
+main s04: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 4 --of 13
+[main] shard 4/13: 5 of 65 units
+  S0 snapshot 4
+    static_sweep        full            obj    1355.2  served 160     3.8s
+  S0 snapshot 4: 1 solves, 9s (total 0.2 min)
+  S0 snapshot 17
+    static_sweep        full            obj    1781.5  served 160     4.3s
+  S0 snapshot 17: 1 solves, 9s (total 0.3 min)
+  S1 snapshot 5
+    static_sweep        full            obj    1377.4  served 160     3.6s
+  S1 snapshot 5: 1 solves, 9s (total 0.5 min)
+  S2 snapshot 8
+    static_sweep        full            obj    1732.8  served 160     3.8s
+  S2 snapshot 8: 1 solves, 9s (total 0.6 min)
+  S4 snapshot 1
+    static_sweep        full            obj    1548.6  served 160     3.3s
+  S4 snapshot 1: 1 solves, 8s (total 0.7 min)
+[main] shard 4 finished
+main s04: rc 0
+main s05: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 5 --of 13
+[main] shard 5/13: 5 of 65 units
+  S0 snapshot 5
+    static_sweep        full            obj    2324.2  served 160     2.9s
+  S0 snapshot 5: 1 solves, 8s (total 0.1 min)
+  S0 snapshot 18
+    static_sweep        full            obj    1922.0  served 160     3.4s
+  S0 snapshot 18: 1 solves, 9s (total 0.3 min)
+  S1 snapshot 6
+    static_sweep        full            obj    1291.6  served 160     3.6s
+  S1 snapshot 6: 1 solves, 9s (total 0.4 min)
+  S2 snapshot 9
+    static_sweep        full            obj    1770.5  served 160     3.1s
+  S2 snapshot 9: 1 solves, 8s (total 0.6 min)
+  S4 snapshot 2
+    static_sweep        full            obj    1846.6  served 160     4.1s
+  S4 snapshot 2: 1 solves, 9s (total 0.7 min)
+[main] shard 5 finished
+main s05: rc 0
+main s06: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 6 --of 13
+[main] shard 6/13: 5 of 65 units
+  S0 snapshot 6
+    static_sweep        full            obj    1662.1  served 160     3.9s
+  S0 snapshot 6: 1 solves, 9s (total 0.2 min)
+  S0 snapshot 19
+    static_sweep        full            obj    1671.0  served 160     3.2s
+  S0 snapshot 19: 1 solves, 8s (total 0.3 min)
+  S1 snapshot 7
+    static_sweep        full            obj    1784.2  served 160     3.7s
+  S1 snapshot 7: 1 solves, 9s (total 0.4 min)
+  S3 snapshot 0
+    static_sweep        full            obj    1874.7  served 160     3.2s
+  S3 snapshot 0: 1 solves, 8s (total 0.6 min)
+  S4 snapshot 3
+    static_sweep        full            obj    2166.6  served 160     3.2s
+  S4 snapshot 3: 1 solves, 8s (total 0.7 min)
+[main] shard 6 finished
+main s06: rc 0
+main s07: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 7 --of 13
+[main] shard 7/13: 5 of 65 units
+  S0 snapshot 7
+    static_sweep        full            obj    1513.0  served 160     3.9s
+  S0 snapshot 7: 1 solves, 9s (total 0.2 min)
+  S0 snapshot 20
+    static_sweep        full            obj    1775.2  served 160     4.1s
+  S0 snapshot 20: 1 solves, 9s (total 0.3 min)
+  S1 snapshot 8
+    static_sweep        full            obj    1507.0  served 160     3.1s
+  S1 snapshot 8: 1 solves, 8s (total 0.4 min)
+  S3 snapshot 1
+    static_sweep        full            obj    1524.2  served 160     3.2s
+  S3 snapshot 1: 1 solves, 8s (total 0.6 min)
+  S4 snapshot 4
+    static_sweep        full            obj    1828.0  served 160     2.8s
+  S4 snapshot 4: 1 solves, 8s (total 0.7 min)
+[main] shard 7 finished
+main s07: rc 0
+main s08: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 8 --of 13
+[main] shard 8/13: 5 of 65 units
+  S0 snapshot 8
+    static_sweep        full            obj    1927.1  served 160     3.1s
+  S0 snapshot 8: 1 solves, 8s (total 0.1 min)
+  S0 snapshot 21
+    static_sweep        full            obj    1733.7  served 160     3.9s
+  S0 snapshot 21: 1 solves, 9s (total 0.3 min)
+  S1 snapshot 9
+    static_sweep        full            obj    1404.4  served 160     3.0s
+  S1 snapshot 9: 1 solves, 8s (total 0.4 min)
+  S3 snapshot 2
+    static_sweep        full            obj    1771.8  served 160     2.8s
+  S3 snapshot 2: 1 solves, 8s (total 0.5 min)
+  S4 snapshot 5
+    static_sweep        full            obj    1996.7  served 160     3.0s
+  S4 snapshot 5: 1 solves, 8s (total 0.7 min)
+[main] shard 8 finished
+main s08: rc 0
+main s09: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 9 --of 13
+[main] shard 9/13: 5 of 65 units
+  S0 snapshot 9
+    static_sweep        full            obj    1734.1  served 160     3.6s
+  S0 snapshot 9: 1 solves, 9s (total 0.1 min)
+  S0 snapshot 22
+    static_sweep        full            obj    1824.6  served 160     3.9s
+  S0 snapshot 22: 1 solves, 9s (total 0.3 min)
+  S2 snapshot 0
+    static_sweep        full            obj    1961.2  served 160     3.0s
+  S2 snapshot 0: 1 solves, 8s (total 0.4 min)
+  S3 snapshot 3
+    static_sweep        full            obj    1664.6  served 160     3.2s
+  S3 snapshot 3: 1 solves, 8s (total 0.6 min)
+  S4 snapshot 6
+    static_sweep        full            obj    1519.9  served 160     3.5s
+  S4 snapshot 6: 1 solves, 8s (total 0.7 min)
+[main] shard 9 finished
+main s09: rc 0
+main s10: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 10 --of 13
+[main] shard 10/13: 5 of 65 units
+  S0 snapshot 10
+    static_sweep        full            obj    1956.5  served 160     3.3s
+  S0 snapshot 10: 1 solves, 9s (total 0.1 min)
+  S0 snapshot 23
+    static_sweep        full            obj    2032.0  served 160     3.4s
+  S0 snapshot 23: 1 solves, 8s (total 0.3 min)
+  S2 snapshot 1
+    static_sweep        full            obj    2347.7  served 160     2.8s
+  S2 snapshot 1: 1 solves, 8s (total 0.4 min)
+  S3 snapshot 4
+    static_sweep        full            obj    2236.3  served 160     4.1s
+  S3 snapshot 4: 1 solves, 9s (total 0.6 min)
+  S4 snapshot 7
+    static_sweep        full            obj    1582.9  served 160     3.5s
+  S4 snapshot 7: 1 solves, 9s (total 0.7 min)
+[main] shard 10 finished
+main s10: rc 0
+main s11: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 11 --of 13
+[main] shard 11/13: 5 of 65 units
+  S0 snapshot 11
+    static_sweep        full            obj    1557.2  served 160     3.8s
+  S0 snapshot 11: 1 solves, 9s (total 0.1 min)
+  S0 snapshot 24
+    static_sweep        full            obj    1418.2  served 160     3.5s
+  S0 snapshot 24: 1 solves, 8s (total 0.3 min)
+  S2 snapshot 2
+    static_sweep        full            obj    1456.8  served 160     3.2s
+  S2 snapshot 2: 1 solves, 8s (total 0.4 min)
+  S3 snapshot 5
+    static_sweep        full            obj    1736.2  served 160     2.7s
+  S3 snapshot 5: 1 solves, 7s (total 0.5 min)
+  S4 snapshot 8
+    static_sweep        full            obj    2099.1  served 160     3.5s
+  S4 snapshot 8: 1 solves, 8s (total 0.7 min)
+[main] shard 11 finished
+main s11: rc 0
+main s12: dropped 5
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study main --shard 12 --of 13
+[main] shard 12/13: 5 of 65 units
+  S0 snapshot 12
+    static_sweep        full            obj    1674.3  served 160     3.5s
+  S0 snapshot 12: 1 solves, 9s (total 0.1 min)
+  S1 snapshot 0
+    static_sweep        full            obj    1572.5  served 160     2.9s
+  S1 snapshot 0: 1 solves, 8s (total 0.3 min)
+  S2 snapshot 3
+    static_sweep        full            obj    2255.7  served 160     2.9s
+  S2 snapshot 3: 1 solves, 8s (total 0.4 min)
+  S3 snapshot 6
+    static_sweep        full            obj    1363.5  served 160     2.7s
+  S3 snapshot 6: 1 solves, 8s (total 0.5 min)
+  S4 snapshot 9
+    static_sweep        full            obj    1801.1  served 160     2.8s
+  S4 snapshot 9: 1 solves, 7s (total 0.6 min)
+[main] shard 12 finished
+main s12: rc 0
+wyndham s00: dropped 25
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_compare --study wyndham --shard 0 --of 1
+[wyndham] shard 0/1: 25 of 25 units
+  W snapshot 0
+    static_sweep        full            obj     153.8  served  32     0.2s
+  W snapshot 0: 1 solves, 1s (total 0.0 min)
+  W snapshot 1
+    static_sweep        full            obj     156.7  served  32     0.2s
+  W snapshot 1: 1 solves, 0s (total 0.0 min)
+  W snapshot 2
+    static_sweep        full            obj     155.3  served  32     0.2s
+  W snapshot 2: 1 solves, 0s (total 0.0 min)
+  W snapshot 3
+    static_sweep        full            obj     155.8  served  32     0.2s
+  W snapshot 3: 1 solves, 0s (total 0.0 min)
+  W snapshot 4
+    static_sweep        full            obj     150.0  served  32     0.2s
+  W snapshot 4: 1 solves, 0s (total 0.0 min)
+  W snapshot 5
+    static_sweep        full            obj     225.0  served  32     0.2s
+  W snapshot 5: 1 solves, 0s (total 0.0 min)
+  W snapshot 6
+    static_sweep        full            obj     148.9  served  32     0.2s
+  W snapshot 6: 1 solves, 0s (total 0.0 min)
+  W snapshot 7
+    static_sweep        full            obj     151.4  served  32     0.2s
+  W snapshot 7: 1 solves, 0s (total 0.1 min)
+  W snapshot 8
+    static_sweep        full            obj     155.0  served  32     0.2s
+  W snapshot 8: 1 solves, 0s (total 0.1 min)
+  W snapshot 9
+    static_sweep        full            obj     147.5  served  32     0.2s
+  W snapshot 9: 1 solves, 0s (total 0.1 min)
+  W snapshot 10
+    static_sweep        full            obj     183.8  served  32     0.2s
+  W snapshot 10: 1 solves, 0s (total 0.1 min)
+  W snapshot 11
+    static_sweep        full            obj     226.5  served  32     0.2s
+  W snapshot 11: 1 solves, 0s (total 0.1 min)
+  W snapshot 12
+    static_sweep        full            obj     229.5  served  32     0.3s
+  W snapshot 12: 1 solves, 0s (total 0.1 min)
+  W snapshot 13
+    static_sweep        full            obj     235.9  served  32     0.2s
+  W snapshot 13: 1 solves, 0s (total 0.1 min)
+  W snapshot 14
+    static_sweep        full            obj     139.4  served  32     0.2s
+  W snapshot 14: 1 solves, 0s (total 0.1 min)
+  W snapshot 15
+    static_sweep        full            obj     157.2  served  32     0.2s
+  W snapshot 15: 1 solves, 0s (total 0.1 min)
+  W snapshot 16
+    static_sweep        full            obj     147.7  served  32     0.2s
+  W snapshot 16: 1 solves, 0s (total 0.1 min)
+  W snapshot 17
+    static_sweep        full            obj     153.5  served  32     0.2s
+  W snapshot 17: 1 solves, 0s (total 0.1 min)
+  W snapshot 18
+    static_sweep        full            obj     304.9  served  32     0.2s
+  W snapshot 18: 1 solves, 0s (total 0.1 min)
+  W snapshot 19
+    static_sweep        full            obj     185.1  served  32     0.3s
+  W snapshot 19: 1 solves, 0s (total 0.1 min)
+  W snapshot 20
+    static_sweep        full            obj     146.5  served  32     0.2s
+  W snapshot 20: 1 solves, 0s (total 0.1 min)
+  W snapshot 21
+    static_sweep        full            obj     266.5  served  32     0.2s
+  W snapshot 21: 1 solves, 0s (total 0.1 min)
+  W snapshot 22
+    static_sweep        full            obj     150.7  served  32     0.3s
+  W snapshot 22: 1 solves, 0s (total 0.1 min)
+  W snapshot 23
+    static_sweep        full            obj     151.6  served  32     0.2s
+  W snapshot 23: 1 solves, 0s (total 0.2 min)
+  W snapshot 24
+    static_sweep        full            obj     309.4  served  32     0.2s
+  W snapshot 24: 1 solves, 0s (total 0.2 min)
+[wyndham] shard 0 finished
+wyndham s00: rc 0
+rollout-moderate s00: dropped 1
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_rollout --load moderate --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 0 --of 16
+[rollout-moderate] shard 0/16: networks ['R0']
+  R0 static_sweepfull             wait mean  48.0 p95    48 max    60  never  0  overflow  4.38%  served 15.0  km  28.2  use  99%   0.0 min
+  R0: 1 chains, 0.1 min
+[rollout-moderate] shard 0 finished
+rollout-moderate s00: rc 0
+=== done 20:33:04
+
+=== 2026-10-01 20:46:56 ['rollout-moderate:1']
+rollout-moderate s01: dropped 1
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_rollout --load moderate --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 1 --of 16
+[rollout-moderate] shard 1/16: networks ['R1']
+  R1 static_sweepfull             wait mean  48.0 p95    48 max    48  never  0  overflow  3.80%  served 15.0  km  21.8  use  99%   0.0 min
+  R1: 1 chains, 0.0 min
+[rollout-moderate] shard 1 finished
+rollout-moderate s01: rc 0
+=== done 20:47:02
+
+=== 2026-10-01 20:55:32 ['rollout-moderate:3']
+rollout-moderate s03: dropped 1
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_rollout --load moderate --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 3 --of 16
+[rollout-moderate] shard 3/16: networks ['R3']
+  R3 static_sweepfull             wait mean  48.0 p95    48 max    48  never  0  overflow  3.49%  served 15.0  km  29.3  use  99%   0.0 min
+  R3: 1 chains, 0.1 min
+[rollout-moderate] shard 3 finished
+rollout-moderate s03: rc 0
+=== done 20:55:39
+
+=== 2026-10-01 21:01:39 ['rollout-moderate:4']
+rollout-moderate s04: dropped 1
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_rollout --load moderate --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 4 --of 16
+[rollout-moderate] shard 4/16: networks ['R4']
+  R4 static_sweepfull             wait mean  48.0 p95    48 max    48  never  0  overflow  4.01%  served 15.0  km  29.8  use 100%   0.0 min
+  R4: 1 chains, 0.0 min
+[rollout-moderate] shard 4 finished
+rollout-moderate s04: rc 0
+=== done 21:01:45
+
+=== 2026-10-01 21:05:45 ['rollout-moderate:2']
+rollout-moderate s02: dropped 1
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_rollout --load moderate --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 2 --of 16
+[rollout-moderate] shard 2/16: networks ['R2']
+  R2 static_sweepfull             wait mean  60.3 p95    72 max    72  never  0  overflow  7.03%  served 12.2  km  18.6  use  99%   0.0 min
+  R2: 1 chains, 0.0 min
+[rollout-moderate] shard 2 finished
+rollout-moderate s02: rc 0
+=== done 21:05:52
+
+=== 2026-10-01 21:40:52 ['rollout-moderate:5']
+rollout-moderate s05: dropped 1
+
+$ C:\Users\ahbab\AppData\Local\Programs\Python\Python313\python.exe -m experiments.exp_rollout --load moderate --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 5 --of 16
+[rollout-moderate] shard 5/16: networks ['R5']
+  R5 static_sweepfull             wait mean  36.0 p95    36 max    36  never  0  overflow  4.17%  served 19.9  km  35.2  use 100%   0.1 min
+  R5: 1 chains, 0.1 min
+[rollout-moderate] shard 5 finished
+rollout-moderate s05: rc 0
+=== done 21:41:01

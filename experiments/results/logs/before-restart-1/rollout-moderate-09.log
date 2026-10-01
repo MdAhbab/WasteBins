@@ -1,0 +1,24 @@
+
+=== 2026-10-01 21:05:19 experiments.exp_rollout --load moderate --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 9 --of 16
+[rollout-moderate] shard 9/16: networks ['R9']
+  R9 insertion   full             wait mean  23.9 p95    48 max    60  never  0  overflow  1.51%  served 30.1  km  54.7  use 100%   4.5 min
+  R9 insertion   urgency          wait mean  23.9 p95    60 max   180  never  0  overflow  0.94%  served 30.2  km  53.7  use 100%   4.4 min
+  R9 insertion   ageing           wait mean  24.8 p95    48 max    96  never  0  overflow  0.94%  served 28.9  km  54.0  use  99%   3.9 min
+  R9 insertion   tier_bounded     wait mean  24.3 p95    48 max    60  never  0  overflow  1.46%  served 29.6  km  57.6  use 100%   4.3 min
+  R9 insertion   tier_unbounded   wait mean  24.3 p95    48 max    60  never  0  overflow  1.41%  served 29.6  km  58.3  use 100%   4.5 min
+  R9 insertion   reserve_bounded  wait mean  23.7 p95    48 max    60  never  0  overflow  1.51%  served 30.3  km  54.7  use 100%   4.5 min
+  R9 insertion   full_r2          wait mean  24.5 p95    48 max    60  never  0  overflow  1.61%  served 29.4  km  54.3  use 100%   4.6 min
+  R9 insertion   full_r4          wait mean  24.0 p95    48 max    60  never  0  overflow  1.77%  served 30.0  km  55.9  use 100%   4.2 min
+  R9 insertion   full_r8          wait mean  24.0 p95    48 max    48  never  0  overflow  1.61%  served 30.0  km  54.6  use  99%   4.7 min
+  R9 insertion   full_ageing      wait mean  25.0 p95    48 max    60  never  0  overflow  1.30%  served 28.8  km  53.7  use 100%   4.1 min
+  R9 ortools     urgency          wait mean  22.3 p95    48 max   108  never  0  overflow  0.73%  served 32.1  km  53.2  use  99%   4.5 min
+  R9 ortools     tier_unbounded   wait mean  22.9 p95    48 max    72  never  0  overflow  1.20%  served 31.4  km  54.7  use  99%   4.5 min
+  R9 ortools     full             wait mean  22.4 p95    48 max    60  never  0  overflow  0.94%  served 31.9  km  52.2  use  99%   4.5 min
+  R9 ortools     full_r4          wait mean  22.9 p95    48 max    60  never  0  overflow  1.35%  served 31.2  km  54.0  use  99%   4.5 min
+  R9 aco         tier_unbounded   wait mean  30.2 p95    60 max    84  never  0  overflow  3.75%  served 23.8  km  34.2  use  99%   4.6 min
+  R9 genetic     tier_unbounded   wait mean  30.6 p95    60 max   120  never  0  overflow  3.18%  served 23.5  km  49.2  use  98%   4.6 min
+  R9 risk_graph  tier_unbounded   wait mean  68.3 p95   132 max   468  never  7  overflow  6.88%  served  8.8  km  11.5  use  99%   0.0 min
+  R9 static_sweepfull             wait mean  60.0 p95    60 max    60  never  0  overflow  8.33%  served 11.8  km  22.1  use  99%   0.0 min
+  R9 threshold   full             wait mean  59.3 p95   108 max   312  never  0  overflow  3.96%  served 12.3  km  43.8  use  97%   1.4 min
+  R9: 19 chains, 72.5 min
+[rollout-moderate] shard 9 finished

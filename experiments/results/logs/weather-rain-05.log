@@ -1,0 +1,18 @@
+
+=== 2026-10-02 00:29:44 experiments.exp_weather --scenario rain --shard 5 --of 8
+[weather-rain] shard 5/8: networks ['R5']
+  R5 rain  blind    insertion full      served 37.1>33.6  dropped  5.3  max wait  144  breach False  heads lost 9  overflow 0.50>0.92   6.6 min
+  R5 rain  blind    insertion urgency   served 38.0>35.2  dropped  4.9  max wait  192  breach None  heads lost 0  overflow 0.38>1.00   6.8 min
+  R5 rain  blind    ortools   full      served 40.9>35.8  dropped  5.5  max wait  168  breach True  heads lost 10  overflow 0.12>0.92   6.6 min
+  R5 rain  protectedinsertion full      served 39.4>32.8  dropped  4.9  max wait   72  breach False  heads lost 0  overflow 0.38>1.42   6.4 min
+  R5 rain  protectedortools   full      served 41.1>36.2  dropped  5.9  max wait   60  breach False  heads lost 0  overflow 0.38>0.75   6.4 min
+  R5 rain  current  insertion full      served 38.9>34.9  dropped  0.0  max wait   48  breach False  heads lost 0  overflow 0.38>0.08   6.2 min
+  R5 rain  current  insertion urgency   served 40.2>37.2  dropped  0.0  max wait  192  breach None  heads lost 0  overflow 0.25>0.25   6.6 min
+  R5 rain  current  ortools   full      served 41.1>37.7  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.00   6.2 min
+  R5: 8 chains, 51.9 min
+[weather-rain] shard 5 finished
+
+=== 2026-10-02 01:54:57 experiments.exp_weather --scenario rain --shard 5 --of 8
+[weather-rain] shard 5/8: networks ['R5']
+  R5: 0 chains, 0.0 min
+[weather-rain] shard 5 finished

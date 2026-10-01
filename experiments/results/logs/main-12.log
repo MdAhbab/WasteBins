@@ -1,0 +1,58 @@
+
+=== 2026-10-01 18:27:46 experiments.exp_compare --study main --shard 12 --of 13
+[main] shard 12/13: 5 of 65 units
+  S0 snapshot 12
+    ortools             full            obj     921.7  served 158   205.5s
+    aco                 full            obj     983.4  served 157   205.4s
+    genetic             full            obj    1132.3  served 149   205.4s
+    risk_graph          tier_unbounded  obj    1780.3  served 160     0.0s
+    static_sweep        full            obj    2468.1  served 156     0.0s
+    threshold           full            obj    7389.2  served  63    46.8s
+  S0 snapshot 12: 7 solves, 874s (total 14.6 min)
+  S1 snapshot 0
+    ortools             full            obj    1025.3  served 159   165.4s
+    aco                 full            obj    1116.5  served 159   165.4s
+    genetic             full            obj    1215.7  served 158   165.4s
+    risk_graph          tier_unbounded  obj    1584.5  served 160     0.0s
+    static_sweep        full            obj    2501.8  served 155     0.0s
+    threshold           full            obj    7014.7  served  69    46.9s
+  S1 snapshot 0: 7 solves, 713s (total 26.4 min)
+  S2 snapshot 3
+    ortools             full            obj     775.2  served 160   180.4s
+    aco                 full            obj     911.1  served 157   180.8s
+    genetic             full            obj     900.1  served 153   180.4s
+    risk_graph          tier_unbounded  obj    1654.3  served 160     0.0s
+    static_sweep        full            obj    2951.1  served 155     0.0s
+    threshold           full            obj    7472.6  served  68    48.6s
+  S2 snapshot 3: 7 solves, 775s (total 39.4 min)
+  S3 snapshot 6
+    ortools             full            obj     837.2  served 160   214.0s
+    aco                 full            obj     912.8  served 160   214.0s
+    genetic             full            obj    1028.5  served 152   214.0s
+    risk_graph          tier_unbounded  obj    1652.6  served 160     0.0s
+    static_sweep        full            obj    2643.3  served 156     0.0s
+    threshold           full            obj    8176.4  served  51    29.8s
+  S3 snapshot 6: 7 solves, 891s (total 54.2 min)
+  S4 snapshot 9
+    ortools             full            obj     926.6  served 160   198.2s
+    aco                 full            obj    1045.4  served 157   198.2s
+    genetic             full            obj    1130.9  served 150   198.2s
+    risk_graph          tier_unbounded  obj    1756.9  served 160     0.0s
+    static_sweep        full            obj    2023.0  served 158     0.0s
+    threshold           full            obj    8040.6  served  61    43.3s
+  S4 snapshot 9: 7 solves, 841s (total 68.2 min)
+[main] shard 12 finished
+
+=== 2026-10-02 01:54:43 experiments.exp_compare --study main --shard 12 --of 13
+[main] shard 12/13: 5 of 65 units
+  S0 snapshot 12
+  S0 snapshot 12: 0 solves, 0s (total 0.0 min)
+  S1 snapshot 0
+  S1 snapshot 0: 0 solves, 0s (total 0.0 min)
+  S2 snapshot 3
+  S2 snapshot 3: 0 solves, 0s (total 0.0 min)
+  S3 snapshot 6
+  S3 snapshot 6: 0 solves, 0s (total 0.0 min)
+  S4 snapshot 9
+  S4 snapshot 9: 0 solves, 0s (total 0.0 min)
+[main] shard 12 finished
