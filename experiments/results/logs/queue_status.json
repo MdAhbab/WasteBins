@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 16:25:31",
- "hours_running": 17.41,
+ "updated": "2026-10-02 16:29:35",
+ "hours_running": 17.47,
  "workers": 3,
  "counts": {
-  "done": 112,
+  "done": 114,
   "running": 3,
-  "pending": 19
+  "pending": 17
  },
  "jobs": [
   {
@@ -906,19 +906,19 @@
   },
   {
    "name": "weights-overflowx2-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "15:39:32",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "16:26:12",
+   "minutes": 46.7
   },
   {
    "name": "weights-overflowx2-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "15:44:40",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "16:29:35",
+   "minutes": 44.9
   },
   {
    "name": "weights-lambdax0.5-00",
@@ -930,17 +930,17 @@
   },
   {
    "name": "weights-lambdax0.5-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "16:26:12",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "weights-lambdax2-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "16:29:35",
    "ended": "",
    "minutes": 0.0
   },
