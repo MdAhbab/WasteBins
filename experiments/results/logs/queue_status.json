@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 18:39:47",
- "hours_running": 19.64,
+ "updated": "2026-10-02 18:46:43",
+ "hours_running": 19.76,
  "workers": 3,
  "counts": {
-  "done": 123,
+  "done": 125,
   "running": 3,
-  "pending": 8
+  "pending": 6
  },
  "jobs": [
   {
@@ -1002,33 +1002,33 @@
   },
   {
    "name": "depot-werribee-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "18:39:40",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "18:46:20",
+   "minutes": 6.7
   },
   {
    "name": "depot-werribee-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "18:39:47",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "18:46:43",
+   "minutes": 6.9
   },
   {
    "name": "depot-point_cook-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "18:46:20",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "depot-point_cook-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "18:46:43",
    "ended": "",
    "minutes": 0.0
   },

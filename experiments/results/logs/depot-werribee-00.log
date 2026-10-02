@@ -2,3 +2,23 @@
 === 2026-10-02 18:39:40 experiments.exp_compare --study depot-werribee --shard 0 --of 2
 [depot-werribee] shard 0/2: 5 of 10 units
   W snapshot 0
+    ortools             full            obj     136.2  served  30    30.0s
+    aco                 full            obj     142.7  served  29    25.2s
+  W snapshot 0: 3 solves, 86s (total 1.4 min)
+  W snapshot 2
+    ortools             full            obj     136.7  served  31    26.2s
+    aco                 full            obj     142.6  served  31    22.4s
+  W snapshot 2: 3 solves, 75s (total 2.7 min)
+  W snapshot 4
+    ortools             full            obj     137.9  served  31    28.0s
+    aco                 full            obj     137.9  served  31    23.3s
+  W snapshot 4: 3 solves, 79s (total 4.0 min)
+  W snapshot 6
+    ortools             full            obj     128.7  served  31    29.3s
+    aco                 full            obj     130.9  served  30    23.1s
+  W snapshot 6: 3 solves, 82s (total 5.4 min)
+  W snapshot 8
+    ortools             full            obj     130.2  served  32    26.2s
+    aco                 full            obj     130.5  served  32    23.7s
+  W snapshot 8: 3 solves, 76s (total 6.6 min)
+[depot-werribee] shard 0 finished
