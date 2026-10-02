@@ -1,0 +1,5 @@
+
+=== 2026-10-02 13:57:37 experiments.exp_compare --study weights-co2x3 --shard 1 --of 2
+[weights-co2x3] shard 1/2: 4 of 8 units
+  S0 snapshot 1
+    ortools             full            obj    1887.0  served 159   227.5s
