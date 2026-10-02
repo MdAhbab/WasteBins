@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 01:10:15",
- "hours_running": 2.15,
+ "updated": "2026-10-02 02:31:07",
+ "hours_running": 3.5,
  "workers": 3,
  "counts": {
-  "done": 55,
+  "done": 59,
   "running": 3,
-  "pending": 76
+  "pending": 72
  },
  "jobs": [
   {
@@ -450,57 +450,57 @@
   },
   {
    "name": "weather-onset-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "00:34:46",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "01:32:04",
+   "minutes": 57.3
   },
   {
    "name": "weather-onset-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "00:47:12",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "01:53:07",
+   "minutes": 65.9
   },
   {
    "name": "weather-onset-02",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "01:10:15",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "02:16:27",
+   "minutes": 66.2
   },
   {
    "name": "weather-onset-03",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "01:32:04",
+   "ended": "02:31:07",
+   "minutes": 59.1
   },
   {
    "name": "weather-onset-04",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "01:53:07",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "weather-onset-05",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "02:16:27",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "weather-onset-06",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "02:31:07",
    "ended": "",
    "minutes": 0.0
   },

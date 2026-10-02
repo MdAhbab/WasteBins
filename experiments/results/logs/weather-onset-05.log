@@ -1,0 +1,6 @@
+
+=== 2026-10-02 02:16:27 experiments.exp_weather --scenario onset --shard 5 --of 8
+[weather-onset] shard 5/8: networks ['R5']
+  R5 onset blind    insertion full      served 38.4>36.2  dropped  2.8  max wait   60  breach False  heads lost 2  overflow 0.38>0.50   6.7 min
+  R5 onset blind    insertion urgency   served 40.2>38.0  dropped  1.2  max wait  192  breach None  heads lost 0  overflow 0.25>0.33   6.7 min
+  R5 onset blind    ortools   full      served 41.5>39.2  dropped  2.8  max wait   60  breach False  heads lost 2  overflow 0.25>0.25   6.7 min
