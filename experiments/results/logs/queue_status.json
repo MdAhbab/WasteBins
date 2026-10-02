@@ -1,11 +1,10 @@
 {
- "updated": "2026-10-02 18:56:45",
- "hours_running": 19.93,
+ "updated": "2026-10-02 19:03:57",
+ "hours_running": 20.05,
  "workers": 3,
  "counts": {
-  "done": 129,
-  "running": 3,
-  "pending": 2
+  "done": 131,
+  "running": 3
  },
  "jobs": [
   {
@@ -1050,33 +1049,33 @@
   },
   {
    "name": "budget-0.25-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "18:56:17",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "19:03:43",
+   "minutes": 7.4
   },
   {
    "name": "budget-0.25-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "18:56:45",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "19:03:57",
+   "minutes": 7.2
   },
   {
    "name": "budget-2-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "19:03:43",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "budget-2-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "19:03:57",
    "ended": "",
    "minutes": 0.0
   }
