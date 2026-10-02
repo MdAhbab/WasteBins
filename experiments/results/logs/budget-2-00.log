@@ -12,3 +12,12 @@
   S0 snapshot 0: 3 solves, 1195s (total 19.9 min)
   S0 snapshot 2
     ortools             full            obj     911.0  served 158   378.3s
+    aco                 full            obj     976.7  served 156   378.3s
+    genetic             full            obj    1080.7  served 155   378.6s
+  S0 snapshot 2: 3 solves, 1143s (total 39.0 min)
+  S0 snapshot 4
+    ortools             full            obj     996.0  served 158   362.7s
+    aco                 full            obj    1058.0  served 157   362.7s
+    genetic             full            obj    1121.3  served 157   362.7s
+  S0 snapshot 4: 3 solves, 1096s (total 57.2 min)
+[budget-2] shard 0 finished

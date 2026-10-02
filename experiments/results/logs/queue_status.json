@@ -1,10 +1,9 @@
 {
- "updated": "2026-10-02 19:41:10",
- "hours_running": 0.54,
+ "updated": "2026-10-02 20:07:40",
+ "hours_running": 0.98,
  "workers": 3,
  "counts": {
-  "done": 132,
-  "running": 2
+  "done": 134
  },
  "jobs": [
   {
@@ -1065,19 +1064,19 @@
   },
   {
    "name": "budget-2-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "19:10:20",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "20:07:35",
+   "minutes": 57.3
   },
   {
    "name": "budget-2-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "19:10:20",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "20:05:37",
+   "minutes": 55.3
   }
  ]
 }
