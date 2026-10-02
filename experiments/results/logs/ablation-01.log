@@ -13,3 +13,12 @@
   S0 snapshot 1: 8 solves, 1879s (total 31.3 min)
   S0 snapshot 6
     insertion           urgency         obj    2326.1  served 138   335.7s
+    insertion           ageing          obj    1451.0  served 140   274.6s
+    insertion           tier_bounded    obj    1080.6  served 148   217.3s
+    insertion           tier_unbounded  obj    1047.4  served 148   203.1s
+    insertion           reserve_bounded obj    1032.7  served 155   195.1s
+    insertion           full_ageing     obj    1117.9  served 146   212.3s
+    insertion_cheapest  full            obj    1116.5  served 142   208.9s
+    insertion_construct full            obj    1093.0  served 155   162.8s
+  S0 snapshot 6: 8 solves, 1818s (total 61.6 min)
+[ablation] shard 1 finished

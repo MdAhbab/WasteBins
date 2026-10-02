@@ -15,3 +15,10 @@
     insertion           urgency         obj    1550.0  served 157   194.5s
     insertion           ageing          obj    1949.1  served 152   228.0s
     insertion           tier_bounded    obj    1387.8  served 158   170.5s
+    insertion           tier_unbounded  obj    1361.1  served 158   178.1s
+    insertion           reserve_bounded obj    1368.3  served 156   172.9s
+    insertion           full_ageing     obj    1456.5  served 146   202.8s
+    insertion_cheapest  full            obj    1416.0  served 157   195.7s
+    insertion_construct full            obj    1407.2  served 156   138.6s
+  S0 snapshot 5: 8 solves, 1490s (total 57.7 min)
+[ablation] shard 0 finished

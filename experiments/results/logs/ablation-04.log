@@ -1,0 +1,24 @@
+
+=== 2026-10-02 10:25:01 experiments.exp_compare --study ablation --shard 4 --of 5
+[ablation] shard 4/5: 2 of 10 units
+  S0 snapshot 4
+    insertion           urgency         obj    1932.8  served 146   294.6s
+    insertion           ageing          obj    1417.7  served 149   246.1s
+    insertion           tier_bounded    obj    1302.4  served 158   207.8s
+    insertion           tier_unbounded  obj    1302.4  served 158   204.8s
+    insertion           reserve_bounded obj    1330.4  served 152   199.3s
+    insertion           full_ageing     obj    1279.9  served 153   181.7s
+    insertion_cheapest  full            obj    1298.4  served 153   212.7s
+    insertion_construct full            obj    1507.2  served 152   171.7s
+  S0 snapshot 4: 8 solves, 1726s (total 28.8 min)
+  S0 snapshot 9
+    insertion           urgency         obj    1985.3  served 147   333.0s
+    insertion           ageing          obj    1212.8  served 152   266.0s
+    insertion           tier_bounded    obj    1283.2  served 151   213.1s
+    insertion           tier_unbounded  obj    1283.2  served 151   210.1s
+    insertion           reserve_bounded obj    1290.5  served 154   223.0s
+    insertion           full_ageing     obj    1298.9  served 150   234.5s
+    insertion_cheapest  full            obj    1250.0  served 150   223.2s
+    insertion_construct full            obj    1400.7  served 154   181.5s
+  S0 snapshot 9: 8 solves, 1893s (total 60.3 min)
+[ablation] shard 4 finished

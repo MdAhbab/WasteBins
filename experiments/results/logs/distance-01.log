@@ -1,0 +1,4 @@
+
+=== 2026-10-02 11:13:37 experiments.exp_distance_model --snapshots 15 --shard 1 --of 5
+  S0  1 insertion  reported   184.6 km  driven   240.3 km  (+23.2 percent)  over shift 2 of 3, worst 52 min
+  S0  1 ortools    reported   104.2 km  driven   153.0 km  (+31.9 percent)  over shift 0 of 3, worst 0 min

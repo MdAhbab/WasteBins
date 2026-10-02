@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 09:48:03",
- "hours_running": 10.78,
+ "updated": "2026-10-02 11:25:22",
+ "hours_running": 12.4,
  "workers": 3,
  "counts": {
-  "done": 87,
+  "done": 92,
   "running": 3,
-  "pending": 44
+  "pending": 39
  },
  "jobs": [
   {
@@ -706,65 +706,65 @@
   },
   {
    "name": "ablation-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "09:19:23",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "10:17:05",
+   "minutes": 57.7
   },
   {
    "name": "ablation-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "09:23:23",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "10:25:01",
+   "minutes": 61.6
   },
   {
    "name": "ablation-02",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "09:48:03",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "10:47:41",
+   "minutes": 59.6
   },
   {
    "name": "ablation-03",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "10:17:05",
+   "ended": "11:13:37",
+   "minutes": 56.5
   },
   {
    "name": "ablation-04",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "10:25:01",
+   "ended": "11:25:22",
+   "minutes": 60.3
   },
   {
    "name": "distance-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "10:47:41",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "distance-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "11:13:37",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "distance-02",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "11:25:22",
    "ended": "",
    "minutes": 0.0
   },
