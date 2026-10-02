@@ -1,0 +1,16 @@
+
+=== 2026-10-02 14:09:48 experiments.exp_compare --study weights-timex0.5 --shard 1 --of 2
+[weights-timex0.5] shard 1/2: 4 of 8 units
+  S0 snapshot 1
+    ortools             full            obj    1030.6  served 160   217.4s
+    aco                 full            obj    1073.8  served 159   217.3s
+  S0 snapshot 1: 3 solves, 662s (total 11.0 min)
+  S0 snapshot 3
+    ortools             full            obj     754.4  served 159   201.0s
+    aco                 full            obj     885.9  served 155   203.1s
+  S0 snapshot 3: 3 solves, 614s (total 21.3 min)
+  S0 snapshot 5
+    ortools             full            obj    1041.0  served 160   193.2s
+    aco                 full            obj    1153.9  served 157   193.2s
+  S0 snapshot 5: 3 solves, 589s (total 31.1 min)
+  S0 snapshot 7

@@ -1,0 +1,4 @@
+
+=== 2026-10-02 14:45:55 experiments.exp_compare --study weights-timex2 --shard 0 --of 2
+[weights-timex2] shard 0/2: 4 of 8 units
+  S0 snapshot 0
