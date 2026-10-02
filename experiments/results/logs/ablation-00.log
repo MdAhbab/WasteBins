@@ -8,3 +8,10 @@
     insertion           tier_unbounded  obj    1055.5  served 155   238.1s
     insertion           reserve_bounded obj    1082.7  served 153   236.6s
     insertion           full_ageing     obj    1150.4  served 152   218.8s
+    insertion_cheapest  full            obj    1212.9  served 141   222.1s
+    insertion_construct full            obj    1210.9  served 153   194.8s
+  S0 snapshot 0: 8 solves, 1970s (total 32.8 min)
+  S0 snapshot 5
+    insertion           urgency         obj    1550.0  served 157   194.5s
+    insertion           ageing          obj    1949.1  served 152   228.0s
+    insertion           tier_bounded    obj    1387.8  served 158   170.5s
