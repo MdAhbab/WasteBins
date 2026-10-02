@@ -3,3 +3,7 @@
 [depot-18] shard 1/2: 4 of 8 units
   S0 snapshot 1
     ortools             full            obj    1192.1  served 160   177.2s
+    aco                 full            obj    1340.0  served 158   177.1s
+  S0 snapshot 1: 3 solves, 539s (total 9.0 min)
+  S0 snapshot 3
+    ortools             full            obj     919.3  served 158   156.2s

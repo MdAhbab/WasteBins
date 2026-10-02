@@ -2,3 +2,23 @@
 === 2026-10-02 18:46:20 experiments.exp_compare --study depot-point_cook --shard 0 --of 2
 [depot-point_cook] shard 0/2: 5 of 10 units
   W snapshot 0
+    ortools             full            obj     134.4  served  29    26.4s
+    aco                 full            obj     134.4  served  29    21.9s
+  W snapshot 0: 3 solves, 75s (total 1.3 min)
+  W snapshot 2
+    ortools             full            obj     134.2  served  31    28.9s
+    aco                 full            obj     135.0  served  31    24.0s
+  W snapshot 2: 3 solves, 82s (total 2.6 min)
+  W snapshot 4
+    ortools             full            obj     134.7  served  32    27.9s
+    aco                 full            obj     134.6  served  32    23.6s
+  W snapshot 4: 3 solves, 80s (total 3.9 min)
+  W snapshot 6
+    ortools             full            obj     129.9  served  30    30.2s
+    aco                 full            obj     129.9  served  30    25.2s
+  W snapshot 6: 3 solves, 86s (total 5.4 min)
+  W snapshot 8
+    ortools             full            obj     135.9  served  32    28.4s
+    aco                 full            obj     136.2  served  32    23.6s
+  W snapshot 8: 3 solves, 81s (total 6.7 min)
+[depot-point_cook] shard 0 finished

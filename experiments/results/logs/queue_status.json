@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 18:46:43",
- "hours_running": 19.76,
+ "updated": "2026-10-02 18:53:39",
+ "hours_running": 19.87,
  "workers": 3,
  "counts": {
-  "done": 125,
+  "done": 127,
   "running": 3,
-  "pending": 6
+  "pending": 4
  },
  "jobs": [
   {
@@ -1018,33 +1018,33 @@
   },
   {
    "name": "depot-point_cook-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "18:46:20",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "18:53:05",
+   "minutes": 6.7
   },
   {
    "name": "depot-point_cook-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "18:46:43",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "18:53:39",
+   "minutes": 6.9
   },
   {
    "name": "budget-0.1-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "18:53:05",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "budget-0.1-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "18:53:39",
    "ended": "",
    "minutes": 0.0
   },

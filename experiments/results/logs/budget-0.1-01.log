@@ -1,0 +1,5 @@
+
+=== 2026-10-02 18:53:39 experiments.exp_compare --study budget-0.1 --shard 1 --of 2
+[budget-0.1] shard 1/2: 3 of 6 units
+  S0 snapshot 1
+    ortools             full            obj    1113.6  served 160    19.3s
