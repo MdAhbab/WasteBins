@@ -14,3 +14,7 @@
     aco                 full            obj     980.5  served 157   209.2s
   S0 snapshot 4: 3 solves, 638s (total 37.9 min)
   S0 snapshot 6
+    ortools             full            obj     644.9  served 159   223.7s
+    aco                 full            obj     759.5  served 157   223.7s
+  S0 snapshot 6: 3 solves, 680s (total 49.2 min)
+[weights-timex0.5] shard 0 finished
