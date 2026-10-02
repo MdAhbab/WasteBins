@@ -6,3 +6,11 @@
     aco                 full            obj     530.3  served 158   256.2s
   S0 snapshot 0: 3 solves, 774s (total 12.9 min)
   S0 snapshot 2
+    ortools             full            obj     566.2  served 160   245.6s
+    aco                 full            obj     666.2  served 157   245.6s
+  S0 snapshot 2: 3 solves, 746s (total 25.3 min)
+  S0 snapshot 4
+    ortools             full            obj     637.2  served 160   217.2s
+    aco                 full            obj     701.1  served 158   223.6s
+  S0 snapshot 4: 3 solves, 667s (total 36.4 min)
+  S0 snapshot 6
