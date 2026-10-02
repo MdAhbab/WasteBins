@@ -2,3 +2,19 @@
 === 2026-10-02 17:56:13 experiments.exp_compare --study depot-9 --shard 0 --of 2
 [depot-9] shard 0/2: 4 of 8 units
   S0 snapshot 0
+    ortools             full            obj     823.7  served 159   264.5s
+    aco                 full            obj     973.9  served 151   264.4s
+  S0 snapshot 0: 3 solves, 803s (total 13.4 min)
+  S0 snapshot 2
+    ortools             full            obj     926.9  served 157   211.5s
+    aco                 full            obj    1018.8  served 153   211.5s
+  S0 snapshot 2: 3 solves, 643s (total 24.1 min)
+  S0 snapshot 4
+    ortools             full            obj     988.0  served 158   170.8s
+    aco                 full            obj    1106.8  served 157   170.9s
+  S0 snapshot 4: 3 solves, 520s (total 32.8 min)
+  S0 snapshot 6
+    ortools             full            obj     750.6  served 158   213.0s
+    aco                 full            obj     850.9  served 156   213.0s
+  S0 snapshot 6: 3 solves, 646s (total 43.5 min)
+[depot-9] shard 0 finished
