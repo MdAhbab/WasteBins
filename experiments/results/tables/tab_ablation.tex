@@ -1,0 +1,23 @@
+\begin{table}[!t]
+\caption{Rule variants under the insertion planner.}
+\label{tab:ablation}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Planner & Objective & vs.\ insertion (\%) & $\delta$ & $p$ & km & Served & Overflow & Hazard (h) & Time (s) \\
+\midrule
+Insertion, urgency & 1{,}910.5 $\pm$ 265.0 & +57.8 [+42.6, +76.1] & 1.00 & 0.016 & 145.4 & 146.4 & 3.1 & 2.48 & 274 \\
+Insertion, ageing & 1{,}511.6 $\pm$ 305.1 & +24.9 [+10.7, +39.4] & 0.74 & 0.117 & 165.0 & 146.7 & 3.1 & 2.42 & 264 \\
+Insertion, tier, bounded & 1{,}233.7 $\pm$ 135.5 & +1.9 [\ensuremath{-}0.2, +4.1] & 0.14 & 0.320 & 213.8 & 154.2 & 3.1 & 2.30 & 209 \\
+Insertion, tier, unbounded & 1{,}229.2 $\pm$ 137.4 & +1.6 [\ensuremath{-}0.3, +3.5] & 0.12 & 0.320 & 211.9 & 154.2 & 3.1 & 2.29 & 209 \\
+Insertion, reservation, bounded & 1{,}217.7 $\pm$ 135.8 & +0.6 [+0.2, +1.1] & 0.08 & 0.117 & 208.1 & 154.3 & 3.1 & 2.46 & 212 \\
+Insertion, full, $r = 1$ & 1{,}210.4 $\pm$ 139.5 & reference &  &  & 205.5 & 154.3 & 3.1 & 2.44 & 185 \\
+Insertion, full with ageing & 1{,}265.0 $\pm$ 130.7 & +4.5 [+1.7, +7.2] & 0.20 & 0.117 & 203.6 & 149.9 & 3.1 & 2.44 & 208 \\
+Insertion, cheapest, full, $r = 1$ & 1{,}286.1 $\pm$ 124.6 & +6.3 [+2.2, +10.4] & 0.20 & 0.117 & 203.0 & 146.7 & 3.1 & 2.36 & 212 \\
+Insertion, construction only, full, $r = 1$ & 1{,}311.6 $\pm$ 139.0 & +8.4 [+6.3, +10.6] & 0.48 & 0.016 & 239.8 & 154.3 & 3.1 & 2.30 & 177 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Ten snapshots of the primary sample. Means $\pm$ standard deviation over snapshots. The relative difference is the ratio of means with a 95 percent percentile bootstrap interval; $\delta$ is Cliff's delta and $p$ the Holm-adjusted Wilcoxon signed-rank $p$-value against the insertion planner. Overflow counts containers reached after their predicted overflow plus unserved containers predicted to overflow within 24~h.
+\end{table}

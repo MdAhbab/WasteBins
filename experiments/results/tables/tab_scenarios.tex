@@ -1,0 +1,24 @@
+\begin{table}[!t]
+\caption{Weather scenario factors during the spell.}
+\label{tab:scenarios}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.24\textwidth}lrrrrr}
+\toprule
+Scenario and cycle & Rain & Speed & Speed limit & Service time & Gas & Litter-bin \\
+ & class & factor & (km\,h$^{-1}$) & factor & factor & fill rate \\
+\midrule
+Rain, day shift & heavy & 0.88 / 0.88 & none & 1.12 / 1.12 & 0.99 & 0.94 \\
+Rain, night shift & heavy & 0.88 / 0.88 & none & 1.12 / 1.12 & 0.99 & 0.94 \\
+Storm, day shift & heavy & 0.88 / 0.88 & none & 1.12 / 1.12 & 0.99 & 0.94 \\
+Storm, night shift & heavy & 0.88 / 0.88 & none & 1.12 / 1.12 & 0.99 & 0.94 \\
+Storm, peak day shift & violent & 0.82 / 0.82 & 24.3 & 1.12 / 1.12 & 0.99 & 0.94 \\
+Heat, day shift & dry & 1.00 / 1.00 & none & 1.15 / 1.48 & 1.14 & 1.11 \\
+Heat, night shift & dry & 1.00 / 1.00 & none & 1.15 / 1.17 & 2.54 & 1.11 \\
+Onset, day shift & dry, then heavy & 1.00 / 0.91 & none & 1.09 / 1.13 & 0.99 & 0.94 \\
+Onset, night shift & dry & 1.00 / 1.00 & none & 1.00 / 1.00 & 1.00 & 1.00 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Factors at dispatch and as a mean over the shift, relative to 28\,$^\circ$C, 60 percent humidity and dry streets.
+\end{table}

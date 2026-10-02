@@ -1,0 +1,19 @@
+\begin{table}[!t]
+\caption{Emission model at stated settings.}
+\label{tab:emissions}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.25\textwidth}>{\raggedright\arraybackslash}p{0.23\textwidth}rrrrrrr}
+\toprule
+Leg & Settings & km\,h$^{-1}$ & kg\,km$^{-1}$ & L per 100 km & Cruise & Stop-go & Idle & Lift \\
+ & & & CO$_2$ & & \% & \% & \% & \% \\
+\midrule
+Transfer leg, empty, no congestion & 5.0 km, 0 kg, $x = 0.0$ & 34.0 & 0.57 & 21.6 & 55 & 43 & 2 & 0 \\
+Transfer leg, full, no congestion & 5.0 km, 6{,}000 kg, $x = 0.0$ & 34.0 & 0.82 & 30.8 & 53 & 45 & 1 & 0 \\
+Collection leg, half load, light congestion & 0.5 km, 3{,}000 kg, $x = 0.2$, 4 min stop & 33.7 & 2.12 & 79.7 & 18 & 25 & 44 & 13 \\
+Collection leg, half load, heavy congestion & 0.5 km, 3{,}000 kg, $x = 0.8$, 4 min stop & 16.2 & 2.91 & 109.6 & 12 & 42 & 37 & 9 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Shares are of the fuel used on the leg. A stop is one lift of 150~kg.
+\end{table}

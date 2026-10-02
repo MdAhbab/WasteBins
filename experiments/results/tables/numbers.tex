@@ -1,0 +1,1362 @@
+%% Written by experiments/make_tables.py. Do not edit by hand.
+%% Each macro is one number quoted in the text.
+\newcommand{\abInsAgeDelta}{0.74}
+\newcommand{\abInsAgeKm}{165.0}
+\newcommand{\abInsAgeLower}{2}
+\newcommand{\abInsAgeObj}{1{,}511.6}
+\newcommand{\abInsAgeP}{p = 0.117}
+\newcommand{\abInsAgeRel}{24.9}
+\newcommand{\abInsAgeRelHi}{39.4}
+\newcommand{\abInsAgeRelLo}{10.7}
+\newcommand{\abInsAgeServed}{146.7}
+\newcommand{\abInsCheapFullDelta}{0.20}
+\newcommand{\abInsCheapFullKm}{203.0}
+\newcommand{\abInsCheapFullLower}{3}
+\newcommand{\abInsCheapFullObj}{1{,}286.1}
+\newcommand{\abInsCheapFullP}{p = 0.117}
+\newcommand{\abInsCheapFullRel}{6.3}
+\newcommand{\abInsCheapFullRelHi}{10.4}
+\newcommand{\abInsCheapFullRelLo}{2.2}
+\newcommand{\abInsCheapFullServed}{146.7}
+\newcommand{\abInsConsFullDelta}{0.48}
+\newcommand{\abInsConsFullKm}{239.8}
+\newcommand{\abInsConsFullLower}{0}
+\newcommand{\abInsConsFullObj}{1{,}311.6}
+\newcommand{\abInsConsFullP}{p = 0.016}
+\newcommand{\abInsConsFullRel}{8.4}
+\newcommand{\abInsConsFullRelHi}{10.6}
+\newcommand{\abInsConsFullRelLo}{6.3}
+\newcommand{\abInsConsFullServed}{154.3}
+\newcommand{\abInsFullAgeDelta}{0.20}
+\newcommand{\abInsFullAgeKm}{203.6}
+\newcommand{\abInsFullAgeLower}{2}
+\newcommand{\abInsFullAgeObj}{1{,}265.0}
+\newcommand{\abInsFullAgeP}{p = 0.117}
+\newcommand{\abInsFullAgeRel}{4.5}
+\newcommand{\abInsFullAgeRelHi}{7.2}
+\newcommand{\abInsFullAgeRelLo}{1.7}
+\newcommand{\abInsFullAgeServed}{149.9}
+\newcommand{\abInsFullKm}{205.5}
+\newcommand{\abInsFullObj}{1{,}210.4}
+\newcommand{\abInsFullServed}{154.3}
+\newcommand{\abInsResBDelta}{0.08}
+\newcommand{\abInsResBKm}{208.1}
+\newcommand{\abInsResBLower}{0}
+\newcommand{\abInsResBObj}{1{,}217.7}
+\newcommand{\abInsResBP}{p = 0.117}
+\newcommand{\abInsResBRel}{0.6}
+\newcommand{\abInsResBRelHi}{1.1}
+\newcommand{\abInsResBRelLo}{0.2}
+\newcommand{\abInsResBServed}{154.3}
+\newcommand{\abInsTierBDelta}{0.14}
+\newcommand{\abInsTierBKm}{213.8}
+\newcommand{\abInsTierBLower}{3}
+\newcommand{\abInsTierBObj}{1{,}233.7}
+\newcommand{\abInsTierBP}{p = 0.320}
+\newcommand{\abInsTierBRel}{1.9}
+\newcommand{\abInsTierBRelHi}{4.1}
+\newcommand{\abInsTierBRelLo}{\ensuremath{-}0.2}
+\newcommand{\abInsTierBServed}{154.2}
+\newcommand{\abInsTierUDelta}{0.12}
+\newcommand{\abInsTierUKm}{211.9}
+\newcommand{\abInsTierULower}{4}
+\newcommand{\abInsTierUObj}{1{,}229.2}
+\newcommand{\abInsTierUP}{p = 0.320}
+\newcommand{\abInsTierURel}{1.6}
+\newcommand{\abInsTierURelHi}{3.5}
+\newcommand{\abInsTierURelLo}{\ensuremath{-}0.3}
+\newcommand{\abInsTierUServed}{154.2}
+\newcommand{\abInsUrgDelta}{1.00}
+\newcommand{\abInsUrgKm}{145.4}
+\newcommand{\abInsUrgLower}{0}
+\newcommand{\abInsUrgObj}{1{,}910.5}
+\newcommand{\abInsUrgP}{p = 0.016}
+\newcommand{\abInsUrgRel}{57.8}
+\newcommand{\abInsUrgRelHi}{76.1}
+\newcommand{\abInsUrgRelLo}{42.6}
+\newcommand{\abInsUrgServed}{146.4}
+\newcommand{\abUnits}{10}
+\newcommand{\boundBreaches}{0}
+\newcommand{\boundChains}{216}
+\newcommand{\distAcoOver}{3}
+\newcommand{\distAcoRoutes}{45}
+\newcommand{\distAcoUnder}{29.5}
+\newcommand{\distAcoVsStreet}{12.9}
+\newcommand{\distAcoVsStreetP}{p < 0.001}
+\newcommand{\distInsOver}{18}
+\newcommand{\distInsRoutes}{45}
+\newcommand{\distInsUnder}{22.3}
+\newcommand{\distInsVsStreet}{9.4}
+\newcommand{\distInsVsStreetP}{p = 0.003}
+\newcommand{\distOrtOver}{0}
+\newcommand{\distOrtRoutes}{45}
+\newcommand{\distOrtUnder}{33.3}
+\newcommand{\distOrtVsStreet}{19.4}
+\newcommand{\distOrtVsStreetP}{p < 0.001}
+\newcommand{\emisLegMax}{1.93}
+\newcommand{\emisLegMin}{0.60}
+\newcommand{\emisLegRatio}{3.2}
+\newcommand{\emisMeasured}{1.42}
+\newcommand{\emisMeasuredFuel}{53.5}
+\newcommand{\emisMeasuredSpeed}{25.7}
+\newcommand{\envCpus}{12}
+\newcommand{\envNumpy}{2.3.3}
+\newcommand{\envOrtools}{9.15.6755}
+\newcommand{\envPython}{3.13.7}
+\newcommand{\envScipy}{1.18.0}
+\newcommand{\heatDailyMax}{39.9}
+\newcommand{\heatDays}{6}
+\newcommand{\lambdaSnapshots}{25}
+\newcommand{\mnAcoFullDelta}{\ensuremath{-}0.55}
+\newcommand{\mnAcoFullKm}{159.4}
+\newcommand{\mnAcoFullLower}{64}
+\newcommand{\mnAcoFullObj}{1{,}013.1}
+\newcommand{\mnAcoFullP}{p < 0.001}
+\newcommand{\mnAcoFullRel}{\ensuremath{-}14.0}
+\newcommand{\mnAcoFullRelHi}{\ensuremath{-}12.5}
+\newcommand{\mnAcoFullRelLo}{\ensuremath{-}15.4}
+\newcommand{\mnAcoFullServed}{156.4}
+\newcommand{\mnGenFullDelta}{\ensuremath{-}0.37}
+\newcommand{\mnGenFullKm}{177.8}
+\newcommand{\mnGenFullLower}{62}
+\newcommand{\mnGenFullObj}{1{,}075.3}
+\newcommand{\mnGenFullP}{p < 0.001}
+\newcommand{\mnGenFullRel}{\ensuremath{-}8.7}
+\newcommand{\mnGenFullRelHi}{\ensuremath{-}7.3}
+\newcommand{\mnGenFullRelLo}{\ensuremath{-}10.1}
+\newcommand{\mnGenFullServed}{155.4}
+\newcommand{\mnInsFullKm}{208.1}
+\newcommand{\mnInsFullObj}{1{,}177.7}
+\newcommand{\mnInsFullServed}{153.8}
+\newcommand{\mnOrtFullDelta}{\ensuremath{-}0.82}
+\newcommand{\mnOrtFullKm}{132.5}
+\newcommand{\mnOrtFullLower}{65}
+\newcommand{\mnOrtFullObj}{895.0}
+\newcommand{\mnOrtFullP}{p < 0.001}
+\newcommand{\mnOrtFullRel}{\ensuremath{-}24.0}
+\newcommand{\mnOrtFullRelHi}{\ensuremath{-}22.8}
+\newcommand{\mnOrtFullRelLo}{\ensuremath{-}25.3}
+\newcommand{\mnOrtFullServed}{159.3}
+\newcommand{\mnRiskTierUDelta}{0.96}
+\newcommand{\mnRiskTierUKm}{199.9}
+\newcommand{\mnRiskTierULower}{1}
+\newcommand{\mnRiskTierUObj}{1{,}771.1}
+\newcommand{\mnRiskTierUP}{p < 0.001}
+\newcommand{\mnRiskTierURel}{50.4}
+\newcommand{\mnRiskTierURelHi}{55.4}
+\newcommand{\mnRiskTierURelLo}{45.6}
+\newcommand{\mnRiskTierUServed}{160.0}
+\newcommand{\mnSweepFullDelta}{0.97}
+\newcommand{\mnSweepFullKm}{198.1}
+\newcommand{\mnSweepFullLower}{0}
+\newcommand{\mnSweepFullObj}{1{,}782.0}
+\newcommand{\mnSweepFullP}{p < 0.001}
+\newcommand{\mnSweepFullRel}{51.3}
+\newcommand{\mnSweepFullRelHi}{56.5}
+\newcommand{\mnSweepFullRelLo}{46.3}
+\newcommand{\mnSweepFullServed}{160.0}
+\newcommand{\mnThrFullDelta}{1.00}
+\newcommand{\mnThrFullKm}{98.5}
+\newcommand{\mnThrFullLower}{0}
+\newcommand{\mnThrFullObj}{7{,}676.9}
+\newcommand{\mnThrFullP}{p < 0.001}
+\newcommand{\mnThrFullRel}{551.9}
+\newcommand{\mnThrFullRelHi}{576.4}
+\newcommand{\mnThrFullRelLo}{526.9}
+\newcommand{\mnThrFullServed}{65.0}
+\newcommand{\mnUnits}{65}
+\newcommand{\netDhakaAsym}{13.1}
+\newcommand{\netDhakaCircMean}{1.438}
+\newcommand{\netDhakaCircMin}{0.70}
+\newcommand{\netDhakaCircPninetynine}{3.31}
+\newcommand{\netDhakaErrHigh}{+12.4}
+\newcommand{\netDhakaErrLow}{\ensuremath{-}25.8}
+\newcommand{\netDhakaErrMeanAbs}{4.8}
+\newcommand{\netDhakaLongestLeg}{21.16}
+\newcommand{\netDhakaLongestLegDepot}{does not touch}
+\newcommand{\netDhakaShortMax}{1{,}645}
+\newcommand{\netDhakaShortPairs}{144}
+\newcommand{\netDhakaShortRoad}{218}
+\newcommand{\netDhakaSnap}{99}
+\newcommand{\netDhakaTagged}{4.2}
+\newcommand{\netDhakaUnder}{56}
+\newcommand{\netWyndhamAsym}{11.6}
+\newcommand{\netWyndhamCircMean}{1.296}
+\newcommand{\netWyndhamErrHigh}{+14.2}
+\newcommand{\netWyndhamErrLow}{\ensuremath{-}16.4}
+\newcommand{\netWyndhamErrMeanAbs}{3.5}
+\newcommand{\netWyndhamShortMax}{462}
+\newcommand{\netWyndhamShortPairs}{248}
+\newcommand{\netWyndhamShortRoad}{102}
+\newcommand{\netWyndhamSnap}{55}
+\newcommand{\netWyndhamTagged}{56.1}
+\newcommand{\netWyndhamUnder}{22}
+\newcommand{\rhInsFullHazard}{86}
+\newcommand{\rhInsFullKm}{53.2}
+\newcommand{\rhInsFullKmPer}{1.56}
+\newcommand{\rhInsFullMean}{20.8}
+\newcommand{\rhInsFullNever}{0}
+\newcommand{\rhInsFullObjective}{1{,}085.0}
+\newcommand{\rhInsFullOverflow}{2.20}
+\newcommand{\rhInsFullPninetyfive}{58}
+\newcommand{\rhInsFullServed}{34.8}
+\newcommand{\rhInsFullWorst}{120}
+\newcommand{\rhInsFullrrHazard}{82}
+\newcommand{\rhInsFullrrHazardP}{p = 0.070}
+\newcommand{\rhInsFullrrHazardRel}{\ensuremath{-}5.2}
+\newcommand{\rhInsFullrrKm}{53.2}
+\newcommand{\rhInsFullrrKmP}{p = 1.000}
+\newcommand{\rhInsFullrrKmPer}{1.55}
+\newcommand{\rhInsFullrrKmPerP}{p = 1.000}
+\newcommand{\rhInsFullrrKmPerRel}{\ensuremath{-}0.5}
+\newcommand{\rhInsFullrrKmRel}{0.0}
+\newcommand{\rhInsFullrrMean}{20.7}
+\newcommand{\rhInsFullrrNever}{0}
+\newcommand{\rhInsFullrrObjective}{720.2}
+\newcommand{\rhInsFullrrObjectiveP}{p = 0.070}
+\newcommand{\rhInsFullrrObjectiveRel}{\ensuremath{-}33.6}
+\newcommand{\rhInsFullrrOverflow}{1.28}
+\newcommand{\rhInsFullrrOverflowP}{p = 0.070}
+\newcommand{\rhInsFullrrOverflowRel}{\ensuremath{-}42.0}
+\newcommand{\rhInsFullrrPninetyfive}{51}
+\newcommand{\rhInsFullrrPninetyfiveP}{p = 0.312}
+\newcommand{\rhInsFullrrPninetyfiveRel}{\ensuremath{-}12.8}
+\newcommand{\rhInsFullrrServed}{35.0}
+\newcommand{\rhInsFullrrServedP}{p = 1.000}
+\newcommand{\rhInsFullrrServedRel}{0.6}
+\newcommand{\rhInsFullrrWorst}{84}
+\newcommand{\rhInsFullrrWorstP}{p = 0.070}
+\newcommand{\rhInsFullrrWorstRel}{\ensuremath{-}29.4}
+\newcommand{\rhInsTierUHazard}{87}
+\newcommand{\rhInsTierUHazardP}{p = 0.273}
+\newcommand{\rhInsTierUHazardRel}{1.5}
+\newcommand{\rhInsTierUKm}{52.7}
+\newcommand{\rhInsTierUKmP}{p = 1.000}
+\newcommand{\rhInsTierUKmPer}{1.53}
+\newcommand{\rhInsTierUKmPerP}{p = 0.547}
+\newcommand{\rhInsTierUKmPerRel}{\ensuremath{-}1.7}
+\newcommand{\rhInsTierUKmRel}{\ensuremath{-}1.1}
+\newcommand{\rhInsTierUMean}{20.7}
+\newcommand{\rhInsTierUNever}{0}
+\newcommand{\rhInsTierUObjective}{1{,}257.5}
+\newcommand{\rhInsTierUObjectiveP}{p = 0.070}
+\newcommand{\rhInsTierUObjectiveRel}{15.9}
+\newcommand{\rhInsTierUOverflow}{2.38}
+\newcommand{\rhInsTierUOverflowP}{p = 0.281}
+\newcommand{\rhInsTierUOverflowRel}{8.0}
+\newcommand{\rhInsTierUPninetyfive}{57}
+\newcommand{\rhInsTierUPninetyfiveP}{p = 1.000}
+\newcommand{\rhInsTierUPninetyfiveRel}{\ensuremath{-}2.6}
+\newcommand{\rhInsTierUServed}{35.0}
+\newcommand{\rhInsTierUServedP}{p = 1.000}
+\newcommand{\rhInsTierUServedRel}{0.6}
+\newcommand{\rhInsTierUWorst}{180}
+\newcommand{\rhInsTierUWorstP}{p = 0.070}
+\newcommand{\rhInsTierUWorstRel}{48.5}
+\newcommand{\rhNetworks}{8}
+\newcommand{\rhOrtFullHazard}{83}
+\newcommand{\rhOrtFullHazardP}{p = 0.070}
+\newcommand{\rhOrtFullHazardRel}{\ensuremath{-}3.6}
+\newcommand{\rhOrtFullKm}{49.7}
+\newcommand{\rhOrtFullKmP}{p = 0.070}
+\newcommand{\rhOrtFullKmPer}{1.31}
+\newcommand{\rhOrtFullKmPerP}{p = 0.070}
+\newcommand{\rhOrtFullKmPerRel}{\ensuremath{-}16.1}
+\newcommand{\rhOrtFullKmRel}{\ensuremath{-}6.6}
+\newcommand{\rhOrtFullMean}{18.8}
+\newcommand{\rhOrtFullNever}{0}
+\newcommand{\rhOrtFullObjective}{462.3}
+\newcommand{\rhOrtFullObjectiveP}{p = 0.070}
+\newcommand{\rhOrtFullObjectiveRel}{\ensuremath{-}57.4}
+\newcommand{\rhOrtFullOverflow}{0.34}
+\newcommand{\rhOrtFullOverflowP}{p = 0.070}
+\newcommand{\rhOrtFullOverflowRel}{\ensuremath{-}84.6}
+\newcommand{\rhOrtFullPninetyfive}{45}
+\newcommand{\rhOrtFullPninetyfiveP}{p = 0.070}
+\newcommand{\rhOrtFullPninetyfiveRel}{\ensuremath{-}23.1}
+\newcommand{\rhOrtFullServed}{38.8}
+\newcommand{\rhOrtFullServedP}{p = 0.070}
+\newcommand{\rhOrtFullServedRel}{11.4}
+\newcommand{\rhOrtFullWorst}{72}
+\newcommand{\rhOrtFullWorstP}{p = 0.070}
+\newcommand{\rhOrtFullWorstRel}{\ensuremath{-}38.2}
+\newcommand{\rhOrtTierUHazard}{83}
+\newcommand{\rhOrtTierUHazardP}{p = 0.109}
+\newcommand{\rhOrtTierUHazardRel}{\ensuremath{-}3.3}
+\newcommand{\rhOrtTierUKm}{49.3}
+\newcommand{\rhOrtTierUKmP}{p = 0.070}
+\newcommand{\rhOrtTierUKmPer}{1.28}
+\newcommand{\rhOrtTierUKmPerP}{p = 0.070}
+\newcommand{\rhOrtTierUKmPerRel}{\ensuremath{-}17.9}
+\newcommand{\rhOrtTierUKmRel}{\ensuremath{-}7.4}
+\newcommand{\rhOrtTierUMean}{18.5}
+\newcommand{\rhOrtTierUNever}{0}
+\newcommand{\rhOrtTierUObjective}{463.9}
+\newcommand{\rhOrtTierUObjectiveP}{p = 0.070}
+\newcommand{\rhOrtTierUObjectiveRel}{\ensuremath{-}57.2}
+\newcommand{\rhOrtTierUOverflow}{0.33}
+\newcommand{\rhOrtTierUOverflowP}{p = 0.070}
+\newcommand{\rhOrtTierUOverflowRel}{\ensuremath{-}85.2}
+\newcommand{\rhOrtTierUPninetyfive}{45}
+\newcommand{\rhOrtTierUPninetyfiveP}{p = 0.070}
+\newcommand{\rhOrtTierUPninetyfiveRel}{\ensuremath{-}23.1}
+\newcommand{\rhOrtTierUServed}{39.1}
+\newcommand{\rhOrtTierUServedP}{p = 0.070}
+\newcommand{\rhOrtTierUServedRel}{12.4}
+\newcommand{\rhOrtTierUWorst}{156}
+\newcommand{\rhOrtTierUWorstP}{p = 0.477}
+\newcommand{\rhOrtTierUWorstRel}{\ensuremath{-}13.2}
+\newcommand{\rmAcoTierUHazard}{86}
+\newcommand{\rmAcoTierUHazardP}{p = 0.004}
+\newcommand{\rmAcoTierUHazardRel}{\ensuremath{-}13.5}
+\newcommand{\rmAcoTierUKm}{31.7}
+\newcommand{\rmAcoTierUKmP}{p < 0.001}
+\newcommand{\rmAcoTierUKmPer}{1.17}
+\newcommand{\rmAcoTierUKmPerP}{p < 0.001}
+\newcommand{\rmAcoTierUKmPerRel}{\ensuremath{-}14.1}
+\newcommand{\rmAcoTierUKmRel}{\ensuremath{-}32.1}
+\newcommand{\rmAcoTierUMean}{26.5}
+\newcommand{\rmAcoTierUNever}{0}
+\newcommand{\rmAcoTierUObjective}{828.7}
+\newcommand{\rmAcoTierUObjectiveP}{p < 0.001}
+\newcommand{\rmAcoTierUObjectiveRel}{96.0}
+\newcommand{\rmAcoTierUOverflow}{1.59}
+\newcommand{\rmAcoTierUOverflowP}{p = 0.002}
+\newcommand{\rmAcoTierUOverflowRel}{166.1}
+\newcommand{\rmAcoTierUPninetyfive}{53}
+\newcommand{\rmAcoTierUPninetyfiveP}{p = 0.020}
+\newcommand{\rmAcoTierUPninetyfiveRel}{10.9}
+\newcommand{\rmAcoTierUServed}{27.4}
+\newcommand{\rmAcoTierUServedP}{p < 0.001}
+\newcommand{\rmAcoTierUServedRel}{\ensuremath{-}21.5}
+\newcommand{\rmAcoTierUWorst}{444}
+\newcommand{\rmAcoTierUWorstP}{p = 0.002}
+\newcommand{\rmAcoTierUWorstRel}{136.8}
+\newcommand{\rmGenTierUHazard}{83}
+\newcommand{\rmGenTierUHazardP}{p = 0.035}
+\newcommand{\rmGenTierUHazardRel}{\ensuremath{-}17.0}
+\newcommand{\rmGenTierUKm}{43.3}
+\newcommand{\rmGenTierUKmP}{p = 0.002}
+\newcommand{\rmGenTierUKmPer}{1.54}
+\newcommand{\rmGenTierUKmPerP}{p < 0.001}
+\newcommand{\rmGenTierUKmPerRel}{13.2}
+\newcommand{\rmGenTierUKmRel}{\ensuremath{-}7.3}
+\newcommand{\rmGenTierUMean}{25.4}
+\newcommand{\rmGenTierUNever}{0}
+\newcommand{\rmGenTierUObjective}{573.3}
+\newcommand{\rmGenTierUObjectiveP}{p < 0.001}
+\newcommand{\rmGenTierUObjectiveRel}{35.6}
+\newcommand{\rmGenTierUOverflow}{0.79}
+\newcommand{\rmGenTierUOverflowP}{p = 0.125}
+\newcommand{\rmGenTierUOverflowRel}{32.2}
+\newcommand{\rmGenTierUPninetyfive}{50}
+\newcommand{\rmGenTierUPninetyfiveP}{p = 0.157}
+\newcommand{\rmGenTierUPninetyfiveRel}{3.1}
+\newcommand{\rmGenTierUServed}{28.5}
+\newcommand{\rmGenTierUServedP}{p = 0.002}
+\newcommand{\rmGenTierUServedRel}{\ensuremath{-}18.1}
+\newcommand{\rmGenTierUWorst}{408}
+\newcommand{\rmGenTierUWorstP}{p = 0.004}
+\newcommand{\rmGenTierUWorstRel}{85.5}
+\newcommand{\rmInsAgeHazard}{100}
+\newcommand{\rmInsAgeHazardP}{p = 0.317}
+\newcommand{\rmInsAgeHazardRel}{0.3}
+\newcommand{\rmInsAgeKm}{42.5}
+\newcommand{\rmInsAgeKmP}{p < 0.001}
+\newcommand{\rmInsAgeKmPer}{1.27}
+\newcommand{\rmInsAgeKmPerP}{p = 0.003}
+\newcommand{\rmInsAgeKmPerRel}{\ensuremath{-}6.4}
+\newcommand{\rmInsAgeKmRel}{\ensuremath{-}9.1}
+\newcommand{\rmInsAgeMean}{21.4}
+\newcommand{\rmInsAgeNever}{0}
+\newcommand{\rmInsAgeObjective}{501.6}
+\newcommand{\rmInsAgeObjectiveP}{p = 0.003}
+\newcommand{\rmInsAgeObjectiveRel}{18.6}
+\newcommand{\rmInsAgeOverflow}{0.45}
+\newcommand{\rmInsAgeOverflowP}{p = 0.091}
+\newcommand{\rmInsAgeOverflowRel}{\ensuremath{-}25.1}
+\newcommand{\rmInsAgePninetyfive}{44}
+\newcommand{\rmInsAgePninetyfiveP}{p = 0.043}
+\newcommand{\rmInsAgePninetyfiveRel}{\ensuremath{-}9.4}
+\newcommand{\rmInsAgeServed}{33.8}
+\newcommand{\rmInsAgeServedP}{p = 0.005}
+\newcommand{\rmInsAgeServedRel}{\ensuremath{-}3.1}
+\newcommand{\rmInsAgeWorst}{216}
+\newcommand{\rmInsAgeWorstP}{p = 0.003}
+\newcommand{\rmInsAgeWorstRel}{103.9}
+\newcommand{\rmInsFullAgeHazard}{100}
+\newcommand{\rmInsFullAgeHazardP}{p = 1.000}
+\newcommand{\rmInsFullAgeHazardRel}{0.3}
+\newcommand{\rmInsFullAgeKm}{45.2}
+\newcommand{\rmInsFullAgeKmP}{p = 0.019}
+\newcommand{\rmInsFullAgeKmPer}{1.37}
+\newcommand{\rmInsFullAgeKmPerP}{p = 1.000}
+\newcommand{\rmInsFullAgeKmPerRel}{0.7}
+\newcommand{\rmInsFullAgeKmRel}{\ensuremath{-}3.2}
+\newcommand{\rmInsFullAgeMean}{21.6}
+\newcommand{\rmInsFullAgeNever}{0}
+\newcommand{\rmInsFullAgeObjective}{415.6}
+\newcommand{\rmInsFullAgeObjectiveP}{p = 1.000}
+\newcommand{\rmInsFullAgeObjectiveRel}{\ensuremath{-}1.7}
+\newcommand{\rmInsFullAgeOverflow}{0.57}
+\newcommand{\rmInsFullAgeOverflowP}{p = 1.000}
+\newcommand{\rmInsFullAgeOverflowRel}{\ensuremath{-}4.4}
+\newcommand{\rmInsFullAgePninetyfive}{44}
+\newcommand{\rmInsFullAgePninetyfiveP}{p = 0.086}
+\newcommand{\rmInsFullAgePninetyfiveRel}{\ensuremath{-}9.4}
+\newcommand{\rmInsFullAgeServed}{33.5}
+\newcommand{\rmInsFullAgeServedP}{p = 0.003}
+\newcommand{\rmInsFullAgeServedRel}{\ensuremath{-}3.8}
+\newcommand{\rmInsFullAgeWorst}{60}
+\newcommand{\rmInsFullAgeWorstP}{p = 0.228}
+\newcommand{\rmInsFullAgeWorstRel}{\ensuremath{-}5.3}
+\newcommand{\rmInsFullHazard}{100}
+\newcommand{\rmInsFullKm}{46.7}
+\newcommand{\rmInsFullKmPer}{1.36}
+\newcommand{\rmInsFullMean}{20.8}
+\newcommand{\rmInsFullNever}{0}
+\newcommand{\rmInsFullObjective}{422.8}
+\newcommand{\rmInsFullOverflow}{0.60}
+\newcommand{\rmInsFullPninetyfive}{48}
+\newcommand{\rmInsFullServed}{34.8}
+\newcommand{\rmInsFullWorst}{72}
+\newcommand{\rmInsFullrHazard}{99}
+\newcommand{\rmInsFullrHazardP}{p = 1.000}
+\newcommand{\rmInsFullrHazardRel}{\ensuremath{-}0.7}
+\newcommand{\rmInsFullrKm}{46.5}
+\newcommand{\rmInsFullrKmP}{p = 1.000}
+\newcommand{\rmInsFullrKmPer}{1.35}
+\newcommand{\rmInsFullrKmPerP}{p = 1.000}
+\newcommand{\rmInsFullrKmPerRel}{\ensuremath{-}0.6}
+\newcommand{\rmInsFullrKmRel}{\ensuremath{-}0.5}
+\newcommand{\rmInsFullrMean}{20.8}
+\newcommand{\rmInsFullrNever}{0}
+\newcommand{\rmInsFullrObjective}{429.7}
+\newcommand{\rmInsFullrObjectiveP}{p = 1.000}
+\newcommand{\rmInsFullrObjectiveRel}{1.6}
+\newcommand{\rmInsFullrOverflow}{0.66}
+\newcommand{\rmInsFullrOverflowP}{p = 0.594}
+\newcommand{\rmInsFullrOverflowRel}{11.5}
+\newcommand{\rmInsFullrPninetyfive}{48}
+\newcommand{\rmInsFullrPninetyfiveP}{p = 1.000}
+\newcommand{\rmInsFullrPninetyfiveRel}{0.0}
+\newcommand{\rmInsFullrServed}{34.9}
+\newcommand{\rmInsFullrServedP}{p = 1.000}
+\newcommand{\rmInsFullrServedRel}{0.1}
+\newcommand{\rmInsFullrWorst}{72}
+\newcommand{\rmInsFullrWorstP}{p = 1.000}
+\newcommand{\rmInsFullrWorstRel}{1.3}
+\newcommand{\rmInsFullrrHazard}{95}
+\newcommand{\rmInsFullrrHazardP}{p = 0.388}
+\newcommand{\rmInsFullrrHazardRel}{\ensuremath{-}4.6}
+\newcommand{\rmInsFullrrKm}{46.8}
+\newcommand{\rmInsFullrrKmP}{p = 1.000}
+\newcommand{\rmInsFullrrKmPer}{1.35}
+\newcommand{\rmInsFullrrKmPerP}{p = 1.000}
+\newcommand{\rmInsFullrrKmPerRel}{\ensuremath{-}0.3}
+\newcommand{\rmInsFullrrKmRel}{0.2}
+\newcommand{\rmInsFullrrMean}{20.7}
+\newcommand{\rmInsFullrrNever}{0}
+\newcommand{\rmInsFullrrObjective}{423.6}
+\newcommand{\rmInsFullrrObjectiveP}{p = 1.000}
+\newcommand{\rmInsFullrrObjectiveRel}{0.2}
+\newcommand{\rmInsFullrrOverflow}{0.60}
+\newcommand{\rmInsFullrrOverflowP}{p = 1.000}
+\newcommand{\rmInsFullrrOverflowRel}{0.0}
+\newcommand{\rmInsFullrrPninetyfive}{48}
+\newcommand{\rmInsFullrrPninetyfiveP}{p = 1.000}
+\newcommand{\rmInsFullrrPninetyfiveRel}{0.0}
+\newcommand{\rmInsFullrrServed}{35.0}
+\newcommand{\rmInsFullrrServedP}{p = 1.000}
+\newcommand{\rmInsFullrrServedRel}{0.4}
+\newcommand{\rmInsFullrrWorst}{72}
+\newcommand{\rmInsFullrrWorstP}{p = 1.000}
+\newcommand{\rmInsFullrrWorstRel}{1.3}
+\newcommand{\rmInsFullrrrHazard}{95}
+\newcommand{\rmInsFullrrrHazardP}{p = 0.246}
+\newcommand{\rmInsFullrrrHazardRel}{\ensuremath{-}5.0}
+\newcommand{\rmInsFullrrrKm}{47.3}
+\newcommand{\rmInsFullrrrKmP}{p = 1.000}
+\newcommand{\rmInsFullrrrKmPer}{1.37}
+\newcommand{\rmInsFullrrrKmPerP}{p = 1.000}
+\newcommand{\rmInsFullrrrKmPerRel}{1.3}
+\newcommand{\rmInsFullrrrKmRel}{1.3}
+\newcommand{\rmInsFullrrrMean}{20.8}
+\newcommand{\rmInsFullrrrNever}{0}
+\newcommand{\rmInsFullrrrObjective}{426.3}
+\newcommand{\rmInsFullrrrObjectiveP}{p = 1.000}
+\newcommand{\rmInsFullrrrObjectiveRel}{0.8}
+\newcommand{\rmInsFullrrrOverflow}{0.63}
+\newcommand{\rmInsFullrrrOverflowP}{p = 1.000}
+\newcommand{\rmInsFullrrrOverflowRel}{5.5}
+\newcommand{\rmInsFullrrrPninetyfive}{48}
+\newcommand{\rmInsFullrrrPninetyfiveP}{p = 1.000}
+\newcommand{\rmInsFullrrrPninetyfiveRel}{0.0}
+\newcommand{\rmInsFullrrrServed}{34.8}
+\newcommand{\rmInsFullrrrServedP}{p = 1.000}
+\newcommand{\rmInsFullrrrServedRel}{\ensuremath{-}0.1}
+\newcommand{\rmInsFullrrrWorst}{72}
+\newcommand{\rmInsFullrrrWorstP}{p = 1.000}
+\newcommand{\rmInsFullrrrWorstRel}{\ensuremath{-}1.3}
+\newcommand{\rmInsResBHazard}{100}
+\newcommand{\rmInsResBHazardP}{p = 1.000}
+\newcommand{\rmInsResBHazardRel}{0.3}
+\newcommand{\rmInsResBKm}{47.0}
+\newcommand{\rmInsResBKmP}{p = 0.896}
+\newcommand{\rmInsResBKmPer}{1.36}
+\newcommand{\rmInsResBKmPerP}{p = 1.000}
+\newcommand{\rmInsResBKmPerRel}{0.3}
+\newcommand{\rmInsResBKmRel}{0.5}
+\newcommand{\rmInsResBMean}{20.7}
+\newcommand{\rmInsResBNever}{0}
+\newcommand{\rmInsResBObjective}{422.6}
+\newcommand{\rmInsResBObjectiveP}{p = 1.000}
+\newcommand{\rmInsResBObjectiveRel}{\ensuremath{-}0.1}
+\newcommand{\rmInsResBOverflow}{0.61}
+\newcommand{\rmInsResBOverflowP}{p = 1.000}
+\newcommand{\rmInsResBOverflowRel}{2.7}
+\newcommand{\rmInsResBPninetyfive}{48}
+\newcommand{\rmInsResBPninetyfiveP}{p = 1.000}
+\newcommand{\rmInsResBPninetyfiveRel}{0.0}
+\newcommand{\rmInsResBServed}{34.9}
+\newcommand{\rmInsResBServedP}{p = 1.000}
+\newcommand{\rmInsResBServedRel}{0.3}
+\newcommand{\rmInsResBWorst}{72}
+\newcommand{\rmInsResBWorstP}{p = 1.000}
+\newcommand{\rmInsResBWorstRel}{1.3}
+\newcommand{\rmInsTierBHazard}{100}
+\newcommand{\rmInsTierBHazardP}{p = 1.000}
+\newcommand{\rmInsTierBHazardRel}{0.3}
+\newcommand{\rmInsTierBKm}{47.1}
+\newcommand{\rmInsTierBKmP}{p = 1.000}
+\newcommand{\rmInsTierBKmPer}{1.37}
+\newcommand{\rmInsTierBKmPerP}{p = 1.000}
+\newcommand{\rmInsTierBKmPerRel}{1.1}
+\newcommand{\rmInsTierBKmRel}{0.9}
+\newcommand{\rmInsTierBMean}{20.8}
+\newcommand{\rmInsTierBNever}{0}
+\newcommand{\rmInsTierBObjective}{423.4}
+\newcommand{\rmInsTierBObjectiveP}{p = 1.000}
+\newcommand{\rmInsTierBObjectiveRel}{0.1}
+\newcommand{\rmInsTierBOverflow}{0.56}
+\newcommand{\rmInsTierBOverflowP}{p = 1.000}
+\newcommand{\rmInsTierBOverflowRel}{\ensuremath{-}6.6}
+\newcommand{\rmInsTierBPninetyfive}{48}
+\newcommand{\rmInsTierBPninetyfiveP}{p = 1.000}
+\newcommand{\rmInsTierBPninetyfiveRel}{0.0}
+\newcommand{\rmInsTierBServed}{34.8}
+\newcommand{\rmInsTierBServedP}{p = 1.000}
+\newcommand{\rmInsTierBServedRel}{0.0}
+\newcommand{\rmInsTierBWorst}{84}
+\newcommand{\rmInsTierBWorstP}{p = 1.000}
+\newcommand{\rmInsTierBWorstRel}{1.3}
+\newcommand{\rmInsTierUHazard}{100}
+\newcommand{\rmInsTierUHazardP}{p = 1.000}
+\newcommand{\rmInsTierUHazardRel}{0.3}
+\newcommand{\rmInsTierUKm}{47.3}
+\newcommand{\rmInsTierUKmP}{p = 1.000}
+\newcommand{\rmInsTierUKmPer}{1.37}
+\newcommand{\rmInsTierUKmPerP}{p = 1.000}
+\newcommand{\rmInsTierUKmPerRel}{0.9}
+\newcommand{\rmInsTierUKmRel}{1.4}
+\newcommand{\rmInsTierUMean}{20.7}
+\newcommand{\rmInsTierUNever}{0}
+\newcommand{\rmInsTierUObjective}{430.5}
+\newcommand{\rmInsTierUObjectiveP}{p = 1.000}
+\newcommand{\rmInsTierUObjectiveRel}{1.8}
+\newcommand{\rmInsTierUOverflow}{0.64}
+\newcommand{\rmInsTierUOverflowP}{p = 1.000}
+\newcommand{\rmInsTierUOverflowRel}{8.2}
+\newcommand{\rmInsTierUPninetyfive}{48}
+\newcommand{\rmInsTierUPninetyfiveP}{p = 1.000}
+\newcommand{\rmInsTierUPninetyfiveRel}{0.0}
+\newcommand{\rmInsTierUServed}{35.1}
+\newcommand{\rmInsTierUServedP}{p = 1.000}
+\newcommand{\rmInsTierUServedRel}{0.6}
+\newcommand{\rmInsTierUWorst}{84}
+\newcommand{\rmInsTierUWorstP}{p = 1.000}
+\newcommand{\rmInsTierUWorstRel}{1.3}
+\newcommand{\rmInsUrgHazard}{100}
+\newcommand{\rmInsUrgHazardP}{p = 1.000}
+\newcommand{\rmInsUrgHazardRel}{0.1}
+\newcommand{\rmInsUrgKm}{41.4}
+\newcommand{\rmInsUrgKmP}{p < 0.001}
+\newcommand{\rmInsUrgKmPer}{1.20}
+\newcommand{\rmInsUrgKmPerP}{p < 0.001}
+\newcommand{\rmInsUrgKmPerRel}{\ensuremath{-}11.4}
+\newcommand{\rmInsUrgKmRel}{\ensuremath{-}11.4}
+\newcommand{\rmInsUrgMean}{20.7}
+\newcommand{\rmInsUrgNever}{0}
+\newcommand{\rmInsUrgObjective}{817.5}
+\newcommand{\rmInsUrgObjectiveP}{p < 0.001}
+\newcommand{\rmInsUrgObjectiveRel}{93.3}
+\newcommand{\rmInsUrgOverflow}{0.52}
+\newcommand{\rmInsUrgOverflowP}{p = 1.000}
+\newcommand{\rmInsUrgOverflowRel}{\ensuremath{-}12.6}
+\newcommand{\rmInsUrgPninetyfive}{51}
+\newcommand{\rmInsUrgPninetyfiveP}{p = 0.228}
+\newcommand{\rmInsUrgPninetyfiveRel}{6.2}
+\newcommand{\rmInsUrgServed}{34.8}
+\newcommand{\rmInsUrgServedP}{p = 1.000}
+\newcommand{\rmInsUrgServedRel}{\ensuremath{-}0.2}
+\newcommand{\rmInsUrgWorst}{228}
+\newcommand{\rmInsUrgWorstP}{p = 0.003}
+\newcommand{\rmInsUrgWorstRel}{196.1}
+\newcommand{\rmNetworks}{16}
+\newcommand{\rmOrtFullHazard}{99}
+\newcommand{\rmOrtFullHazardP}{p = 0.635}
+\newcommand{\rmOrtFullHazardRel}{\ensuremath{-}1.2}
+\newcommand{\rmOrtFullKm}{47.0}
+\newcommand{\rmOrtFullKmP}{p = 0.635}
+\newcommand{\rmOrtFullKmPer}{1.23}
+\newcommand{\rmOrtFullKmPerP}{p < 0.001}
+\newcommand{\rmOrtFullKmPerRel}{\ensuremath{-}9.3}
+\newcommand{\rmOrtFullKmRel}{0.6}
+\newcommand{\rmOrtFullMean}{18.7}
+\newcommand{\rmOrtFullNever}{0}
+\newcommand{\rmOrtFullObjective}{377.6}
+\newcommand{\rmOrtFullObjectiveP}{p < 0.001}
+\newcommand{\rmOrtFullObjectiveRel}{\ensuremath{-}10.7}
+\newcommand{\rmOrtFullOverflow}{0.34}
+\newcommand{\rmOrtFullOverflowP}{p = 0.005}
+\newcommand{\rmOrtFullOverflowRel}{\ensuremath{-}42.6}
+\newcommand{\rmOrtFullPninetyfive}{46}
+\newcommand{\rmOrtFullPninetyfiveP}{p = 0.333}
+\newcommand{\rmOrtFullPninetyfiveRel}{\ensuremath{-}4.7}
+\newcommand{\rmOrtFullServed}{38.7}
+\newcommand{\rmOrtFullServedP}{p = 0.003}
+\newcommand{\rmOrtFullServedRel}{11.0}
+\newcommand{\rmOrtFullWorst}{72}
+\newcommand{\rmOrtFullWorstP}{p = 0.333}
+\newcommand{\rmOrtFullWorstRel}{5.3}
+\newcommand{\rmOrtFullrrHazard}{98}
+\newcommand{\rmOrtFullrrHazardP}{p = 0.577}
+\newcommand{\rmOrtFullrrHazardRel}{\ensuremath{-}2.0}
+\newcommand{\rmOrtFullrrKm}{47.2}
+\newcommand{\rmOrtFullrrKmP}{p = 0.645}
+\newcommand{\rmOrtFullrrKmPer}{1.25}
+\newcommand{\rmOrtFullrrKmPerP}{p < 0.001}
+\newcommand{\rmOrtFullrrKmPerRel}{\ensuremath{-}7.7}
+\newcommand{\rmOrtFullrrKmRel}{1.1}
+\newcommand{\rmOrtFullrrMean}{18.9}
+\newcommand{\rmOrtFullrrNever}{0}
+\newcommand{\rmOrtFullrrObjective}{383.9}
+\newcommand{\rmOrtFullrrObjectiveP}{p < 0.001}
+\newcommand{\rmOrtFullrrObjectiveRel}{\ensuremath{-}9.2}
+\newcommand{\rmOrtFullrrOverflow}{0.45}
+\newcommand{\rmOrtFullrrOverflowP}{p = 0.131}
+\newcommand{\rmOrtFullrrOverflowRel}{\ensuremath{-}24.6}
+\newcommand{\rmOrtFullrrPninetyfive}{46}
+\newcommand{\rmOrtFullrrPninetyfiveP}{p = 0.577}
+\newcommand{\rmOrtFullrrPninetyfiveRel}{\ensuremath{-}3.1}
+\newcommand{\rmOrtFullrrServed}{38.3}
+\newcommand{\rmOrtFullrrServedP}{p < 0.001}
+\newcommand{\rmOrtFullrrServedRel}{9.9}
+\newcommand{\rmOrtFullrrWorst}{60}
+\newcommand{\rmOrtFullrrWorstP}{p = 0.645}
+\newcommand{\rmOrtFullrrWorstRel}{\ensuremath{-}2.6}
+\newcommand{\rmOrtTierUHazard}{96}
+\newcommand{\rmOrtTierUHazardP}{p = 0.215}
+\newcommand{\rmOrtTierUHazardRel}{\ensuremath{-}3.6}
+\newcommand{\rmOrtTierUKm}{46.9}
+\newcommand{\rmOrtTierUKmP}{p = 0.669}
+\newcommand{\rmOrtTierUKmPer}{1.23}
+\newcommand{\rmOrtTierUKmPerP}{p < 0.001}
+\newcommand{\rmOrtTierUKmPerRel}{\ensuremath{-}9.2}
+\newcommand{\rmOrtTierUKmRel}{0.4}
+\newcommand{\rmOrtTierUMean}{18.8}
+\newcommand{\rmOrtTierUNever}{0}
+\newcommand{\rmOrtTierUObjective}{381.7}
+\newcommand{\rmOrtTierUObjectiveP}{p < 0.001}
+\newcommand{\rmOrtTierUObjectiveRel}{\ensuremath{-}9.7}
+\newcommand{\rmOrtTierUOverflow}{0.38}
+\newcommand{\rmOrtTierUOverflowP}{p = 0.014}
+\newcommand{\rmOrtTierUOverflowRel}{\ensuremath{-}35.5}
+\newcommand{\rmOrtTierUPninetyfive}{47}
+\newcommand{\rmOrtTierUPninetyfiveP}{p = 0.635}
+\newcommand{\rmOrtTierUPninetyfiveRel}{\ensuremath{-}1.6}
+\newcommand{\rmOrtTierUServed}{38.5}
+\newcommand{\rmOrtTierUServedP}{p < 0.001}
+\newcommand{\rmOrtTierUServedRel}{10.6}
+\newcommand{\rmOrtTierUWorst}{132}
+\newcommand{\rmOrtTierUWorstP}{p = 0.215}
+\newcommand{\rmOrtTierUWorstRel}{13.2}
+\newcommand{\rmOrtUrgHazard}{98}
+\newcommand{\rmOrtUrgHazardP}{p = 0.655}
+\newcommand{\rmOrtUrgHazardRel}{\ensuremath{-}1.4}
+\newcommand{\rmOrtUrgKm}{43.3}
+\newcommand{\rmOrtUrgKmP}{p < 0.001}
+\newcommand{\rmOrtUrgKmPer}{1.10}
+\newcommand{\rmOrtUrgKmPerP}{p < 0.001}
+\newcommand{\rmOrtUrgKmPerRel}{\ensuremath{-}18.6}
+\newcommand{\rmOrtUrgKmRel}{\ensuremath{-}7.2}
+\newcommand{\rmOrtUrgMean}{18.2}
+\newcommand{\rmOrtUrgNever}{0}
+\newcommand{\rmOrtUrgObjective}{689.9}
+\newcommand{\rmOrtUrgObjectiveP}{p < 0.001}
+\newcommand{\rmOrtUrgObjectiveRel}{63.2}
+\newcommand{\rmOrtUrgOverflow}{0.37}
+\newcommand{\rmOrtUrgOverflowP}{p = 0.096}
+\newcommand{\rmOrtUrgOverflowRel}{\ensuremath{-}37.2}
+\newcommand{\rmOrtUrgPninetyfive}{42}
+\newcommand{\rmOrtUrgPninetyfiveP}{p = 0.014}
+\newcommand{\rmOrtUrgPninetyfiveRel}{\ensuremath{-}12.5}
+\newcommand{\rmOrtUrgServed}{39.8}
+\newcommand{\rmOrtUrgServedP}{p = 0.002}
+\newcommand{\rmOrtUrgServedRel}{14.1}
+\newcommand{\rmOrtUrgWorst}{240}
+\newcommand{\rmOrtUrgWorstP}{p = 0.002}
+\newcommand{\rmOrtUrgWorstRel}{189.5}
+\newcommand{\rmRiskTierUHazard}{37}
+\newcommand{\rmRiskTierUHazardP}{p < 0.001}
+\newcommand{\rmRiskTierUHazardRel}{\ensuremath{-}62.7}
+\newcommand{\rmRiskTierUKm}{13.9}
+\newcommand{\rmRiskTierUKmP}{p < 0.001}
+\newcommand{\rmRiskTierUKmPer}{1.20}
+\newcommand{\rmRiskTierUKmPerP}{p = 0.002}
+\newcommand{\rmRiskTierUKmPerRel}{\ensuremath{-}11.7}
+\newcommand{\rmRiskTierUKmRel}{\ensuremath{-}70.1}
+\newcommand{\rmRiskTierUMean}{57.5}
+\newcommand{\rmRiskTierUNever}{55}
+\newcommand{\rmRiskTierUObjective}{4{,}470.0}
+\newcommand{\rmRiskTierUObjectiveP}{p < 0.001}
+\newcommand{\rmRiskTierUObjectiveRel}{957.2}
+\newcommand{\rmRiskTierUOverflow}{6.99}
+\newcommand{\rmRiskTierUOverflowP}{p = 0.002}
+\newcommand{\rmRiskTierUOverflowRel}{1{,}073.8}
+\newcommand{\rmRiskTierUPninetyfive}{107}
+\newcommand{\rmRiskTierUPninetyfiveP}{p = 0.002}
+\newcommand{\rmRiskTierUPninetyfiveRel}{123.4}
+\newcommand{\rmRiskTierUServed}{11.7}
+\newcommand{\rmRiskTierUServedP}{p = 0.002}
+\newcommand{\rmRiskTierUServedRel}{\ensuremath{-}66.4}
+\newcommand{\rmRiskTierUWorst}{468}
+\newcommand{\rmRiskTierUWorstP}{p = 0.002}
+\newcommand{\rmRiskTierUWorstRel}{692.1}
+\newcommand{\rmSweepFullHazard}{65}
+\newcommand{\rmSweepFullHazardP}{p < 0.001}
+\newcommand{\rmSweepFullHazardRel}{\ensuremath{-}34.5}
+\newcommand{\rmSweepFullKm}{24.9}
+\newcommand{\rmSweepFullKmP}{p < 0.001}
+\newcommand{\rmSweepFullKmPer}{1.80}
+\newcommand{\rmSweepFullKmPerP}{p < 0.001}
+\newcommand{\rmSweepFullKmPerRel}{33.0}
+\newcommand{\rmSweepFullKmRel}{\ensuremath{-}46.7}
+\newcommand{\rmSweepFullMean}{54.0}
+\newcommand{\rmSweepFullNever}{0}
+\newcommand{\rmSweepFullObjective}{2{,}259.2}
+\newcommand{\rmSweepFullObjectiveP}{p < 0.001}
+\newcommand{\rmSweepFullObjectiveRel}{434.3}
+\newcommand{\rmSweepFullOverflow}{5.79}
+\newcommand{\rmSweepFullOverflowP}{p < 0.001}
+\newcommand{\rmSweepFullOverflowRel}{871.6}
+\newcommand{\rmSweepFullPninetyfive}{55}
+\newcommand{\rmSweepFullPninetyfiveP}{p = 0.116}
+\newcommand{\rmSweepFullPninetyfiveRel}{14.1}
+\newcommand{\rmSweepFullServed}{14.0}
+\newcommand{\rmSweepFullServedP}{p < 0.001}
+\newcommand{\rmSweepFullServedRel}{\ensuremath{-}59.9}
+\newcommand{\rmSweepFullWorst}{84}
+\newcommand{\rmSweepFullWorstP}{p = 0.564}
+\newcommand{\rmSweepFullWorstRel}{2.6}
+\newcommand{\rmThrFullHazard}{98}
+\newcommand{\rmThrFullHazardP}{p = 0.018}
+\newcommand{\rmThrFullHazardRel}{\ensuremath{-}1.3}
+\newcommand{\rmThrFullKm}{32.5}
+\newcommand{\rmThrFullKmP}{p < 0.001}
+\newcommand{\rmThrFullKmPer}{2.68}
+\newcommand{\rmThrFullKmPerP}{p < 0.001}
+\newcommand{\rmThrFullKmPerRel}{97.8}
+\newcommand{\rmThrFullKmRel}{\ensuremath{-}30.3}
+\newcommand{\rmThrFullMean}{59.4}
+\newcommand{\rmThrFullNever}{0}
+\newcommand{\rmThrFullObjective}{2{,}969.9}
+\newcommand{\rmThrFullObjectiveP}{p < 0.001}
+\newcommand{\rmThrFullObjectiveRel}{602.4}
+\newcommand{\rmThrFullOverflow}{3.09}
+\newcommand{\rmThrFullOverflowP}{p = 0.001}
+\newcommand{\rmThrFullOverflowRel}{418.0}
+\newcommand{\rmThrFullPninetyfive}{112}
+\newcommand{\rmThrFullPninetyfiveP}{p = 0.001}
+\newcommand{\rmThrFullPninetyfiveRel}{134.2}
+\newcommand{\rmThrFullServed}{12.2}
+\newcommand{\rmThrFullServedP}{p < 0.001}
+\newcommand{\rmThrFullServedRel}{\ensuremath{-}65.1}
+\newcommand{\rmThrFullWorst}{348}
+\newcommand{\rmThrFullWorstP}{p = 0.001}
+\newcommand{\rmThrFullWorstRel}{342.1}
+\newcommand{\rtInsAgeHazard}{98}
+\newcommand{\rtInsAgeHazardP}{p = 0.040}
+\newcommand{\rtInsAgeHazardRel}{1.3}
+\newcommand{\rtInsAgeKm}{58.4}
+\newcommand{\rtInsAgeKmP}{p = 1.000}
+\newcommand{\rtInsAgeKmPer}{1.76}
+\newcommand{\rtInsAgeKmPerP}{p = 1.000}
+\newcommand{\rtInsAgeKmPerRel}{\ensuremath{-}0.4}
+\newcommand{\rtInsAgeKmRel}{\ensuremath{-}0.5}
+\newcommand{\rtInsAgeMean}{21.5}
+\newcommand{\rtInsAgeNever}{0}
+\newcommand{\rtInsAgeObjective}{1{,}259.5}
+\newcommand{\rtInsAgeObjectiveP}{p = 0.013}
+\newcommand{\rtInsAgeObjectiveRel}{7.3}
+\newcommand{\rtInsAgeOverflow}{4.93}
+\newcommand{\rtInsAgeOverflowP}{p = 0.040}
+\newcommand{\rtInsAgeOverflowRel}{\ensuremath{-}7.6}
+\newcommand{\rtInsAgePninetyfive}{43}
+\newcommand{\rtInsAgePninetyfiveP}{p = 0.127}
+\newcommand{\rtInsAgePninetyfiveRel}{\ensuremath{-}8.1}
+\newcommand{\rtInsAgeServed}{33.9}
+\newcommand{\rtInsAgeServedP}{p = 1.000}
+\newcommand{\rtInsAgeServedRel}{0.1}
+\newcommand{\rtInsAgeWorst}{240}
+\newcommand{\rtInsAgeWorstP}{p = 0.004}
+\newcommand{\rtInsAgeWorstRel}{130.5}
+\newcommand{\rtInsFullHazard}{97}
+\newcommand{\rtInsFullKm}{58.6}
+\newcommand{\rtInsFullKmPer}{1.76}
+\newcommand{\rtInsFullMean}{21.5}
+\newcommand{\rtInsFullNever}{0}
+\newcommand{\rtInsFullObjective}{1{,}174.1}
+\newcommand{\rtInsFullOverflow}{5.34}
+\newcommand{\rtInsFullPninetyfive}{46}
+\newcommand{\rtInsFullServed}{33.8}
+\newcommand{\rtInsFullWorst}{72}
+\newcommand{\rtInsFullrrHazard}{93}
+\newcommand{\rtInsFullrrHazardP}{p = 0.017}
+\newcommand{\rtInsFullrrHazardRel}{\ensuremath{-}3.6}
+\newcommand{\rtInsFullrrKm}{58.5}
+\newcommand{\rtInsFullrrKmP}{p = 1.000}
+\newcommand{\rtInsFullrrKmPer}{1.76}
+\newcommand{\rtInsFullrrKmPerP}{p = 1.000}
+\newcommand{\rtInsFullrrKmPerRel}{\ensuremath{-}0.3}
+\newcommand{\rtInsFullrrKmRel}{\ensuremath{-}0.2}
+\newcommand{\rtInsFullrrMean}{21.5}
+\newcommand{\rtInsFullrrNever}{0}
+\newcommand{\rtInsFullrrObjective}{1{,}188.7}
+\newcommand{\rtInsFullrrObjectiveP}{p = 1.000}
+\newcommand{\rtInsFullrrObjectiveRel}{1.2}
+\newcommand{\rtInsFullrrOverflow}{5.20}
+\newcommand{\rtInsFullrrOverflowP}{p = 0.935}
+\newcommand{\rtInsFullrrOverflowRel}{\ensuremath{-}2.7}
+\newcommand{\rtInsFullrrPninetyfive}{46}
+\newcommand{\rtInsFullrrPninetyfiveP}{p = 1.000}
+\newcommand{\rtInsFullrrPninetyfiveRel}{0.0}
+\newcommand{\rtInsFullrrServed}{33.9}
+\newcommand{\rtInsFullrrServedP}{p = 1.000}
+\newcommand{\rtInsFullrrServedRel}{0.1}
+\newcommand{\rtInsFullrrWorst}{72}
+\newcommand{\rtInsFullrrWorstP}{p = 0.114}
+\newcommand{\rtInsFullrrWorstRel}{\ensuremath{-}7.3}
+\newcommand{\rtInsTierUHazard}{97}
+\newcommand{\rtInsTierUHazardP}{p = 0.371}
+\newcommand{\rtInsTierUHazardRel}{0.5}
+\newcommand{\rtInsTierUKm}{58.4}
+\newcommand{\rtInsTierUKmP}{p = 1.000}
+\newcommand{\rtInsTierUKmPer}{1.74}
+\newcommand{\rtInsTierUKmPerP}{p = 1.000}
+\newcommand{\rtInsTierUKmPerRel}{\ensuremath{-}1.5}
+\newcommand{\rtInsTierUKmRel}{\ensuremath{-}0.4}
+\newcommand{\rtInsTierUMean}{21.2}
+\newcommand{\rtInsTierUNever}{0}
+\newcommand{\rtInsTierUObjective}{1{,}161.9}
+\newcommand{\rtInsTierUObjectiveP}{p = 1.000}
+\newcommand{\rtInsTierUObjectiveRel}{\ensuremath{-}1.0}
+\newcommand{\rtInsTierUOverflow}{5.23}
+\newcommand{\rtInsTierUOverflowP}{p = 1.000}
+\newcommand{\rtInsTierUOverflowRel}{\ensuremath{-}2.0}
+\newcommand{\rtInsTierUPninetyfive}{47}
+\newcommand{\rtInsTierUPninetyfiveP}{p = 1.000}
+\newcommand{\rtInsTierUPninetyfiveRel}{1.6}
+\newcommand{\rtInsTierUServed}{34.1}
+\newcommand{\rtInsTierUServedP}{p = 0.800}
+\newcommand{\rtInsTierUServedRel}{0.8}
+\newcommand{\rtInsTierUWorst}{168}
+\newcommand{\rtInsTierUWorstP}{p = 0.405}
+\newcommand{\rtInsTierUWorstRel}{17.1}
+\newcommand{\rtInsUrgHazard}{97}
+\newcommand{\rtInsUrgHazardP}{p = 0.926}
+\newcommand{\rtInsUrgHazardRel}{0.4}
+\newcommand{\rtInsUrgKm}{57.3}
+\newcommand{\rtInsUrgKmP}{p = 0.075}
+\newcommand{\rtInsUrgKmPer}{1.69}
+\newcommand{\rtInsUrgKmPerP}{p = 0.029}
+\newcommand{\rtInsUrgKmPerRel}{\ensuremath{-}4.2}
+\newcommand{\rtInsUrgKmRel}{\ensuremath{-}2.3}
+\newcommand{\rtInsUrgMean}{21.1}
+\newcommand{\rtInsUrgNever}{0}
+\newcommand{\rtInsUrgObjective}{1{,}357.4}
+\newcommand{\rtInsUrgObjectiveP}{p < 0.001}
+\newcommand{\rtInsUrgObjectiveRel}{15.6}
+\newcommand{\rtInsUrgOverflow}{4.86}
+\newcommand{\rtInsUrgOverflowP}{p = 0.032}
+\newcommand{\rtInsUrgOverflowRel}{\ensuremath{-}8.9}
+\newcommand{\rtInsUrgPninetyfive}{46}
+\newcommand{\rtInsUrgPninetyfiveP}{p = 0.926}
+\newcommand{\rtInsUrgPninetyfiveRel}{\ensuremath{-}1.6}
+\newcommand{\rtInsUrgServed}{34.4}
+\newcommand{\rtInsUrgServedP}{p = 0.075}
+\newcommand{\rtInsUrgServedRel}{1.8}
+\newcommand{\rtInsUrgWorst}{240}
+\newcommand{\rtInsUrgWorstP}{p = 0.003}
+\newcommand{\rtInsUrgWorstRel}{150.0}
+\newcommand{\rtNetworks}{16}
+\newcommand{\rtOrtFullHazard}{82}
+\newcommand{\rtOrtFullHazardP}{p = 0.002}
+\newcommand{\rtOrtFullHazardRel}{\ensuremath{-}15.3}
+\newcommand{\rtOrtFullKm}{53.6}
+\newcommand{\rtOrtFullKmP}{p < 0.001}
+\newcommand{\rtOrtFullKmPer}{1.47}
+\newcommand{\rtOrtFullKmPerP}{p < 0.001}
+\newcommand{\rtOrtFullKmPerRel}{\ensuremath{-}16.9}
+\newcommand{\rtOrtFullKmRel}{\ensuremath{-}8.6}
+\newcommand{\rtOrtFullMean}{19.6}
+\newcommand{\rtOrtFullNever}{0}
+\newcommand{\rtOrtFullObjective}{1{,}008.8}
+\newcommand{\rtOrtFullObjectiveP}{p < 0.001}
+\newcommand{\rtOrtFullObjectiveRel}{\ensuremath{-}14.1}
+\newcommand{\rtOrtFullOverflow}{3.68}
+\newcommand{\rtOrtFullOverflowP}{p < 0.001}
+\newcommand{\rtOrtFullOverflowRel}{\ensuremath{-}31.0}
+\newcommand{\rtOrtFullPninetyfive}{45}
+\newcommand{\rtOrtFullPninetyfiveP}{p = 0.109}
+\newcommand{\rtOrtFullPninetyfiveRel}{\ensuremath{-}3.2}
+\newcommand{\rtOrtFullServed}{37.0}
+\newcommand{\rtOrtFullServedP}{p = 0.002}
+\newcommand{\rtOrtFullServedRel}{9.4}
+\newcommand{\rtOrtFullWorst}{84}
+\newcommand{\rtOrtFullWorstP}{p = 0.042}
+\newcommand{\rtOrtFullWorstRel}{11.0}
+\newcommand{\rtOrtFullrrHazard}{84}
+\newcommand{\rtOrtFullrrHazardP}{p = 0.003}
+\newcommand{\rtOrtFullrrHazardRel}{\ensuremath{-}13.2}
+\newcommand{\rtOrtFullrrKm}{53.9}
+\newcommand{\rtOrtFullrrKmP}{p < 0.001}
+\newcommand{\rtOrtFullrrKmPer}{1.49}
+\newcommand{\rtOrtFullrrKmPerP}{p < 0.001}
+\newcommand{\rtOrtFullrrKmPerRel}{\ensuremath{-}15.3}
+\newcommand{\rtOrtFullrrKmRel}{\ensuremath{-}8.0}
+\newcommand{\rtOrtFullrrMean}{19.8}
+\newcommand{\rtOrtFullrrNever}{0}
+\newcommand{\rtOrtFullrrObjective}{1{,}029.8}
+\newcommand{\rtOrtFullrrObjectiveP}{p = 0.003}
+\newcommand{\rtOrtFullrrObjectiveRel}{\ensuremath{-}12.3}
+\newcommand{\rtOrtFullrrOverflow}{4.12}
+\newcommand{\rtOrtFullrrOverflowP}{p = 0.003}
+\newcommand{\rtOrtFullrrOverflowRel}{\ensuremath{-}22.8}
+\newcommand{\rtOrtFullrrPninetyfive}{46}
+\newcommand{\rtOrtFullrrPninetyfiveP}{p = 0.317}
+\newcommand{\rtOrtFullrrPninetyfiveRel}{\ensuremath{-}1.6}
+\newcommand{\rtOrtFullrrServed}{36.7}
+\newcommand{\rtOrtFullrrServedP}{p = 0.003}
+\newcommand{\rtOrtFullrrServedRel}{8.4}
+\newcommand{\rtOrtFullrrWorst}{72}
+\newcommand{\rtOrtFullrrWorstP}{p = 0.315}
+\newcommand{\rtOrtFullrrWorstRel}{\ensuremath{-}4.9}
+\newcommand{\rtOrtTierUHazard}{67}
+\newcommand{\rtOrtTierUHazardP}{p < 0.001}
+\newcommand{\rtOrtTierUHazardRel}{\ensuremath{-}30.8}
+\newcommand{\rtOrtTierUKm}{51.3}
+\newcommand{\rtOrtTierUKmP}{p < 0.001}
+\newcommand{\rtOrtTierUKmPer}{1.36}
+\newcommand{\rtOrtTierUKmPerP}{p < 0.001}
+\newcommand{\rtOrtTierUKmPerRel}{\ensuremath{-}23.0}
+\newcommand{\rtOrtTierUKmRel}{\ensuremath{-}12.5}
+\newcommand{\rtOrtTierUMean}{18.9}
+\newcommand{\rtOrtTierUNever}{2}
+\newcommand{\rtOrtTierUObjective}{993.8}
+\newcommand{\rtOrtTierUObjectiveP}{p < 0.001}
+\newcommand{\rtOrtTierUObjectiveRel}{\ensuremath{-}15.4}
+\newcommand{\rtOrtTierUOverflow}{3.12}
+\newcommand{\rtOrtTierUOverflowP}{p < 0.001}
+\newcommand{\rtOrtTierUOverflowRel}{\ensuremath{-}41.5}
+\newcommand{\rtOrtTierUPninetyfive}{44}
+\newcommand{\rtOrtTierUPninetyfiveP}{p = 0.059}
+\newcommand{\rtOrtTierUPninetyfiveRel}{\ensuremath{-}6.3}
+\newcommand{\rtOrtTierUServed}{38.1}
+\newcommand{\rtOrtTierUServedP}{p = 0.001}
+\newcommand{\rtOrtTierUServedRel}{12.6}
+\newcommand{\rtOrtTierUWorst}{468}
+\newcommand{\rtOrtTierUWorstP}{p = 0.001}
+\newcommand{\rtOrtTierUWorstRel}{211.0}
+\newcommand{\rtOrtUrgHazard}{70}
+\newcommand{\rtOrtUrgHazardP}{p = 0.002}
+\newcommand{\rtOrtUrgHazardRel}{\ensuremath{-}28.0}
+\newcommand{\rtOrtUrgKm}{51.5}
+\newcommand{\rtOrtUrgKmP}{p < 0.001}
+\newcommand{\rtOrtUrgKmPer}{1.37}
+\newcommand{\rtOrtUrgKmPerP}{p < 0.001}
+\newcommand{\rtOrtUrgKmPerRel}{\ensuremath{-}22.6}
+\newcommand{\rtOrtUrgKmRel}{\ensuremath{-}12.2}
+\newcommand{\rtOrtUrgMean}{19.0}
+\newcommand{\rtOrtUrgNever}{3}
+\newcommand{\rtOrtUrgObjective}{1{,}132.7}
+\newcommand{\rtOrtUrgObjectiveP}{p = 0.495}
+\newcommand{\rtOrtUrgObjectiveRel}{\ensuremath{-}3.5}
+\newcommand{\rtOrtUrgOverflow}{3.23}
+\newcommand{\rtOrtUrgOverflowP}{p = 0.002}
+\newcommand{\rtOrtUrgOverflowRel}{\ensuremath{-}39.6}
+\newcommand{\rtOrtUrgPninetyfive}{41}
+\newcommand{\rtOrtUrgPninetyfiveP}{p = 0.016}
+\newcommand{\rtOrtUrgPninetyfiveRel}{\ensuremath{-}11.3}
+\newcommand{\rtOrtUrgServed}{38.1}
+\newcommand{\rtOrtUrgServedP}{p < 0.001}
+\newcommand{\rtOrtUrgServedRel}{12.5}
+\newcommand{\rtOrtUrgWorst}{468}
+\newcommand{\rtOrtUrgWorstP}{p = 0.002}
+\newcommand{\rtOrtUrgWorstRel}{273.2}
+\newcommand{\rtSweepFullHazard}{50}
+\newcommand{\rtSweepFullHazardP}{p < 0.001}
+\newcommand{\rtSweepFullHazardRel}{\ensuremath{-}48.3}
+\newcommand{\rtSweepFullKm}{26.0}
+\newcommand{\rtSweepFullKmP}{p < 0.001}
+\newcommand{\rtSweepFullKmPer}{1.85}
+\newcommand{\rtSweepFullKmPerP}{p = 0.144}
+\newcommand{\rtSweepFullKmPerRel}{5.1}
+\newcommand{\rtSweepFullKmRel}{\ensuremath{-}55.7}
+\newcommand{\rtSweepFullMean}{52.5}
+\newcommand{\rtSweepFullNever}{0}
+\newcommand{\rtSweepFullObjective}{5{,}287.6}
+\newcommand{\rtSweepFullObjectiveP}{p < 0.001}
+\newcommand{\rtSweepFullObjectiveRel}{350.3}
+\newcommand{\rtSweepFullOverflow}{15.79}
+\newcommand{\rtSweepFullOverflowP}{p < 0.001}
+\newcommand{\rtSweepFullOverflowRel}{195.7}
+\newcommand{\rtSweepFullPninetyfive}{53}
+\newcommand{\rtSweepFullPninetyfiveP}{p = 0.063}
+\newcommand{\rtSweepFullPninetyfiveRel}{14.5}
+\newcommand{\rtSweepFullServed}{14.2}
+\newcommand{\rtSweepFullServedP}{p = 0.002}
+\newcommand{\rtSweepFullServedRel}{\ensuremath{-}58.2}
+\newcommand{\rtSweepFullWorst}{72}
+\newcommand{\rtSweepFullWorstP}{p = 0.118}
+\newcommand{\rtSweepFullWorstRel}{\ensuremath{-}6.1}
+\newcommand{\rtThrFullHazard}{96}
+\newcommand{\rtThrFullHazardP}{p = 0.041}
+\newcommand{\rtThrFullHazardRel}{\ensuremath{-}1.1}
+\newcommand{\rtThrFullKm}{46.3}
+\newcommand{\rtThrFullKmP}{p < 0.001}
+\newcommand{\rtThrFullKmPer}{2.39}
+\newcommand{\rtThrFullKmPerP}{p < 0.001}
+\newcommand{\rtThrFullKmPerRel}{35.6}
+\newcommand{\rtThrFullKmRel}{\ensuremath{-}21.0}
+\newcommand{\rtThrFullMean}{37.2}
+\newcommand{\rtThrFullNever}{0}
+\newcommand{\rtThrFullObjective}{3{,}070.8}
+\newcommand{\rtThrFullObjectiveP}{p < 0.001}
+\newcommand{\rtThrFullObjectiveRel}{161.5}
+\newcommand{\rtThrFullOverflow}{11.96}
+\newcommand{\rtThrFullOverflowP}{p < 0.001}
+\newcommand{\rtThrFullOverflowRel}{124.0}
+\newcommand{\rtThrFullPninetyfive}{68}
+\newcommand{\rtThrFullPninetyfiveP}{p = 0.001}
+\newcommand{\rtThrFullPninetyfiveRel}{46.8}
+\newcommand{\rtThrFullServed}{19.4}
+\newcommand{\rtThrFullServedP}{p = 0.001}
+\newcommand{\rtThrFullServedRel}{\ensuremath{-}42.6}
+\newcommand{\rtThrFullWorst}{300}
+\newcommand{\rtThrFullWorstP}{p = 0.001}
+\newcommand{\rtThrFullWorstRel}{181.7}
+\newcommand{\speedMax}{60.4}
+\newcommand{\speedMin}{10.2}
+\newcommand{\sweepCases}{8}
+\newcommand{\sweepCeilingKm}{33}
+\newcommand{\sweepExact}{8}
+\newcommand{\sweepLongest}{288}
+\newcommand{\tightAttained}{12}
+\newcommand{\tightCases}{12}
+\newcommand{\tripAboveHalf}{4}
+\newcommand{\tripCostMax}{119.0}
+\newcommand{\tripCostMaxConstant}{111.5}
+\newcommand{\tripCostMaxWait}{63.5}
+\newcommand{\tripCostMaxWaitConstant}{59.5}
+\newcommand{\tripCostMedian}{26.6}
+\newcommand{\tripErrHigh}{+13.3}
+\newcommand{\tripErrLow}{\ensuremath{-}43.4}
+\newcommand{\tripLongest}{31.66}
+\newcommand{\tripLongestBack}{17.51}
+\newcommand{\tripLongestErr}{8.8}
+\newcommand{\tripLongestOut}{14.15}
+\newcommand{\tripNotServable}{0}
+\newcommand{\tripUnderstated}{59}
+\newcommand{\tuneAcoBest}{938}
+\newcommand{\tuneAcoSettings}{8}
+\newcommand{\tuneAcoWorst}{1{,}403}
+\newcommand{\tuneBudget}{209}
+\newcommand{\tuneGenBest}{1{,}002}
+\newcommand{\tuneGenSettings}{8}
+\newcommand{\tuneGenWorst}{1{,}946}
+\newcommand{\tuneInsObjective}{1{,}103}
+\newcommand{\tuneOrtBest}{862}
+\newcommand{\tuneOrtSettings}{6}
+\newcommand{\tuneOrtWorst}{945}
+\newcommand{\wdBeforeP}{p = 0.078}
+\newcommand{\wdBeforePct}{8.7}
+\newcommand{\wdContainers}{32}
+\newcommand{\wdDates}{949}
+\newcommand{\wdGeneralP}{p = 0.140}
+\newcommand{\wdGeneralPct}{3.8}
+\newcommand{\wdPairs}{24{,}095}
+\newcommand{\wdRecyclingP}{p < 0.001}
+\newcommand{\wdRecyclingPct}{34.2}
+\newcommand{\wdTempCoef}{0.1025}
+\newcommand{\wdTempHi}{19.4}
+\newcommand{\wdTempLo}{2.8}
+\newcommand{\wdTempP}{p = 0.007}
+\newcommand{\wdTempPct}{10.8}
+\newcommand{\wdTempPctNoMonth}{18.2}
+\newcommand{\wdTempZ}{2.69}
+\newcommand{\wdWetCoefSigned}{-\, 0.0903}
+\newcommand{\wdWetHi}{13.2}
+\newcommand{\wdWetLo}{3.8}
+\newcommand{\wdWetP}{p < 0.001}
+\newcommand{\wdWetPct}{8.6}
+\newcommand{\wdWetPctNoMonth}{9.0}
+\newcommand{\wdWetZ}{\ensuremath{-}3.46}
+\newcommand{\wxHeatBlindInsFullBreaches}{0}
+\newcommand{\wxHeatBlindInsFullDropped}{4.2}
+\newcommand{\wxHeatBlindInsFullHeads}{66}
+\newcommand{\wxHeatBlindInsFullServed}{32.3}
+\newcommand{\wxHeatBlindInsFullWorst}{180}
+\newcommand{\wxHeatBlindInsUrgBreaches}{0}
+\newcommand{\wxHeatBlindInsUrgDropped}{4.5}
+\newcommand{\wxHeatBlindInsUrgHeads}{0}
+\newcommand{\wxHeatBlindInsUrgServed}{33.1}
+\newcommand{\wxHeatBlindInsUrgWorst}{216}
+\newcommand{\wxHeatBlindOrtFullBreaches}{3}
+\newcommand{\wxHeatBlindOrtFullDropped}{4.7}
+\newcommand{\wxHeatBlindOrtFullHeads}{72}
+\newcommand{\wxHeatBlindOrtFullServed}{34.1}
+\newcommand{\wxHeatBlindOrtFullWorst}{192}
+\newcommand{\wxHeatCurrInsFullBreaches}{0}
+\newcommand{\wxHeatCurrInsFullDropped}{2.0}
+\newcommand{\wxHeatCurrInsFullHeads}{27}
+\newcommand{\wxHeatCurrInsFullServed}{32.3}
+\newcommand{\wxHeatCurrInsFullWorst}{108}
+\newcommand{\wxHeatCurrInsUrgBreaches}{0}
+\newcommand{\wxHeatCurrInsUrgDropped}{2.3}
+\newcommand{\wxHeatCurrInsUrgHeads}{0}
+\newcommand{\wxHeatCurrInsUrgServed}{33.3}
+\newcommand{\wxHeatCurrInsUrgWorst}{252}
+\newcommand{\wxHeatCurrOrtFullBreaches}{0}
+\newcommand{\wxHeatCurrOrtFullDropped}{2.0}
+\newcommand{\wxHeatCurrOrtFullHeads}{27}
+\newcommand{\wxHeatCurrOrtFullServed}{33.7}
+\newcommand{\wxHeatCurrOrtFullWorst}{108}
+\newcommand{\wxHeatForeInsFullBreaches}{0}
+\newcommand{\wxHeatForeInsFullDropped}{0.6}
+\newcommand{\wxHeatForeInsFullHeads}{11}
+\newcommand{\wxHeatForeInsFullServed}{31.3}
+\newcommand{\wxHeatForeInsFullWorst}{96}
+\newcommand{\wxHeatForeInsUrgBreaches}{0}
+\newcommand{\wxHeatForeInsUrgDropped}{0.6}
+\newcommand{\wxHeatForeInsUrgHeads}{0}
+\newcommand{\wxHeatForeInsUrgServed}{32.1}
+\newcommand{\wxHeatForeInsUrgWorst}{204}
+\newcommand{\wxHeatForeOrtFullBreaches}{0}
+\newcommand{\wxHeatForeOrtFullDropped}{0.6}
+\newcommand{\wxHeatForeOrtFullHeads}{10}
+\newcommand{\wxHeatForeOrtFullServed}{32.6}
+\newcommand{\wxHeatForeOrtFullWorst}{96}
+\newcommand{\wxHeatProtInsFullBreaches}{0}
+\newcommand{\wxHeatProtInsFullDropped}{4.5}
+\newcommand{\wxHeatProtInsFullHeads}{0}
+\newcommand{\wxHeatProtInsFullServed}{31.9}
+\newcommand{\wxHeatProtInsFullWorst}{132}
+\newcommand{\wxHeatProtOrtFullBreaches}{0}
+\newcommand{\wxHeatProtOrtFullDropped}{5.6}
+\newcommand{\wxHeatProtOrtFullHeads}{1}
+\newcommand{\wxHeatProtOrtFullServed}{33.4}
+\newcommand{\wxHeatProtOrtFullWorst}{132}
+\newcommand{\wxOnsetBlindInsFullBreaches}{0}
+\newcommand{\wxOnsetBlindInsFullDropped}{1.7}
+\newcommand{\wxOnsetBlindInsFullHeads}{22}
+\newcommand{\wxOnsetBlindInsFullServed}{34.5}
+\newcommand{\wxOnsetBlindInsFullWorst}{96}
+\newcommand{\wxOnsetBlindInsUrgBreaches}{0}
+\newcommand{\wxOnsetBlindInsUrgDropped}{1.5}
+\newcommand{\wxOnsetBlindInsUrgHeads}{0}
+\newcommand{\wxOnsetBlindInsUrgServed}{35.4}
+\newcommand{\wxOnsetBlindInsUrgWorst}{228}
+\newcommand{\wxOnsetBlindOrtFullBreaches}{0}
+\newcommand{\wxOnsetBlindOrtFullDropped}{1.9}
+\newcommand{\wxOnsetBlindOrtFullHeads}{23}
+\newcommand{\wxOnsetBlindOrtFullServed}{36.8}
+\newcommand{\wxOnsetBlindOrtFullWorst}{120}
+\newcommand{\wxOnsetCurrInsFullBreaches}{0}
+\newcommand{\wxOnsetCurrInsFullDropped}{1.1}
+\newcommand{\wxOnsetCurrInsFullHeads}{12}
+\newcommand{\wxOnsetCurrInsFullServed}{34.5}
+\newcommand{\wxOnsetCurrInsFullWorst}{84}
+\newcommand{\wxOnsetCurrInsUrgBreaches}{0}
+\newcommand{\wxOnsetCurrInsUrgDropped}{1.0}
+\newcommand{\wxOnsetCurrInsUrgHeads}{0}
+\newcommand{\wxOnsetCurrInsUrgServed}{34.7}
+\newcommand{\wxOnsetCurrInsUrgWorst}{240}
+\newcommand{\wxOnsetCurrOrtFullBreaches}{0}
+\newcommand{\wxOnsetCurrOrtFullDropped}{1.2}
+\newcommand{\wxOnsetCurrOrtFullHeads}{12}
+\newcommand{\wxOnsetCurrOrtFullServed}{37.0}
+\newcommand{\wxOnsetCurrOrtFullWorst}{96}
+\newcommand{\wxOnsetForeInsFullBreaches}{0}
+\newcommand{\wxOnsetForeInsFullDropped}{0.3}
+\newcommand{\wxOnsetForeInsFullHeads}{3}
+\newcommand{\wxOnsetForeInsFullServed}{34.3}
+\newcommand{\wxOnsetForeInsFullWorst}{84}
+\newcommand{\wxOnsetForeInsUrgBreaches}{0}
+\newcommand{\wxOnsetForeInsUrgDropped}{0.1}
+\newcommand{\wxOnsetForeInsUrgHeads}{0}
+\newcommand{\wxOnsetForeInsUrgServed}{35.8}
+\newcommand{\wxOnsetForeInsUrgWorst}{216}
+\newcommand{\wxOnsetForeOrtFullBreaches}{0}
+\newcommand{\wxOnsetForeOrtFullDropped}{0.1}
+\newcommand{\wxOnsetForeOrtFullHeads}{0}
+\newcommand{\wxOnsetForeOrtFullServed}{37.1}
+\newcommand{\wxOnsetForeOrtFullWorst}{72}
+\newcommand{\wxOnsetProtInsFullBreaches}{0}
+\newcommand{\wxOnsetProtInsFullDropped}{1.8}
+\newcommand{\wxOnsetProtInsFullHeads}{0}
+\newcommand{\wxOnsetProtInsFullServed}{34.1}
+\newcommand{\wxOnsetProtInsFullWorst}{84}
+\newcommand{\wxOnsetProtOrtFullBreaches}{0}
+\newcommand{\wxOnsetProtOrtFullDropped}{2.2}
+\newcommand{\wxOnsetProtOrtFullHeads}{0}
+\newcommand{\wxOnsetProtOrtFullServed}{36.6}
+\newcommand{\wxOnsetProtOrtFullWorst}{84}
+\newcommand{\wxRainBlindInsFullBreaches}{0}
+\newcommand{\wxRainBlindInsFullDropped}{3.8}
+\newcommand{\wxRainBlindInsFullHeads}{57}
+\newcommand{\wxRainBlindInsFullServed}{32.9}
+\newcommand{\wxRainBlindInsFullWorst}{156}
+\newcommand{\wxRainBlindInsUrgBreaches}{0}
+\newcommand{\wxRainBlindInsUrgDropped}{3.5}
+\newcommand{\wxRainBlindInsUrgHeads}{0}
+\newcommand{\wxRainBlindInsUrgServed}{33.3}
+\newcommand{\wxRainBlindInsUrgWorst}{324}
+\newcommand{\wxRainBlindOrtFullBreaches}{1}
+\newcommand{\wxRainBlindOrtFullDropped}{3.9}
+\newcommand{\wxRainBlindOrtFullHeads}{64}
+\newcommand{\wxRainBlindOrtFullServed}{34.6}
+\newcommand{\wxRainBlindOrtFullWorst}{180}
+\newcommand{\wxRainCurrInsFullBreaches}{0}
+\newcommand{\wxRainCurrInsFullDropped}{0.0}
+\newcommand{\wxRainCurrInsFullHeads}{0}
+\newcommand{\wxRainCurrInsFullServed}{33.0}
+\newcommand{\wxRainCurrInsFullWorst}{72}
+\newcommand{\wxRainCurrInsUrgBreaches}{0}
+\newcommand{\wxRainCurrInsUrgDropped}{0.0}
+\newcommand{\wxRainCurrInsUrgHeads}{0}
+\newcommand{\wxRainCurrInsUrgServed}{34.6}
+\newcommand{\wxRainCurrInsUrgWorst}{240}
+\newcommand{\wxRainCurrOrtFullBreaches}{0}
+\newcommand{\wxRainCurrOrtFullDropped}{0.0}
+\newcommand{\wxRainCurrOrtFullHeads}{0}
+\newcommand{\wxRainCurrOrtFullServed}{34.8}
+\newcommand{\wxRainCurrOrtFullWorst}{84}
+\newcommand{\wxRainProtInsFullBreaches}{0}
+\newcommand{\wxRainProtInsFullDropped}{3.8}
+\newcommand{\wxRainProtInsFullHeads}{0}
+\newcommand{\wxRainProtInsFullServed}{32.0}
+\newcommand{\wxRainProtInsFullWorst}{108}
+\newcommand{\wxRainProtOrtFullBreaches}{0}
+\newcommand{\wxRainProtOrtFullDropped}{4.8}
+\newcommand{\wxRainProtOrtFullHeads}{0}
+\newcommand{\wxRainProtOrtFullServed}{34.2}
+\newcommand{\wxRainProtOrtFullWorst}{120}
+\newcommand{\wxStormBlindInsFullBreaches}{0}
+\newcommand{\wxStormBlindInsFullDropped}{4.2}
+\newcommand{\wxStormBlindInsFullHeads}{68}
+\newcommand{\wxStormBlindInsFullServed}{31.7}
+\newcommand{\wxStormBlindInsFullWorst}{180}
+\newcommand{\wxStormBlindInsUrgBreaches}{0}
+\newcommand{\wxStormBlindInsUrgDropped}{4.0}
+\newcommand{\wxStormBlindInsUrgHeads}{0}
+\newcommand{\wxStormBlindInsUrgServed}{33.1}
+\newcommand{\wxStormBlindInsUrgWorst}{324}
+\newcommand{\wxStormBlindOrtFullBreaches}{0}
+\newcommand{\wxStormBlindOrtFullDropped}{4.7}
+\newcommand{\wxStormBlindOrtFullHeads}{72}
+\newcommand{\wxStormBlindOrtFullServed}{33.7}
+\newcommand{\wxStormBlindOrtFullWorst}{180}
+\newcommand{\wxStormCurrInsFullBreaches}{0}
+\newcommand{\wxStormCurrInsFullDropped}{0.0}
+\newcommand{\wxStormCurrInsFullHeads}{0}
+\newcommand{\wxStormCurrInsFullServed}{31.9}
+\newcommand{\wxStormCurrInsFullWorst}{72}
+\newcommand{\wxStormCurrInsUrgBreaches}{0}
+\newcommand{\wxStormCurrInsUrgDropped}{0.0}
+\newcommand{\wxStormCurrInsUrgHeads}{0}
+\newcommand{\wxStormCurrInsUrgServed}{33.8}
+\newcommand{\wxStormCurrInsUrgWorst}{204}
+\newcommand{\wxStormCurrOrtFullBreaches}{0}
+\newcommand{\wxStormCurrOrtFullDropped}{0.0}
+\newcommand{\wxStormCurrOrtFullHeads}{0}
+\newcommand{\wxStormCurrOrtFullServed}{33.4}
+\newcommand{\wxStormCurrOrtFullWorst}{72}
+\newcommand{\wxStormProtInsFullBreaches}{0}
+\newcommand{\wxStormProtInsFullDropped}{4.5}
+\newcommand{\wxStormProtInsFullHeads}{0}
+\newcommand{\wxStormProtInsFullServed}{31.7}
+\newcommand{\wxStormProtInsFullWorst}{144}
+\newcommand{\wxStormProtOrtFullBreaches}{0}
+\newcommand{\wxStormProtOrtFullDropped}{5.5}
+\newcommand{\wxStormProtOrtFullHeads}{0}
+\newcommand{\wxStormProtOrtFullServed}{33.3}
+\newcommand{\wxStormProtOrtFullWorst}{120}
+\newcommand{\wyAcoFullDelta}{0.10}
+\newcommand{\wyAcoFullKm}{18.7}
+\newcommand{\wyAcoFullLower}{2}
+\newcommand{\wyAcoFullObj}{149.4}
+\newcommand{\wyAcoFullP}{p = 0.003}
+\newcommand{\wyAcoFullRel}{0.4}
+\newcommand{\wyAcoFullRelHi}{0.7}
+\newcommand{\wyAcoFullRelLo}{0.1}
+\newcommand{\wyAcoFullServed}{31.0}
+\newcommand{\wyGenFullDelta}{0.07}
+\newcommand{\wyGenFullKm}{19.1}
+\newcommand{\wyGenFullLower}{1}
+\newcommand{\wyGenFullObj}{149.4}
+\newcommand{\wyGenFullP}{p = 0.001}
+\newcommand{\wyGenFullRel}{0.4}
+\newcommand{\wyGenFullRelHi}{0.7}
+\newcommand{\wyGenFullRelLo}{0.1}
+\newcommand{\wyGenFullServed}{31.0}
+\newcommand{\wyInsFullKm}{18.7}
+\newcommand{\wyInsFullObj}{148.9}
+\newcommand{\wyInsFullServed}{31.2}
+\newcommand{\wyOrtFullDelta}{0.01}
+\newcommand{\wyOrtFullKm}{18.7}
+\newcommand{\wyOrtFullLower}{6}
+\newcommand{\wyOrtFullObj}{148.8}
+\newcommand{\wyOrtFullP}{p = 0.627}
+\newcommand{\wyOrtFullRel}{0.0}
+\newcommand{\wyOrtFullRelHi}{0.0}
+\newcommand{\wyOrtFullRelLo}{\ensuremath{-}0.1}
+\newcommand{\wyOrtFullServed}{31.2}
+\newcommand{\wyRiskTierUDelta}{0.86}
+\newcommand{\wyRiskTierUKm}{25.6}
+\newcommand{\wyRiskTierULower}{0}
+\newcommand{\wyRiskTierUObj}{200.1}
+\newcommand{\wyRiskTierUP}{p < 0.001}
+\newcommand{\wyRiskTierURel}{34.4}
+\newcommand{\wyRiskTierURelHi}{49.7}
+\newcommand{\wyRiskTierURelLo}{22.4}
+\newcommand{\wyRiskTierUServed}{32.0}
+\newcommand{\wySweepFullDelta}{0.82}
+\newcommand{\wySweepFullKm}{19.9}
+\newcommand{\wySweepFullLower}{0}
+\newcommand{\wySweepFullObj}{183.5}
+\newcommand{\wySweepFullP}{p < 0.001}
+\newcommand{\wySweepFullRel}{23.3}
+\newcommand{\wySweepFullRelHi}{36.2}
+\newcommand{\wySweepFullRelLo}{13.1}
+\newcommand{\wySweepFullServed}{32.0}
+\newcommand{\wyThrFullDelta}{1.00}
+\newcommand{\wyThrFullKm}{15.1}
+\newcommand{\wyThrFullLower}{0}
+\newcommand{\wyThrFullObj}{1{,}846.8}
+\newcommand{\wyThrFullP}{p < 0.001}
+\newcommand{\wyThrFullRel}{1{,}140.7}
+\newcommand{\wyThrFullRelHi}{1{,}298.0}
+\newcommand{\wyThrFullRelLo}{990.9}
+\newcommand{\wyThrFullServed}{5.1}
+\newcommand{\wyUnits}{25}

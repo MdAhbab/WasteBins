@@ -1,0 +1,35 @@
+\begin{table}[!t]
+\caption{Multi-cycle results, moderate load.}
+\label{tab:rollout_moderate}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Policy & Worst & \multicolumn{2}{c}{Wait at collection (h)} & Never & Overflow & Hazards & Served & km per \\
+\cmidrule(lr){3-4}
+ & wait (h) & mean & p95 & collected & (\%) & in cycle (\%) & per cycle & container \\
+\midrule
+Insertion, urgency & 228 & 20.7 & 51 & 0 & 0.52 & 100 & 34.8 & 1.20 \\
+Insertion, ageing & 216 & 21.4 & 44 & 0 & 0.45 & 100 & 33.8 & 1.27 \\
+Insertion, tier, bounded & 84 & 20.8 & 48 & 0 & 0.56 & 100 & 34.8 & 1.37 \\
+Insertion, tier, unbounded & 84 & 20.7 & 48 & 0 & 0.64 & 100 & 35.1 & 1.37 \\
+Insertion, reservation, bounded & 72 & 20.7 & 48 & 0 & 0.61 & 100 & 34.9 & 1.36 \\
+Insertion, full, $r = 1$ & 72 & 20.8 & 48 & 0 & 0.60 & 100 & 34.8 & 1.36 \\
+Insertion, full, $r = 2$ & 72 & 20.8 & 48 & 0 & 0.66 & 99 & 34.9 & 1.35 \\
+Insertion, full, $r = 4$ & 72 & 20.7 & 48 & 0 & 0.60 & 95 & 35.0 & 1.35 \\
+Insertion, full, $r = 8$ & 72 & 20.8 & 48 & 0 & 0.63 & 95 & 34.8 & 1.37 \\
+Insertion, full with ageing & 60 & 21.6 & 44 & 0 & 0.57 & 100 & 33.5 & 1.37 \\
+OR-Tools, urgency & 240 & 18.2 & 42 & 0 & 0.37 & 98 & 39.8 & 1.10 \\
+OR-Tools, tier, unbounded & 132 & 18.8 & 47 & 0 & 0.38 & 96 & 38.5 & 1.23 \\
+OR-Tools, full, $r = 1$ & 72 & 18.7 & 46 & 0 & 0.34 & 99 & 38.7 & 1.23 \\
+OR-Tools, full, $r = 4$ & 60 & 18.9 & 46 & 0 & 0.45 & 98 & 38.3 & 1.25 \\
+Ant colony, tier, unbounded & 444 & 26.5 & 53 & 0 & 1.59 & 86 & 27.4 & 1.17 \\
+Genetic algorithm, tier, unbounded & 408 & 25.4 & 50 & 0 & 0.79 & 83 & 28.5 & 1.54 \\
+Risk graph, tier, unbounded & 468 & 57.5 & 107 & 55 & 6.99 & 37 & 11.7 & 1.20 \\
+Static sweep & 84 & 54.0 & 55 & 0 & 5.79 & 65 & 14.0 & 1.80 \\
+Fill threshold & 348 & 59.4 & 112 & 0 & 3.09 & 98 & 12.2 & 2.68 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Worst wait is the largest over all networks; other columns are means over networks.
+\end{table}

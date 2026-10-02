@@ -1,0 +1,18 @@
+\begin{table}[!t]
+\caption{Planner settings and tuning grids.}
+\label{tab:config}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lr>{\raggedright\arraybackslash}p{0.28\textwidth}>{\raggedright\arraybackslash}p{0.13\textwidth}>{\raggedright\arraybackslash}p{0.21\textwidth}}
+\toprule
+Planner & Grid & Setting selected & Mean objective & Fixed parameters \\
+ & size & & best to worst & \\
+\midrule
+OR-Tools & 6 & first solution parallel cheapest insertion, metaheuristic guided local search & 862 to 945 & arc emissions at mean load \\
+Ant colony & 8 & ants 8, $\beta$ 2.5, local-search share 0.3 & 938 to 1{,}403 & $\alpha = 1$, evaporation 0.10, $q_0 = 0.25$ \\
+Genetic algorithm & 8 & population 40, mutation rate 0.5, local-search share 0.3 & 1{,}002 to 1{,}946 & crossover 0.85, elite 4, tournament 3 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Each grid was run on three tuning instances at the matched time; the setting with the lowest mean objective was kept.
+\end{table}

@@ -1,0 +1,21 @@
+\begin{table}[!t]
+\caption{Multi-cycle results, hazard load.}
+\label{tab:rollout_hazard}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Policy & Worst & \multicolumn{2}{c}{Wait at collection (h)} & Never & Overflow & Hazards & Served & km per \\
+\cmidrule(lr){3-4}
+ & wait (h) & mean & p95 & collected & (\%) & in cycle (\%) & per cycle & container \\
+\midrule
+Insertion, tier, unbounded & 180 & 20.7 & 57 & 0 & 2.38 & 87 & 35.0 & 1.53 \\
+Insertion, full, $r = 1$ & 120 & 20.8 & 58 & 0 & 2.20 & 86 & 34.8 & 1.56 \\
+Insertion, full, $r = 4$ & 84 & 20.7 & 51 & 0 & 1.28 & 82 & 35.0 & 1.55 \\
+OR-Tools, tier, unbounded & 156 & 18.5 & 45 & 0 & 0.33 & 83 & 39.1 & 1.28 \\
+OR-Tools, full, $r = 1$ & 72 & 18.8 & 45 & 0 & 0.34 & 83 & 38.8 & 1.31 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Worst wait is the largest over all networks; other columns are means over networks.
+\end{table}

@@ -1,0 +1,21 @@
+\begin{table}[!t]
+\caption{Single-cycle comparison on the Dhaka samples.}
+\label{tab:main}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Planner & Objective & vs.\ insertion (\%) & $\delta$ & $p$ & km & Served & Overflow & Hazard (h) & Time (s) \\
+\midrule
+Insertion & 1{,}177.7 $\pm$ 152.3 & reference &  &  & 208.1 & 153.8 & 2.5 & 2.33 & 182 \\
+OR-Tools & 895.0 $\pm$ 148.7 & \ensuremath{-}24.0 [\ensuremath{-}25.3, \ensuremath{-}22.8] & \ensuremath{-}0.82 & $<0.001$ & 132.5 & 159.3 & 2.5 & 2.19 & 182 \\
+Ant colony & 1{,}013.1 $\pm$ 152.1 & \ensuremath{-}14.0 [\ensuremath{-}15.4, \ensuremath{-}12.5] & \ensuremath{-}0.55 & $<0.001$ & 159.4 & 156.4 & 2.5 & 2.44 & 183 \\
+Genetic algorithm & 1{,}075.3 $\pm$ 161.6 & \ensuremath{-}8.7 [\ensuremath{-}10.1, \ensuremath{-}7.3] & \ensuremath{-}0.37 & $<0.001$ & 177.8 & 155.4 & 2.5 & 2.46 & 182 \\
+Risk graph & 1{,}771.1 $\pm$ 264.9 & +50.4 [+45.6, +55.4] & 0.96 & $<0.001$ & 199.9 & 160.0 & 9.2 & 3.50 & 0 \\
+Static sweep & 1{,}782.0 $\pm$ 264.9 & +51.3 [+46.3, +56.5] & 0.97 & $<0.001$ & 198.1 & 160.0 & 10.5 & 3.90 & 3 \\
+Fill threshold & 7{,}676.9 $\pm$ 776.6 & +551.9 [+526.9, +576.4] & 1.00 & $<0.001$ & 98.5 & 65.0 & 2.5 & 2.26 & 46 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Matched computing time; every planner except the risk graph under the full rule. Means $\pm$ standard deviation over snapshots. The relative difference is the ratio of means with a 95 percent percentile bootstrap interval; $\delta$ is Cliff's delta and $p$ the Holm-adjusted Wilcoxon signed-rank $p$-value against the insertion planner. Overflow counts containers reached after their predicted overflow plus unserved containers predicted to overflow within 24~h.
+\end{table}

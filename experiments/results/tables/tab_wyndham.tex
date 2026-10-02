@@ -1,0 +1,21 @@
+\begin{table}[!t]
+\caption{Single-cycle comparison on the Wyndham days.}
+\label{tab:wyndham}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Planner & Objective & vs.\ insertion (\%) & $\delta$ & $p$ & km & Served & Overflow & Hazard (h) & Time (s) \\
+\midrule
+Insertion & 148.9 $\pm$ 35.4 & reference &  &  & 18.7 & 31.2 & 0.1 & 1.14 & 28 \\
+OR-Tools & 148.8 $\pm$ 35.4 & 0.0 [\ensuremath{-}0.1, 0.0] & 0.01 & 0.627 & 18.7 & 31.2 & 0.1 & 1.13 & 28 \\
+Ant colony & 149.4 $\pm$ 35.3 & +0.4 [+0.1, +0.7] & 0.10 & 0.003 & 18.7 & 31.0 & 0.1 & 1.24 & 24 \\
+Genetic algorithm & 149.4 $\pm$ 35.3 & +0.4 [+0.1, +0.7] & 0.07 & 0.001 & 19.1 & 31.0 & 0.1 & 1.32 & 24 \\
+Risk graph & 200.1 $\pm$ 59.4 & +34.4 [+22.4, +49.7] & 0.86 & $<0.001$ & 25.6 & 32.0 & 0.3 & 1.44 & 0 \\
+Static sweep & 183.5 $\pm$ 51.2 & +23.3 [+13.1, +36.2] & 0.82 & $<0.001$ & 19.9 & 32.0 & 0.4 & 2.35 & 0 \\
+Fill threshold & 1{,}846.8 $\pm$ 419.7 & +1{,}140.7 [+990.9, +1{,}298.0] & 1.00 & $<0.001$ & 15.1 & 5.1 & 0.1 & 0.99 & 1 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Matched computing time; every planner except the risk graph under the full rule. Means $\pm$ standard deviation over snapshots. The relative difference is the ratio of means with a 95 percent percentile bootstrap interval; $\delta$ is Cliff's delta and $p$ the Holm-adjusted Wilcoxon signed-rank $p$-value against the insertion planner. Overflow counts containers reached after their predicted overflow plus unserved containers predicted to overflow within 24~h.
+\end{table}

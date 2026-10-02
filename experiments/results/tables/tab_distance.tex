@@ -1,0 +1,18 @@
+\begin{table}[!t]
+\caption{Plans on a constant detour factor driven on the street graph.}
+\label{tab:distance}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Planner & Reported & Driven & Understated & Routes over & Worst & Driven vs.\ street \\
+ & km & km & (\%) & shift & overrun (min) & plan (\%) \\
+\midrule
+Insertion & 180.4 & 232.0 & 22.3 & 18 of 45 & 59 & +9.4 [+4.4, +14.2] \\
+OR-Tools & 105.4 & 158.1 & 33.3 & 0 of 45 & 0 & +19.4 [+14.7, +24.5] \\
+Ant colony & 125.8 & 178.5 & 29.5 & 3 of 45 & 80 & +12.9 [+8.8, +17.2] \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Factor 1.30; primary sample; means over snapshots.
+\end{table}
