@@ -2,3 +2,19 @@
 === 2026-10-02 16:25:31 experiments.exp_compare --study weights-lambdax0.5 --shard 0 --of 2
 [weights-lambdax0.5] shard 0/2: 4 of 8 units
   S0 snapshot 0
+    ortools             full            obj     833.7  served 158   256.3s
+    aco                 full            obj     934.7  served 149   256.4s
+  S0 snapshot 0: 3 solves, 779s (total 13.0 min)
+  S0 snapshot 2
+    ortools             full            obj     887.4  served 153   288.2s
+    aco                 full            obj    1026.8  served 149   288.2s
+  S0 snapshot 2: 3 solves, 874s (total 27.5 min)
+  S0 snapshot 4
+    ortools             full            obj    1013.4  served 157   240.4s
+    aco                 full            obj    1064.8  served 154   240.4s
+  S0 snapshot 4: 3 solves, 729s (total 39.7 min)
+  S0 snapshot 6
+    ortools             full            obj     737.3  served 157   220.7s
+    aco                 full            obj     905.2  served 146   220.9s
+  S0 snapshot 6: 3 solves, 671s (total 50.9 min)
+[weights-lambdax0.5] shard 0 finished
