@@ -6,3 +6,9 @@
 === 2026-10-02 19:10:20 experiments.exp_compare --study budget-2 --shard 0 --of 2
 [budget-2] shard 0/2: 3 of 6 units
   S0 snapshot 0
+    ortools             full            obj     845.4  served 159   397.4s
+    aco                 full            obj     953.5  served 155   394.9s
+    genetic             full            obj     982.9  served 151   394.9s
+  S0 snapshot 0: 3 solves, 1195s (total 19.9 min)
+  S0 snapshot 2
+    ortools             full            obj     911.0  served 158   378.3s

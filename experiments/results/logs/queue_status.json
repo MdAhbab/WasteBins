@@ -1,10 +1,10 @@
 {
- "updated": "2026-10-02 19:10:20",
- "hours_running": 0.03,
+ "updated": "2026-10-02 19:41:10",
+ "hours_running": 0.54,
  "workers": 3,
  "counts": {
-  "done": 131,
-  "running": 3
+  "done": 132,
+  "running": 2
  },
  "jobs": [
   {
@@ -993,11 +993,11 @@
   },
   {
    "name": "depot-18-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "19:10:13",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "19:41:10",
+   "minutes": 31.0
   },
   {
    "name": "depot-werribee-00",
