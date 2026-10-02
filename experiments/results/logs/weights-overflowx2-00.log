@@ -2,3 +2,16 @@
 === 2026-10-02 15:39:32 experiments.exp_compare --study weights-overflowx2 --shard 0 --of 2
 [weights-overflowx2] shard 0/2: 4 of 8 units
   S0 snapshot 0
+    ortools             full            obj    1011.0  served 159   240.0s
+    aco                 full            obj    1100.1  served 153   239.9s
+  S0 snapshot 0: 3 solves, 729s (total 12.2 min)
+  S0 snapshot 2
+    ortools             full            obj    1161.1  served 158   225.3s
+    aco                 full            obj    1275.3  served 153   225.3s
+  S0 snapshot 2: 3 solves, 684s (total 23.6 min)
+  S0 snapshot 4
+    ortools             full            obj    1318.4  served 158   222.7s
+    aco                 full            obj    1404.9  served 156   227.6s
+  S0 snapshot 4: 3 solves, 682s (total 34.9 min)
+  S0 snapshot 6
+    ortools             full            obj     815.7  served 158   231.1s
