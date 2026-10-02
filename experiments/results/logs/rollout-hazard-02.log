@@ -1,3 +1,4 @@
 
 === 2026-10-02 08:13:36 experiments.exp_rollout --load hazard --shard 2 --of 8
 [rollout-hazard] shard 2/8: networks ['R2']
+  R2 insertion   full             wait mean  18.9 p95    48 max   120  never  0  overflow  2.19%  served 38.2  km  46.8  use  99%   7.3 min

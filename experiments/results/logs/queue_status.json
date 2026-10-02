@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 08:13:36",
- "hours_running": 9.21,
+ "updated": "2026-10-02 08:25:15",
+ "hours_running": 9.4,
  "workers": 3,
  "counts": {
-  "done": 79,
+  "done": 80,
   "running": 3,
-  "pending": 52
+  "pending": 51
  },
  "jobs": [
   {
@@ -634,11 +634,11 @@
   },
   {
    "name": "rollout-tight-15",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "07:22:46",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "08:25:15",
+   "minutes": 62.5
   },
   {
    "name": "rollout-hazard-00",
@@ -666,9 +666,9 @@
   },
   {
    "name": "rollout-hazard-03",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "08:25:15",
    "ended": "",
    "minutes": 0.0
   },

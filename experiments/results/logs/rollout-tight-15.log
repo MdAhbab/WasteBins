@@ -8,3 +8,9 @@
   R15 insertion   full_r4          wait mean  19.8 p95    48 max    60  never  0  overflow  4.95%  served 36.2  km  51.9  use  99%   6.5 min
   R15 ortools     urgency          wait mean  17.6 p95    36 max   468  never  1  overflow  2.86%  served 40.3  km  45.9  use  99%   6.7 min
   R15 ortools     tier_unbounded   wait mean  17.8 p95    36 max   180  never  0  overflow  3.12%  served 40.1  km  46.0  use  99%   6.7 min
+  R15 ortools     full             wait mean  18.4 p95    43 max    84  never  0  overflow  3.59%  served 39.1  km  47.3  use  99%   6.7 min
+  R15 ortools     full_r4          wait mean  18.4 p95    48 max    60  never  0  overflow  3.91%  served 39.1  km  48.0  use  99%   6.7 min
+  R15 static_sweepfull             wait mean  48.0 p95    48 max    60  never  0  overflow 18.23%  served 15.0  km  22.6  use  98%   0.0 min
+  R15 threshold   full             wait mean  33.9 p95    60 max   144  never  0  overflow 13.07%  served 21.2  km  41.1  use  98%   2.0 min
+  R15: 11 chains, 62.4 min
+[rollout-tight] shard 15 finished
