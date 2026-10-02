@@ -4,3 +4,13 @@
   R0 insertion   full             wait mean  22.0 p95    48 max    60  never  0  overflow  5.00%  served 32.8  km  57.7  use 100%   5.2 min
   R0 insertion   urgency          wait mean  20.8 p95    48 max   240  never  0  overflow  4.06%  served 34.4  km  54.7  use 100%   5.4 min
   R0 insertion   ageing           wait mean  21.0 p95    36 max   240  never  0  overflow  4.22%  served 34.3  km  54.7  use  99%   5.4 min
+  R0 insertion   tier_unbounded   wait mean  21.7 p95    48 max    60  never  0  overflow  4.64%  served 33.0  km  58.2  use 100%   5.2 min
+  R0 insertion   full_r4          wait mean  22.3 p95    48 max    60  never  0  overflow  5.21%  served 32.2  km  58.4  use  99%   5.1 min
+  R0 ortools     urgency          wait mean  19.5 p95    36 max   240  never  0  overflow  3.18%  served 37.0  km  49.3  use  99%   5.2 min
+  R0 ortools     tier_unbounded   wait mean  19.7 p95    48 max   168  never  0  overflow  3.59%  served 36.5  km  50.7  use  99%   5.2 min
+  R0 ortools     full             wait mean  21.0 p95    48 max    72  never  0  overflow  4.11%  served 34.3  km  55.9  use  99%   5.2 min
+  R0 ortools     full_r4          wait mean  21.3 p95    48 max    60  never  0  overflow  4.53%  served 33.8  km  56.4  use  99%   5.2 min
+  R0 static_sweepfull             wait mean  48.0 p95    48 max    60  never  0  overflow 17.50%  served 15.0  km  30.2  use  98%   0.0 min
+  R0 threshold   full             wait mean  34.4 p95    60 max   192  never  0  overflow 11.77%  served 21.2  km  48.4  use  95%   1.9 min
+  R0: 11 chains, 49.0 min
+[rollout-tight] shard 0 finished

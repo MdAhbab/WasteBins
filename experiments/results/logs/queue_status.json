@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 03:44:57",
- "hours_running": 4.73,
+ "updated": "2026-10-02 04:22:52",
+ "hours_running": 5.36,
  "workers": 3,
  "counts": {
-  "done": 63,
+  "done": 65,
   "running": 3,
-  "pending": 68
+  "pending": 66
  },
  "jobs": [
   {
@@ -514,19 +514,19 @@
   },
   {
    "name": "rollout-tight-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "03:24:29",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "04:13:29",
+   "minutes": 49.0
   },
   {
    "name": "rollout-tight-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "03:27:25",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "04:22:52",
+   "minutes": 55.5
   },
   {
    "name": "rollout-tight-02",
@@ -538,17 +538,17 @@
   },
   {
    "name": "rollout-tight-03",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "04:13:29",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "rollout-tight-04",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "04:22:52",
    "ended": "",
    "minutes": 0.0
   },
