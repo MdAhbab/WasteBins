@@ -10,3 +10,7 @@
   R4 onset current  insertion urgency   served 34.0>33.5  dropped  1.1  max wait  168  breach None  heads lost 0  overflow 0.38>0.42   5.2 min
   R4 onset current  ortools   full      served 38.1>35.6  dropped  1.3  max wait   72  breach False  heads lost 2  overflow 0.25>0.50   5.2 min
   R4 onset forecast insertion full      served 35.2>32.2  dropped  0.4  max wait   60  breach False  heads lost 0  overflow 0.50>0.25   5.1 min
+  R4 onset forecast insertion urgency   served 35.1>35.6  dropped  0.2  max wait  132  breach None  heads lost 0  overflow 0.50>0.25   5.2 min
+  R4 onset forecast ortools   full      served 37.6>35.1  dropped  0.2  max wait   60  breach False  heads lost 0  overflow 0.38>0.25   5.1 min
+  R4: 11 chains, 57.7 min
+[weather-onset] shard 4 finished

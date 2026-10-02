@@ -1,0 +1,6 @@
+
+=== 2026-10-02 03:24:29 experiments.exp_rollout --load tight --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 0 --of 16
+[rollout-tight] shard 0/16: networks ['R0']
+  R0 insertion   full             wait mean  22.0 p95    48 max    60  never  0  overflow  5.00%  served 32.8  km  57.7  use 100%   5.2 min
+  R0 insertion   urgency          wait mean  20.8 p95    48 max   240  never  0  overflow  4.06%  served 34.4  km  54.7  use 100%   5.4 min
+  R0 insertion   ageing           wait mean  21.0 p95    36 max   240  never  0  overflow  4.22%  served 34.3  km  54.7  use  99%   5.4 min

@@ -4,3 +4,13 @@
   R5 onset blind    insertion full      served 38.4>36.2  dropped  2.8  max wait   60  breach False  heads lost 2  overflow 0.38>0.50   6.7 min
   R5 onset blind    insertion urgency   served 40.2>38.0  dropped  1.2  max wait  192  breach None  heads lost 0  overflow 0.25>0.33   6.7 min
   R5 onset blind    ortools   full      served 41.5>39.2  dropped  2.8  max wait   60  breach False  heads lost 2  overflow 0.25>0.25   6.7 min
+  R5 onset protectedinsertion full      served 39.5>36.5  dropped  1.9  max wait   60  breach False  heads lost 0  overflow 0.38>0.33   6.7 min
+  R5 onset protectedortools   full      served 41.5>38.5  dropped  2.8  max wait   60  breach False  heads lost 0  overflow 0.25>0.25   6.7 min
+  R5 onset current  insertion full      served 38.8>35.6  dropped  1.5  max wait   60  breach False  heads lost 2  overflow 0.50>0.17   6.3 min
+  R5 onset current  insertion urgency   served 39.1>38.4  dropped  1.2  max wait  192  breach None  heads lost 0  overflow 0.38>0.42   6.4 min
+  R5 onset current  ortools   full      served 41.2>40.3  dropped  1.6  max wait   60  breach False  heads lost 1  overflow 0.12>0.17   6.3 min
+  R5 onset forecast insertion full      served 39.1>36.2  dropped  0.3  max wait   60  breach False  heads lost 0  overflow 0.25>0.08   6.2 min
+  R5 onset forecast insertion urgency   served 38.9>37.9  dropped  0.0  max wait  192  breach None  heads lost 0  overflow 0.38>0.25   6.1 min
+  R5 onset forecast ortools   full      served 41.2>40.0  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.17   6.2 min
+  R5: 11 chains, 70.9 min
+[weather-onset] shard 5 finished
