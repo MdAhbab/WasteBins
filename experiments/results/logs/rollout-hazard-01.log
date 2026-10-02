@@ -1,0 +1,3 @@
+
+=== 2026-10-02 08:05:22 experiments.exp_rollout --load hazard --shard 1 --of 8
+[rollout-hazard] shard 1/8: networks ['R1']

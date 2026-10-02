@@ -9,3 +9,8 @@
   R8 ortools     urgency          wait mean  18.7 p95    48 max   264  never  0  overflow  4.22%  served 38.4  km  47.5  use  99%   5.0 min
   R8 ortools     tier_unbounded   wait mean  19.2 p95    48 max   120  never  0  overflow  4.11%  served 37.8  km  48.2  use  99%   5.0 min
   R8 ortools     full             wait mean  19.3 p95    48 max    72  never  0  overflow  4.58%  served 37.3  km  50.0  use  99%   5.0 min
+  R8 ortools     full_r4          wait mean  19.9 p95    48 max    60  never  0  overflow  5.31%  served 36.0  km  52.0  use  99%   5.0 min
+  R8 static_sweepfull             wait mean  60.0 p95    60 max    60  never  0  overflow 15.36%  served 12.0  km  22.2  use  99%   0.0 min
+  R8 threshold   full             wait mean  35.0 p95    72 max   204  never  0  overflow 16.25%  served 20.5  km  42.3  use  98%   2.0 min
+  R8: 11 chains, 49.3 min
+[rollout-tight] shard 8 finished

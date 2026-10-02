@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 06:17:02",
- "hours_running": 7.26,
+ "updated": "2026-10-02 08:13:36",
+ "hours_running": 9.21,
  "workers": 3,
  "counts": {
-  "done": 72,
+  "done": 79,
   "running": 3,
-  "pending": 59
+  "pending": 52
  },
  "jobs": [
   {
@@ -578,11 +578,11 @@
   },
   {
    "name": "rollout-tight-08",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "05:37:31",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "06:26:49",
+   "minutes": 49.3
   },
   {
    "name": "rollout-tight-09",
@@ -594,73 +594,73 @@
   },
   {
    "name": "rollout-tight-10",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "05:57:10",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "06:57:40",
+   "minutes": 60.5
   },
   {
    "name": "rollout-tight-11",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "06:17:02",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "07:15:51",
+   "minutes": 58.8
   },
   {
    "name": "rollout-tight-12",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "06:26:49",
+   "ended": "07:22:46",
+   "minutes": 55.9
   },
   {
    "name": "rollout-tight-13",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "06:57:40",
+   "ended": "07:48:26",
+   "minutes": 50.8
   },
   {
    "name": "rollout-tight-14",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "07:15:51",
+   "ended": "08:05:22",
+   "minutes": 49.5
   },
   {
    "name": "rollout-tight-15",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "07:22:46",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "rollout-hazard-00",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "07:48:26",
+   "ended": "08:13:36",
+   "minutes": 25.2
   },
   {
    "name": "rollout-hazard-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "08:05:22",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "rollout-hazard-02",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "08:13:36",
    "ended": "",
    "minutes": 0.0
   },
