@@ -1,6 +1,6 @@
 {
- "updated": "2026-10-02 19:03:57",
- "hours_running": 20.05,
+ "updated": "2026-10-02 19:10:20",
+ "hours_running": 0.03,
  "workers": 3,
  "counts": {
   "done": 131,
@@ -11,991 +11,991 @@
    "name": "tune-select",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:11",
-   "ended": "23:01:25",
+   "started": "19:08:36",
+   "ended": "19:08:51",
    "minutes": 0.2
   },
   {
    "name": "main-00",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:25",
-   "ended": "23:01:29",
+   "started": "19:08:51",
+   "ended": "19:08:56",
    "minutes": 0.1
   },
   {
    "name": "main-01",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:28",
-   "ended": "23:01:31",
+   "started": "19:08:53",
+   "ended": "19:08:56",
    "minutes": 0.0
   },
   {
    "name": "main-02",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:29",
-   "ended": "23:01:31",
+   "started": "19:08:55",
+   "ended": "19:08:57",
    "minutes": 0.0
   },
   {
    "name": "main-03",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:30",
-   "ended": "23:01:33",
+   "started": "19:08:56",
+   "ended": "19:08:58",
    "minutes": 0.0
   },
   {
    "name": "main-04",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:31",
-   "ended": "23:01:33",
+   "started": "19:08:56",
+   "ended": "19:08:58",
    "minutes": 0.0
   },
   {
    "name": "main-05",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:31",
-   "ended": "23:01:34",
+   "started": "19:08:57",
+   "ended": "19:08:59",
    "minutes": 0.0
   },
   {
    "name": "main-06",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:33",
-   "ended": "23:01:34",
+   "started": "19:08:58",
+   "ended": "19:08:59",
    "minutes": 0.0
   },
   {
    "name": "main-07",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:33",
-   "ended": "23:01:35",
+   "started": "19:08:58",
+   "ended": "19:09:00",
    "minutes": 0.0
   },
   {
    "name": "main-08",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:34",
-   "ended": "23:01:36",
+   "started": "19:08:59",
+   "ended": "19:09:01",
    "minutes": 0.0
   },
   {
    "name": "main-09",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:34",
-   "ended": "23:01:37",
+   "started": "19:08:59",
+   "ended": "19:09:01",
    "minutes": 0.0
   },
   {
    "name": "main-10",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:35",
-   "ended": "23:01:37",
+   "started": "19:09:00",
+   "ended": "19:09:01",
    "minutes": 0.0
   },
   {
    "name": "main-11",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:36",
-   "ended": "23:01:38",
+   "started": "19:09:01",
+   "ended": "19:09:03",
    "minutes": 0.0
   },
   {
    "name": "main-12",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:37",
-   "ended": "23:01:38",
+   "started": "19:09:01",
+   "ended": "19:09:03",
    "minutes": 0.0
   },
   {
    "name": "wyndham-00",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:37",
-   "ended": "23:01:39",
+   "started": "19:09:01",
+   "ended": "19:09:03",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-00",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:38",
-   "ended": "23:01:41",
-   "minutes": 0.0
+   "started": "19:09:03",
+   "ended": "19:09:06",
+   "minutes": 0.1
   },
   {
    "name": "rollout-moderate-01",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:38",
-   "ended": "23:01:41",
+   "started": "19:09:03",
+   "ended": "19:09:06",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-02",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:39",
-   "ended": "23:01:42",
+   "started": "19:09:03",
+   "ended": "19:09:06",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-03",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:41",
-   "ended": "23:01:44",
+   "started": "19:09:06",
+   "ended": "19:09:08",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-04",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:41",
-   "ended": "23:01:44",
+   "started": "19:09:06",
+   "ended": "19:09:08",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-05",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:42",
-   "ended": "23:01:44",
+   "started": "19:09:06",
+   "ended": "19:09:08",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-06",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:44",
-   "ended": "23:01:46",
+   "started": "19:09:08",
+   "ended": "19:09:10",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-07",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:44",
-   "ended": "23:01:46",
+   "started": "19:09:08",
+   "ended": "19:09:10",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-08",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:44",
-   "ended": "23:01:46",
+   "started": "19:09:08",
+   "ended": "19:09:10",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-09",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:46",
-   "ended": "23:01:48",
+   "started": "19:09:10",
+   "ended": "19:09:12",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-10",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:46",
-   "ended": "23:01:49",
+   "started": "19:09:10",
+   "ended": "19:09:12",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-11",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:46",
-   "ended": "23:01:49",
+   "started": "19:09:10",
+   "ended": "19:09:12",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-12",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:48",
-   "ended": "23:01:51",
+   "started": "19:09:12",
+   "ended": "19:09:14",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-13",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:49",
-   "ended": "23:01:52",
+   "started": "19:09:12",
+   "ended": "19:09:14",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-14",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:49",
-   "ended": "23:01:52",
+   "started": "19:09:12",
+   "ended": "19:09:14",
    "minutes": 0.0
   },
   {
    "name": "rollout-moderate-15",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:51",
-   "ended": "23:01:54",
+   "started": "19:09:14",
+   "ended": "19:09:17",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-00",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:52",
-   "ended": "23:01:54",
+   "started": "19:09:14",
+   "ended": "19:09:16",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-01",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:52",
-   "ended": "23:01:54",
+   "started": "19:09:14",
+   "ended": "19:09:16",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-02",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:54",
-   "ended": "23:01:56",
+   "started": "19:09:16",
+   "ended": "19:09:18",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-03",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:54",
-   "ended": "23:01:56",
+   "started": "19:09:16",
+   "ended": "19:09:18",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-04",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:54",
-   "ended": "23:01:56",
+   "started": "19:09:17",
+   "ended": "19:09:19",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-05",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:56",
-   "ended": "23:01:58",
+   "started": "19:09:18",
+   "ended": "19:09:20",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-06",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:56",
-   "ended": "23:01:58",
+   "started": "19:09:18",
+   "ended": "19:09:21",
    "minutes": 0.0
   },
   {
    "name": "weather-rain-07",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:56",
-   "ended": "23:01:59",
+   "started": "19:09:19",
+   "ended": "19:09:21",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-00",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:58",
-   "ended": "23:02:00",
+   "started": "19:09:20",
+   "ended": "19:09:22",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-01",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:58",
-   "ended": "23:02:01",
+   "started": "19:09:21",
+   "ended": "19:09:23",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-02",
    "state": "done",
    "returncode": 0,
-   "started": "23:01:59",
-   "ended": "23:02:01",
+   "started": "19:09:21",
+   "ended": "19:09:23",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-03",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:00",
-   "ended": "23:02:02",
+   "started": "19:09:22",
+   "ended": "19:09:24",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-04",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:01",
-   "ended": "23:02:03",
+   "started": "19:09:23",
+   "ended": "19:09:25",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-05",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:01",
-   "ended": "23:02:03",
+   "started": "19:09:23",
+   "ended": "19:09:25",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-06",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:02",
-   "ended": "23:02:05",
+   "started": "19:09:24",
+   "ended": "19:09:26",
    "minutes": 0.0
   },
   {
    "name": "weather-heat-07",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:03",
-   "ended": "23:02:05",
+   "started": "19:09:25",
+   "ended": "19:09:26",
    "minutes": 0.0
   },
   {
    "name": "weather-storm-00",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:03",
-   "ended": "23:02:05",
+   "started": "19:09:25",
+   "ended": "19:09:26",
    "minutes": 0.0
   },
   {
    "name": "weather-storm-01",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:05",
-   "ended": "23:53:55",
-   "minutes": 51.8
+   "started": "19:09:26",
+   "ended": "19:09:28",
+   "minutes": 0.0
   },
   {
    "name": "weather-storm-02",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:05",
-   "ended": "23:55:18",
-   "minutes": 53.2
+   "started": "19:09:26",
+   "ended": "19:09:28",
+   "minutes": 0.0
   },
   {
    "name": "weather-storm-03",
    "state": "done",
    "returncode": 0,
-   "started": "23:02:05",
-   "ended": "23:47:58",
-   "minutes": 45.9
+   "started": "19:09:26",
+   "ended": "19:09:28",
+   "minutes": 0.0
   },
   {
    "name": "weather-storm-04",
    "state": "done",
    "returncode": 0,
-   "started": "23:47:58",
-   "ended": "00:30:45",
-   "minutes": 42.8
+   "started": "19:09:28",
+   "ended": "19:09:30",
+   "minutes": 0.0
   },
   {
    "name": "weather-storm-05",
    "state": "done",
    "returncode": 0,
-   "started": "23:53:55",
-   "ended": "00:47:12",
-   "minutes": 53.3
+   "started": "19:09:28",
+   "ended": "19:09:30",
+   "minutes": 0.0
   },
   {
    "name": "weather-storm-06",
    "state": "done",
    "returncode": 0,
-   "started": "23:55:18",
-   "ended": "00:34:46",
-   "minutes": 39.5
+   "started": "19:09:28",
+   "ended": "19:09:30",
+   "minutes": 0.0
   },
   {
    "name": "weather-storm-07",
    "state": "done",
    "returncode": 0,
-   "started": "00:30:45",
-   "ended": "01:10:15",
-   "minutes": 39.5
+   "started": "19:09:30",
+   "ended": "19:09:32",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-00",
    "state": "done",
    "returncode": 0,
-   "started": "00:34:46",
-   "ended": "01:32:04",
-   "minutes": 57.3
+   "started": "19:09:30",
+   "ended": "19:09:32",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-01",
    "state": "done",
    "returncode": 0,
-   "started": "00:47:12",
-   "ended": "01:53:07",
-   "minutes": 65.9
+   "started": "19:09:30",
+   "ended": "19:09:32",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-02",
    "state": "done",
    "returncode": 0,
-   "started": "01:10:15",
-   "ended": "02:16:27",
-   "minutes": 66.2
+   "started": "19:09:32",
+   "ended": "19:09:34",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-03",
    "state": "done",
    "returncode": 0,
-   "started": "01:32:04",
-   "ended": "02:31:07",
-   "minutes": 59.1
+   "started": "19:09:32",
+   "ended": "19:09:34",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-04",
    "state": "done",
    "returncode": 0,
-   "started": "01:53:07",
-   "ended": "02:50:52",
-   "minutes": 57.8
+   "started": "19:09:32",
+   "ended": "19:09:34",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-05",
    "state": "done",
    "returncode": 0,
-   "started": "02:16:27",
-   "ended": "03:27:25",
-   "minutes": 71.0
+   "started": "19:09:34",
+   "ended": "19:09:36",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-06",
    "state": "done",
    "returncode": 0,
-   "started": "02:31:07",
-   "ended": "03:24:29",
-   "minutes": 53.4
+   "started": "19:09:34",
+   "ended": "19:09:36",
+   "minutes": 0.0
   },
   {
    "name": "weather-onset-07",
    "state": "done",
    "returncode": 0,
-   "started": "02:50:52",
-   "ended": "03:44:57",
-   "minutes": 54.1
+   "started": "19:09:34",
+   "ended": "19:09:36",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-00",
    "state": "done",
    "returncode": 0,
-   "started": "03:24:29",
-   "ended": "04:13:29",
-   "minutes": 49.0
+   "started": "19:09:36",
+   "ended": "19:09:38",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-01",
    "state": "done",
    "returncode": 0,
-   "started": "03:27:25",
-   "ended": "04:22:52",
-   "minutes": 55.5
+   "started": "19:09:36",
+   "ended": "19:09:38",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-02",
    "state": "done",
    "returncode": 0,
-   "started": "03:44:57",
-   "ended": "04:49:50",
-   "minutes": 64.9
+   "started": "19:09:36",
+   "ended": "19:09:38",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-03",
    "state": "done",
    "returncode": 0,
-   "started": "04:13:29",
-   "ended": "04:54:07",
-   "minutes": 40.6
+   "started": "19:09:38",
+   "ended": "19:09:40",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-04",
    "state": "done",
    "returncode": 0,
-   "started": "04:22:52",
-   "ended": "05:13:38",
-   "minutes": 50.8
+   "started": "19:09:38",
+   "ended": "19:09:40",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-05",
    "state": "done",
    "returncode": 0,
-   "started": "04:49:50",
-   "ended": "05:37:45",
-   "minutes": 47.9
+   "started": "19:09:38",
+   "ended": "19:09:40",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-06",
    "state": "done",
    "returncode": 0,
-   "started": "04:54:07",
-   "ended": "05:37:31",
-   "minutes": 43.4
+   "started": "19:09:40",
+   "ended": "19:09:42",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-07",
    "state": "done",
    "returncode": 0,
-   "started": "05:13:38",
-   "ended": "05:57:10",
-   "minutes": 43.5
+   "started": "19:09:40",
+   "ended": "19:09:43",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-08",
    "state": "done",
    "returncode": 0,
-   "started": "05:37:31",
-   "ended": "06:26:49",
-   "minutes": 49.3
+   "started": "19:09:40",
+   "ended": "19:09:42",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-09",
    "state": "done",
    "returncode": 0,
-   "started": "05:37:45",
-   "ended": "06:17:02",
-   "minutes": 39.3
+   "started": "19:09:42",
+   "ended": "19:09:44",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-10",
    "state": "done",
    "returncode": 0,
-   "started": "05:57:10",
-   "ended": "06:57:40",
-   "minutes": 60.5
+   "started": "19:09:42",
+   "ended": "19:09:44",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-11",
    "state": "done",
    "returncode": 0,
-   "started": "06:17:02",
-   "ended": "07:15:51",
-   "minutes": 58.8
+   "started": "19:09:43",
+   "ended": "19:09:45",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-12",
    "state": "done",
    "returncode": 0,
-   "started": "06:26:49",
-   "ended": "07:22:46",
-   "minutes": 55.9
+   "started": "19:09:44",
+   "ended": "19:09:46",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-13",
    "state": "done",
    "returncode": 0,
-   "started": "06:57:40",
-   "ended": "07:48:26",
-   "minutes": 50.8
+   "started": "19:09:44",
+   "ended": "19:09:47",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-14",
    "state": "done",
    "returncode": 0,
-   "started": "07:15:51",
-   "ended": "08:05:22",
-   "minutes": 49.5
+   "started": "19:09:45",
+   "ended": "19:09:47",
+   "minutes": 0.0
   },
   {
    "name": "rollout-tight-15",
    "state": "done",
    "returncode": 0,
-   "started": "07:22:46",
-   "ended": "08:25:15",
-   "minutes": 62.5
+   "started": "19:09:46",
+   "ended": "19:09:49",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-00",
    "state": "done",
    "returncode": 0,
-   "started": "07:48:26",
-   "ended": "08:13:36",
-   "minutes": 25.2
+   "started": "19:09:47",
+   "ended": "19:09:48",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-01",
    "state": "done",
    "returncode": 0,
-   "started": "08:05:22",
-   "ended": "08:49:10",
-   "minutes": 43.8
+   "started": "19:09:47",
+   "ended": "19:09:48",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-02",
    "state": "done",
    "returncode": 0,
-   "started": "08:13:36",
-   "ended": "08:50:32",
-   "minutes": 36.9
+   "started": "19:09:48",
+   "ended": "19:09:50",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-03",
    "state": "done",
    "returncode": 0,
-   "started": "08:25:15",
-   "ended": "08:53:01",
-   "minutes": 27.8
+   "started": "19:09:48",
+   "ended": "19:09:50",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-04",
    "state": "done",
    "returncode": 0,
-   "started": "08:49:10",
-   "ended": "09:16:27",
-   "minutes": 27.3
+   "started": "19:09:49",
+   "ended": "19:09:50",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-05",
    "state": "done",
    "returncode": 0,
-   "started": "08:50:32",
-   "ended": "09:23:23",
-   "minutes": 32.8
+   "started": "19:09:50",
+   "ended": "19:09:52",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-06",
    "state": "done",
    "returncode": 0,
-   "started": "08:53:01",
-   "ended": "09:19:23",
-   "minutes": 26.4
+   "started": "19:09:50",
+   "ended": "19:09:52",
+   "minutes": 0.0
   },
   {
    "name": "rollout-hazard-07",
    "state": "done",
    "returncode": 0,
-   "started": "09:16:27",
-   "ended": "09:48:03",
-   "minutes": 31.6
+   "started": "19:09:50",
+   "ended": "19:09:52",
+   "minutes": 0.0
   },
   {
    "name": "ablation-00",
    "state": "done",
    "returncode": 0,
-   "started": "09:19:23",
-   "ended": "10:17:05",
-   "minutes": 57.7
+   "started": "19:09:52",
+   "ended": "19:09:54",
+   "minutes": 0.0
   },
   {
    "name": "ablation-01",
    "state": "done",
    "returncode": 0,
-   "started": "09:23:23",
-   "ended": "10:25:01",
-   "minutes": 61.6
+   "started": "19:09:52",
+   "ended": "19:09:54",
+   "minutes": 0.0
   },
   {
    "name": "ablation-02",
    "state": "done",
    "returncode": 0,
-   "started": "09:48:03",
-   "ended": "10:47:41",
-   "minutes": 59.6
+   "started": "19:09:52",
+   "ended": "19:09:54",
+   "minutes": 0.0
   },
   {
    "name": "ablation-03",
    "state": "done",
    "returncode": 0,
-   "started": "10:17:05",
-   "ended": "11:13:37",
-   "minutes": 56.5
+   "started": "19:09:54",
+   "ended": "19:09:56",
+   "minutes": 0.0
   },
   {
    "name": "ablation-04",
    "state": "done",
    "returncode": 0,
-   "started": "10:25:01",
-   "ended": "11:25:22",
-   "minutes": 60.3
+   "started": "19:09:54",
+   "ended": "19:09:56",
+   "minutes": 0.0
   },
   {
    "name": "distance-00",
    "state": "done",
    "returncode": 0,
-   "started": "10:47:41",
-   "ended": "11:27:43",
-   "minutes": 40.0
+   "started": "19:09:54",
+   "ended": "19:09:56",
+   "minutes": 0.0
   },
   {
    "name": "distance-01",
    "state": "done",
    "returncode": 0,
-   "started": "11:13:37",
-   "ended": "11:49:46",
-   "minutes": 36.1
+   "started": "19:09:56",
+   "ended": "19:09:58",
+   "minutes": 0.0
   },
   {
    "name": "distance-02",
    "state": "done",
    "returncode": 0,
-   "started": "11:25:22",
-   "ended": "12:04:50",
-   "minutes": 39.5
+   "started": "19:09:56",
+   "ended": "19:09:58",
+   "minutes": 0.0
   },
   {
    "name": "distance-03",
    "state": "done",
    "returncode": 0,
-   "started": "11:27:44",
-   "ended": "11:59:20",
-   "minutes": 31.6
+   "started": "19:09:56",
+   "ended": "19:09:58",
+   "minutes": 0.0
   },
   {
    "name": "distance-04",
    "state": "done",
    "returncode": 0,
-   "started": "11:49:46",
-   "ended": "12:26:49",
-   "minutes": 37.0
+   "started": "19:09:58",
+   "ended": "19:09:59",
+   "minutes": 0.0
   },
   {
    "name": "scale-00",
    "state": "done",
    "returncode": 0,
-   "started": "11:59:20",
-   "ended": "13:00:13",
-   "minutes": 60.9
+   "started": "19:09:58",
+   "ended": "19:09:59",
+   "minutes": 0.0
   },
   {
    "name": "scale-01",
    "state": "done",
    "returncode": 0,
-   "started": "12:04:50",
-   "ended": "12:50:43",
-   "minutes": 45.9
+   "started": "19:09:58",
+   "ended": "19:10:00",
+   "minutes": 0.0
   },
   {
    "name": "scale-02",
    "state": "done",
    "returncode": 0,
-   "started": "12:26:49",
-   "ended": "13:10:34",
-   "minutes": 43.8
+   "started": "19:09:59",
+   "ended": "19:10:01",
+   "minutes": 0.0
   },
   {
    "name": "scale-03",
    "state": "done",
    "returncode": 0,
-   "started": "12:50:43",
-   "ended": "13:20:11",
-   "minutes": 29.5
+   "started": "19:09:59",
+   "ended": "19:10:01",
+   "minutes": 0.0
   },
   {
    "name": "scale-04",
    "state": "done",
    "returncode": 0,
-   "started": "13:00:13",
-   "ended": "13:24:03",
-   "minutes": 23.8
+   "started": "19:10:00",
+   "ended": "19:10:01",
+   "minutes": 0.0
   },
   {
    "name": "weights-co2x0-00",
    "state": "done",
    "returncode": 0,
-   "started": "13:10:34",
-   "ended": "13:57:37",
-   "minutes": 47.0
+   "started": "19:10:01",
+   "ended": "19:10:03",
+   "minutes": 0.0
   },
   {
    "name": "weights-co2x0-01",
    "state": "done",
    "returncode": 0,
-   "started": "13:20:11",
-   "ended": "14:07:49",
-   "minutes": 47.6
+   "started": "19:10:01",
+   "ended": "19:10:03",
+   "minutes": 0.0
   },
   {
    "name": "weights-co2x3-00",
    "state": "done",
    "returncode": 0,
-   "started": "13:24:03",
-   "ended": "14:09:48",
-   "minutes": 45.8
+   "started": "19:10:01",
+   "ended": "19:10:03",
+   "minutes": 0.0
   },
   {
    "name": "weights-co2x3-01",
    "state": "done",
    "returncode": 0,
-   "started": "13:57:37",
-   "ended": "14:45:55",
-   "minutes": 48.3
+   "started": "19:10:03",
+   "ended": "19:10:04",
+   "minutes": 0.0
   },
   {
    "name": "weights-timex0.5-00",
    "state": "done",
    "returncode": 0,
-   "started": "14:07:49",
-   "ended": "14:57:03",
-   "minutes": 49.2
+   "started": "19:10:03",
+   "ended": "19:10:04",
+   "minutes": 0.0
   },
   {
    "name": "weights-timex0.5-01",
    "state": "done",
    "returncode": 0,
-   "started": "14:09:48",
-   "ended": "14:51:45",
-   "minutes": 41.9
+   "started": "19:10:03",
+   "ended": "19:10:05",
+   "minutes": 0.0
   },
   {
    "name": "weights-timex2-00",
    "state": "done",
    "returncode": 0,
-   "started": "14:45:55",
-   "ended": "15:35:56",
-   "minutes": 50.0
+   "started": "19:10:04",
+   "ended": "19:10:06",
+   "minutes": 0.0
   },
   {
    "name": "weights-timex2-01",
    "state": "done",
    "returncode": 0,
-   "started": "14:51:45",
-   "ended": "15:39:32",
-   "minutes": 47.8
+   "started": "19:10:04",
+   "ended": "19:10:06",
+   "minutes": 0.0
   },
   {
    "name": "weights-overflowx0.5-00",
    "state": "done",
    "returncode": 0,
-   "started": "14:57:03",
-   "ended": "15:44:40",
-   "minutes": 47.6
+   "started": "19:10:05",
+   "ended": "19:10:07",
+   "minutes": 0.0
   },
   {
    "name": "weights-overflowx0.5-01",
    "state": "done",
    "returncode": 0,
-   "started": "15:35:56",
-   "ended": "16:25:31",
-   "minutes": 49.6
+   "started": "19:10:06",
+   "ended": "19:10:08",
+   "minutes": 0.0
   },
   {
    "name": "weights-overflowx2-00",
    "state": "done",
    "returncode": 0,
-   "started": "15:39:32",
-   "ended": "16:26:12",
-   "minutes": 46.7
+   "started": "19:10:06",
+   "ended": "19:10:08",
+   "minutes": 0.0
   },
   {
    "name": "weights-overflowx2-01",
    "state": "done",
    "returncode": 0,
-   "started": "15:44:40",
-   "ended": "16:29:35",
-   "minutes": 44.9
+   "started": "19:10:07",
+   "ended": "19:10:08",
+   "minutes": 0.0
   },
   {
    "name": "weights-lambdax0.5-00",
    "state": "done",
    "returncode": 0,
-   "started": "16:25:31",
-   "ended": "17:16:27",
-   "minutes": 50.9
+   "started": "19:10:08",
+   "ended": "19:10:09",
+   "minutes": 0.0
   },
   {
    "name": "weights-lambdax0.5-01",
    "state": "done",
    "returncode": 0,
-   "started": "16:26:12",
-   "ended": "17:12:55",
-   "minutes": 46.7
+   "started": "19:10:08",
+   "ended": "19:10:09",
+   "minutes": 0.0
   },
   {
    "name": "weights-lambdax2-00",
    "state": "done",
    "returncode": 0,
-   "started": "16:29:35",
-   "ended": "17:15:51",
-   "minutes": 46.3
+   "started": "19:10:08",
+   "ended": "19:10:10",
+   "minutes": 0.0
   },
   {
    "name": "weights-lambdax2-01",
    "state": "done",
    "returncode": 0,
-   "started": "17:12:55",
-   "ended": "17:56:13",
-   "minutes": 43.3
+   "started": "19:10:09",
+   "ended": "19:10:11",
+   "minutes": 0.0
   },
   {
    "name": "depot-4-00",
    "state": "done",
    "returncode": 0,
-   "started": "17:15:51",
-   "ended": "18:01:55",
-   "minutes": 46.1
+   "started": "19:10:09",
+   "ended": "19:10:11",
+   "minutes": 0.0
   },
   {
    "name": "depot-4-01",
    "state": "done",
    "returncode": 0,
-   "started": "17:16:27",
-   "ended": "18:03:40",
-   "minutes": 47.2
+   "started": "19:10:10",
+   "ended": "19:10:11",
+   "minutes": 0.0
   },
   {
    "name": "depot-9-00",
    "state": "done",
    "returncode": 0,
-   "started": "17:56:13",
-   "ended": "18:39:47",
-   "minutes": 43.6
+   "started": "19:10:11",
+   "ended": "19:10:13",
+   "minutes": 0.0
   },
   {
    "name": "depot-9-01",
    "state": "done",
    "returncode": 0,
-   "started": "18:01:55",
-   "ended": "18:39:11",
-   "minutes": 37.3
+   "started": "19:10:11",
+   "ended": "19:10:13",
+   "minutes": 0.0
   },
   {
    "name": "depot-18-00",
    "state": "done",
    "returncode": 0,
-   "started": "18:03:40",
-   "ended": "18:39:40",
-   "minutes": 36.0
+   "started": "19:10:11",
+   "ended": "19:10:13",
+   "minutes": 0.0
   },
   {
    "name": "depot-18-01",
    "state": "running",
    "returncode": 0,
-   "started": "18:39:11",
+   "started": "19:10:13",
    "ended": "",
    "minutes": 0.0
   },
@@ -1003,71 +1003,71 @@
    "name": "depot-werribee-00",
    "state": "done",
    "returncode": 0,
-   "started": "18:39:40",
-   "ended": "18:46:20",
-   "minutes": 6.7
+   "started": "19:10:13",
+   "ended": "19:10:14",
+   "minutes": 0.0
   },
   {
    "name": "depot-werribee-01",
    "state": "done",
    "returncode": 0,
-   "started": "18:39:47",
-   "ended": "18:46:43",
-   "minutes": 6.9
+   "started": "19:10:13",
+   "ended": "19:10:15",
+   "minutes": 0.0
   },
   {
    "name": "depot-point_cook-00",
    "state": "done",
    "returncode": 0,
-   "started": "18:46:20",
-   "ended": "18:53:05",
-   "minutes": 6.7
+   "started": "19:10:14",
+   "ended": "19:10:16",
+   "minutes": 0.0
   },
   {
    "name": "depot-point_cook-01",
    "state": "done",
    "returncode": 0,
-   "started": "18:46:43",
-   "ended": "18:53:39",
-   "minutes": 6.9
+   "started": "19:10:15",
+   "ended": "19:10:17",
+   "minutes": 0.0
   },
   {
    "name": "budget-0.1-00",
    "state": "done",
    "returncode": 0,
-   "started": "18:53:05",
-   "ended": "18:56:17",
-   "minutes": 3.2
+   "started": "19:10:16",
+   "ended": "19:10:18",
+   "minutes": 0.0
   },
   {
    "name": "budget-0.1-01",
    "state": "done",
    "returncode": 0,
-   "started": "18:53:39",
-   "ended": "18:56:45",
-   "minutes": 3.1
+   "started": "19:10:17",
+   "ended": "19:10:18",
+   "minutes": 0.0
   },
   {
    "name": "budget-0.25-00",
    "state": "done",
    "returncode": 0,
-   "started": "18:56:17",
-   "ended": "19:03:43",
-   "minutes": 7.4
+   "started": "19:10:18",
+   "ended": "19:10:20",
+   "minutes": 0.0
   },
   {
    "name": "budget-0.25-01",
    "state": "done",
    "returncode": 0,
-   "started": "18:56:45",
-   "ended": "19:03:57",
-   "minutes": 7.2
+   "started": "19:10:18",
+   "ended": "19:10:20",
+   "minutes": 0.0
   },
   {
    "name": "budget-2-00",
    "state": "running",
    "returncode": 0,
-   "started": "19:03:43",
+   "started": "19:10:20",
    "ended": "",
    "minutes": 0.0
   },
@@ -1075,7 +1075,7 @@
    "name": "budget-2-01",
    "state": "running",
    "returncode": 0,
-   "started": "19:03:57",
+   "started": "19:10:20",
    "ended": "",
    "minutes": 0.0
   }

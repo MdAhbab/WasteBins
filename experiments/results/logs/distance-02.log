@@ -10,3 +10,6 @@
   S0 12 ortools    reported    99.9 km  driven   154.8 km  (+35.5 percent)  over shift 0 of 3, worst 0 min
   S0 12 aco        reported   130.1 km  driven   181.0 km  (+28.1 percent)  over shift 1 of 2, worst 54 min
 [distance] shard 2 finished
+
+=== 2026-10-02 19:09:56 experiments.exp_distance_model --snapshots 15 --shard 2 --of 5
+[distance] shard 2 finished

@@ -8,3 +8,8 @@
   R1 ortools     full             wait mean  15.9 p95    36 max    60  never  0  overflow  0.21%  served 45.4  km  40.0  use  99%   8.7 min
   R1: 5 chains, 43.8 min
 [rollout-hazard] shard 1 finished
+
+=== 2026-10-02 19:09:47 experiments.exp_rollout --load hazard --shard 1 --of 8
+[rollout-hazard] shard 1/8: networks ['R1']
+  R1: 0 chains, 0.0 min
+[rollout-hazard] shard 1 finished

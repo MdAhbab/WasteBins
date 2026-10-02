@@ -11,3 +11,8 @@
   R5 storm current  ortools   full      served 41.1>35.3  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.25   6.4 min
   R5: 8 chains, 53.3 min
 [weather-storm] shard 5 finished
+
+=== 2026-10-02 19:09:28 experiments.exp_weather --scenario storm --shard 5 --of 8
+[weather-storm] shard 5/8: networks ['R5']
+  R5: 0 chains, 0.0 min
+[weather-storm] shard 5 finished

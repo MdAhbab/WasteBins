@@ -5,3 +5,6 @@
   n=  80 snapshot 1: construction    41.7s  insertion     615.0  ortools     505.7
   n=  40 snapshot 0: construction     5.1s  insertion     324.5  ortools     325.0
 [scale] shard 3 finished
+
+=== 2026-10-02 19:09:59 experiments.exp_scale --shard 3 --of 5
+[scale] shard 3 finished

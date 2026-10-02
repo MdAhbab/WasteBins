@@ -22,3 +22,17 @@
     aco                 full            obj     135.7  served  31    26.1s
   W snapshot 9: 3 solves, 86s (total 6.9 min)
 [depot-werribee] shard 1 finished
+
+=== 2026-10-02 19:10:13 experiments.exp_compare --study depot-werribee --shard 1 --of 2
+[depot-werribee] shard 1/2: 5 of 10 units
+  W snapshot 1
+  W snapshot 1: 0 solves, 0s (total 0.0 min)
+  W snapshot 3
+  W snapshot 3: 0 solves, 0s (total 0.0 min)
+  W snapshot 5
+  W snapshot 5: 0 solves, 0s (total 0.0 min)
+  W snapshot 7
+  W snapshot 7: 0 solves, 0s (total 0.0 min)
+  W snapshot 9
+  W snapshot 9: 0 solves, 0s (total 0.0 min)
+[depot-werribee] shard 1 finished

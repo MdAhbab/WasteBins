@@ -16,3 +16,8 @@
   R3 storm current  ortools   full      served 37.9>31.3  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.00>0.17   5.6 min
   R3: 8 chains, 45.9 min
 [weather-storm] shard 3 finished
+
+=== 2026-10-02 19:09:26 experiments.exp_weather --scenario storm --shard 3 --of 8
+[weather-storm] shard 3/8: networks ['R3']
+  R3: 0 chains, 0.0 min
+[weather-storm] shard 3 finished

@@ -17,3 +17,13 @@
     genetic             full            obj    1466.3  served 141    45.3s
   S0 snapshot 4: 3 solves, 142s (total 7.4 min)
 [budget-0.25] shard 0 finished
+
+=== 2026-10-02 19:10:18 experiments.exp_compare --study budget-0.25 --shard 0 --of 2
+[budget-0.25] shard 0/2: 3 of 6 units
+  S0 snapshot 0
+  S0 snapshot 0: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 2
+  S0 snapshot 2: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 4
+  S0 snapshot 4: 0 solves, 0s (total 0.0 min)
+[budget-0.25] shard 0 finished

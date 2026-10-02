@@ -19,3 +19,8 @@
 [weather-heat] shard 7/8: networks ['R7']
   R7: 0 chains, 0.0 min
 [weather-heat] shard 7 finished
+
+=== 2026-10-02 19:09:25 experiments.exp_weather --scenario heat --shard 7 --of 8
+[weather-heat] shard 7/8: networks ['R7']
+  R7: 0 chains, 0.0 min
+[weather-heat] shard 7 finished

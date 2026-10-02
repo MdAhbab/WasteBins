@@ -11,3 +11,8 @@
   R4 storm current  ortools   full      served 38.0>31.2  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.42   5.2 min
   R4: 8 chains, 42.7 min
 [weather-storm] shard 4 finished
+
+=== 2026-10-02 19:09:28 experiments.exp_weather --scenario storm --shard 4 --of 8
+[weather-storm] shard 4/8: networks ['R4']
+  R4: 0 chains, 0.0 min
+[weather-storm] shard 4 finished

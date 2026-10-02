@@ -14,3 +14,8 @@
   R1 threshold   full             wait mean  38.2 p95    60 max   156  never  0  overflow 10.94%  served 18.8  km  39.5  use  97%   1.8 min
   R1: 11 chains, 55.4 min
 [rollout-tight] shard 1 finished
+
+=== 2026-10-02 19:09:36 experiments.exp_rollout --load tight --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 1 --of 16
+[rollout-tight] shard 1/16: networks ['R1']
+  R1: 0 chains, 0.0 min
+[rollout-tight] shard 1 finished

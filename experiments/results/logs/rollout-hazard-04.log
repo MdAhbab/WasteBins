@@ -8,3 +8,8 @@
   R4 ortools     full             wait mean  19.0 p95    48 max    60  never  0  overflow  0.31%  served 37.8  km  48.8  use  99%   5.5 min
   R4: 5 chains, 27.2 min
 [rollout-hazard] shard 4 finished
+
+=== 2026-10-02 19:09:49 experiments.exp_rollout --load hazard --shard 4 --of 8
+[rollout-hazard] shard 4/8: networks ['R4']
+  R4: 0 chains, 0.0 min
+[rollout-hazard] shard 4 finished

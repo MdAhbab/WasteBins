@@ -14,3 +14,8 @@
   R6 onset forecast ortools   full      served 34.6>30.4  dropped  0.2  max wait   72  breach False  heads lost 0  overflow 0.50>0.58   4.7 min
   R6: 11 chains, 53.3 min
 [weather-onset] shard 6 finished
+
+=== 2026-10-02 19:09:34 experiments.exp_weather --scenario onset --shard 6 --of 8
+[weather-onset] shard 6/8: networks ['R6']
+  R6: 0 chains, 0.0 min
+[weather-onset] shard 6 finished

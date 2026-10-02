@@ -18,3 +18,15 @@
     aco                 full            obj     909.3  served 154   182.0s
   S0 snapshot 7: 3 solves, 554s (total 37.2 min)
 [depot-9] shard 1 finished
+
+=== 2026-10-02 19:10:11 experiments.exp_compare --study depot-9 --shard 1 --of 2
+[depot-9] shard 1/2: 4 of 8 units
+  S0 snapshot 1
+  S0 snapshot 1: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 3
+  S0 snapshot 3: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 5
+  S0 snapshot 5: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 7
+  S0 snapshot 7: 0 solves, 0s (total 0.0 min)
+[depot-9] shard 1 finished

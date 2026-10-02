@@ -8,3 +8,8 @@
   R3 ortools     full             wait mean  20.3 p95    48 max    72  never  0  overflow  0.36%  served 35.6  km  57.9  use  99%   5.6 min
   R3: 5 chains, 27.7 min
 [rollout-hazard] shard 3 finished
+
+=== 2026-10-02 19:09:48 experiments.exp_rollout --load hazard --shard 3 --of 8
+[rollout-hazard] shard 3/8: networks ['R3']
+  R3: 0 chains, 0.0 min
+[rollout-hazard] shard 3 finished

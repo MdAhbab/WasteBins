@@ -14,3 +14,8 @@
   R14 threshold   full             wait mean  36.4 p95    72 max   120  never  0  overflow 15.05%  served 20.0  km  50.8  use  99%   1.9 min
   R14: 11 chains, 49.5 min
 [rollout-tight] shard 14 finished
+
+=== 2026-10-02 19:09:45 experiments.exp_rollout --load tight --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 14 --of 16
+[rollout-tight] shard 14/16: networks ['R14']
+  R14: 0 chains, 0.0 min
+[rollout-tight] shard 14 finished

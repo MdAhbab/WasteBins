@@ -18,3 +18,15 @@
     aco                 full            obj    1688.0  served 149   237.8s
   S0 snapshot 7: 3 solves, 722s (total 48.3 min)
 [weights-co2x3] shard 1 finished
+
+=== 2026-10-02 19:10:03 experiments.exp_compare --study weights-co2x3 --shard 1 --of 2
+[weights-co2x3] shard 1/2: 4 of 8 units
+  S0 snapshot 1
+  S0 snapshot 1: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 3
+  S0 snapshot 3: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 5
+  S0 snapshot 5: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 7
+  S0 snapshot 7: 0 solves, 0s (total 0.0 min)
+[weights-co2x3] shard 1 finished

@@ -14,3 +14,8 @@
   R5 onset forecast ortools   full      served 41.2>40.0  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.17   6.2 min
   R5: 11 chains, 70.9 min
 [weather-onset] shard 5 finished
+
+=== 2026-10-02 19:09:34 experiments.exp_weather --scenario onset --shard 5 --of 8
+[weather-onset] shard 5/8: networks ['R5']
+  R5: 0 chains, 0.0 min
+[weather-onset] shard 5 finished

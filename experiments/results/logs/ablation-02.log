@@ -22,3 +22,11 @@
     insertion_construct full            obj    1155.4  served 157   167.8s
   S0 snapshot 7: 8 solves, 1737s (total 59.6 min)
 [ablation] shard 2 finished
+
+=== 2026-10-02 19:09:52 experiments.exp_compare --study ablation --shard 2 --of 5
+[ablation] shard 2/5: 2 of 10 units
+  S0 snapshot 2
+  S0 snapshot 2: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 7
+  S0 snapshot 7: 0 solves, 0s (total 0.0 min)
+[ablation] shard 2 finished
