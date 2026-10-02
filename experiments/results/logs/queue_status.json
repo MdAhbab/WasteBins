@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 11:49:46",
- "hours_running": 12.81,
+ "updated": "2026-10-02 12:26:49",
+ "hours_running": 13.43,
  "workers": 3,
  "counts": {
-  "done": 94,
+  "done": 97,
   "running": 3,
-  "pending": 37
+  "pending": 34
  },
  "jobs": [
   {
@@ -762,49 +762,49 @@
   },
   {
    "name": "distance-02",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "11:25:22",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "12:04:50",
+   "minutes": 39.5
   },
   {
    "name": "distance-03",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "11:27:44",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "11:59:20",
+   "minutes": 31.6
   },
   {
    "name": "distance-04",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "11:49:46",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "12:26:49",
+   "minutes": 37.0
   },
   {
    "name": "scale-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "11:59:20",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "scale-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "12:04:50",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "scale-02",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "12:26:49",
    "ended": "",
    "minutes": 0.0
   },

@@ -8,3 +8,5 @@
   S0  8 aco        reported   141.7 km  driven   205.2 km  (+30.9 percent)  over shift 1 of 3, worst 81 min
   S0 13 insertion  reported   221.6 km  driven   271.9 km  (+18.5 percent)  over shift 1 of 3, worst 50 min
   S0 13 ortools    reported   115.9 km  driven   168.0 km  (+31.0 percent)  over shift 0 of 3, worst 0 min
+  S0 13 aco        reported   122.9 km  driven   170.2 km  (+27.8 percent)  over shift 1 of 3, worst 39 min
+[distance] shard 3 finished
