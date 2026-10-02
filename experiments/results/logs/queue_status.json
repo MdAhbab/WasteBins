@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 17:56:13",
- "hours_running": 18.92,
+ "updated": "2026-10-02 18:03:40",
+ "hours_running": 19.04,
  "workers": 3,
  "counts": {
-  "done": 118,
+  "done": 120,
   "running": 3,
-  "pending": 13
+  "pending": 11
  },
  "jobs": [
   {
@@ -954,19 +954,19 @@
   },
   {
    "name": "depot-4-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "17:15:51",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "18:01:55",
+   "minutes": 46.1
   },
   {
    "name": "depot-4-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "17:16:27",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "18:03:40",
+   "minutes": 47.2
   },
   {
    "name": "depot-9-00",
@@ -978,17 +978,17 @@
   },
   {
    "name": "depot-9-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "18:01:55",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "depot-18-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "18:03:40",
    "ended": "",
    "minutes": 0.0
   },
