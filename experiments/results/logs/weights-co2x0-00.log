@@ -1,0 +1,8 @@
+
+=== 2026-10-02 13:10:34 experiments.exp_compare --study weights-co2x0 --shard 0 --of 2
+[weights-co2x0] shard 0/2: 4 of 8 units
+  S0 snapshot 0
+    ortools             full            obj     472.9  served 159   254.2s
+    aco                 full            obj     530.3  served 158   256.2s
+  S0 snapshot 0: 3 solves, 774s (total 12.9 min)
+  S0 snapshot 2

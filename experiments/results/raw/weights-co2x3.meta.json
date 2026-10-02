@@ -1,16 +1,33 @@
 {
-  "study": "scale",
-  "sizes": [
-    40,
-    60,
-    80,
-    120,
-    160,
-    240,
-    320
-  ],
-  "snapshots": 3,
-  "containers_per_vehicle": 25,
+  "study": "weights-co2x3",
+  "config": {
+    "area": "dhaka",
+    "n_vehicles": 6,
+    "improve_s": 30.0,
+    "weights": {
+      "co2_kg": 6.0
+    },
+    "depot": null,
+    "budget_factor": 1.0,
+    "flat": false,
+    "reference_from": null,
+    "networks": [
+      [
+        "S0",
+        8
+      ]
+    ],
+    "specs": [
+      [
+        "ortools",
+        "full"
+      ],
+      [
+        "aco",
+        "full"
+      ]
+    ]
+  },
   "improve_s": 30.0,
   "solver_config": {
     "ortools": {
@@ -47,6 +64,6 @@
     "platform": "Linux-6.18.44-fc-v51-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "logical_cpus": 4,
-    "utc": "2026-10-02T13:00:14Z"
+    "utc": "2026-10-02T13:24:04Z"
   }
 }

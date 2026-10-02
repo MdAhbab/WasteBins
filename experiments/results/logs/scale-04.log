@@ -1,0 +1,7 @@
+
+=== 2026-10-02 13:00:13 experiments.exp_scale --shard 4 --of 5
+  n= 240 snapshot 1: construction   458.3s  insertion    1876.2  ortools    1348.5
+  n= 120 snapshot 0: construction    89.9s  insertion     877.6  ortools     720.5
+  n=  80 snapshot 2: construction    35.8s  insertion     600.3  ortools     563.3
+  n=  40 snapshot 1: construction     4.5s  insertion     249.5  ortools     247.9
+[scale] shard 4 finished

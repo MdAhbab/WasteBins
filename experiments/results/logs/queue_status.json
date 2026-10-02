@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 12:26:49",
- "hours_running": 13.43,
+ "updated": "2026-10-02 13:24:03",
+ "hours_running": 14.38,
  "workers": 3,
  "counts": {
-  "done": 97,
+  "done": 102,
   "running": 3,
-  "pending": 34
+  "pending": 29
  },
  "jobs": [
   {
@@ -786,65 +786,65 @@
   },
   {
    "name": "scale-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "11:59:20",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "13:00:13",
+   "minutes": 60.9
   },
   {
    "name": "scale-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "12:04:50",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "12:50:43",
+   "minutes": 45.9
   },
   {
    "name": "scale-02",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "12:26:49",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "13:10:34",
+   "minutes": 43.8
   },
   {
    "name": "scale-03",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "12:50:43",
+   "ended": "13:20:11",
+   "minutes": 29.5
   },
   {
    "name": "scale-04",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "13:00:13",
+   "ended": "13:24:03",
+   "minutes": 23.8
   },
   {
    "name": "weights-co2x0-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "13:10:34",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "weights-co2x0-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "13:20:11",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "weights-co2x3-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "13:24:03",
    "ended": "",
    "minutes": 0.0
   },
