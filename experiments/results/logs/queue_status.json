@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 00:47:12",
- "hours_running": 1.77,
+ "updated": "2026-10-02 01:10:15",
+ "hours_running": 2.15,
  "workers": 3,
  "counts": {
-  "done": 54,
+  "done": 55,
   "running": 3,
-  "pending": 77
+  "pending": 76
  },
  "jobs": [
   {
@@ -442,11 +442,11 @@
   },
   {
    "name": "weather-storm-07",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "00:30:45",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "01:10:15",
+   "minutes": 39.5
   },
   {
    "name": "weather-onset-00",
@@ -466,9 +466,9 @@
   },
   {
    "name": "weather-onset-02",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "01:10:15",
    "ended": "",
    "minutes": 0.0
   },

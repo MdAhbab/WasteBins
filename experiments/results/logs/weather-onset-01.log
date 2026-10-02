@@ -1,3 +1,6 @@
 
 === 2026-10-02 00:47:12 experiments.exp_weather --scenario onset --shard 1 --of 8
 [weather-onset] shard 1/8: networks ['R1']
+  R1 onset blind    insertion full      served 36.5>36.7  dropped  1.8  max wait   60  breach False  heads lost 3  overflow 0.25>0.42   6.0 min
+  R1 onset blind    insertion urgency   served 35.9>38.2  dropped  1.5  max wait  120  breach None  heads lost 0  overflow 0.38>0.25   6.0 min
+  R1 onset blind    ortools   full      served 43.6>41.0  dropped  2.4  max wait   60  breach False  heads lost 1  overflow 0.25>0.33   6.0 min
