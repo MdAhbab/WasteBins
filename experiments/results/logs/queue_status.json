@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 14:57:03",
- "hours_running": 15.93,
+ "updated": "2026-10-02 15:35:56",
+ "hours_running": 16.58,
  "workers": 3,
  "counts": {
-  "done": 108,
+  "done": 109,
   "running": 3,
-  "pending": 23
+  "pending": 22
  },
  "jobs": [
   {
@@ -874,11 +874,11 @@
   },
   {
    "name": "weights-timex2-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "14:45:55",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "15:35:56",
+   "minutes": 50.0
   },
   {
    "name": "weights-timex2-01",
@@ -898,9 +898,9 @@
   },
   {
    "name": "weights-overflowx0.5-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "15:35:56",
    "ended": "",
    "minutes": 0.0
   },

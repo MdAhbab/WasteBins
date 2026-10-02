@@ -3,3 +3,18 @@
 [weights-timex2] shard 0/2: 4 of 8 units
   S0 snapshot 0
     ortools             full            obj    1011.7  served 159   258.0s
+    aco                 full            obj    1146.6  served 154   257.9s
+  S0 snapshot 0: 3 solves, 784s (total 13.1 min)
+  S0 snapshot 2
+    ortools             full            obj    1104.5  served 155   247.6s
+    aco                 full            obj    1291.6  served 144   248.3s
+  S0 snapshot 2: 3 solves, 753s (total 25.6 min)
+  S0 snapshot 4
+    ortools             full            obj    1198.9  served 157   231.1s
+    aco                 full            obj    1324.2  served 157   231.1s
+  S0 snapshot 4: 3 solves, 702s (total 37.3 min)
+  S0 snapshot 6
+    ortools             full            obj     906.5  served 157   250.4s
+    aco                 full            obj    1075.2  served 152   250.4s
+  S0 snapshot 6: 3 solves, 761s (total 50.0 min)
+[weights-timex2] shard 0 finished

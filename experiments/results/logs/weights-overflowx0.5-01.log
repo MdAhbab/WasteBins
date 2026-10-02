@@ -1,0 +1,4 @@
+
+=== 2026-10-02 15:35:56 experiments.exp_compare --study weights-overflowx0.5 --shard 1 --of 2
+[weights-overflowx0.5] shard 1/2: 4 of 8 units
+  S0 snapshot 1
