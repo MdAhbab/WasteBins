@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 04:22:52",
- "hours_running": 5.36,
+ "updated": "2026-10-02 06:17:02",
+ "hours_running": 7.26,
  "workers": 3,
  "counts": {
-  "done": 65,
+  "done": 72,
   "running": 3,
-  "pending": 66
+  "pending": 59
  },
  "jobs": [
   {
@@ -530,81 +530,81 @@
   },
   {
    "name": "rollout-tight-02",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "03:44:57",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "04:49:50",
+   "minutes": 64.9
   },
   {
    "name": "rollout-tight-03",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "04:13:29",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "04:54:07",
+   "minutes": 40.6
   },
   {
    "name": "rollout-tight-04",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "04:22:52",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "05:13:38",
+   "minutes": 50.8
   },
   {
    "name": "rollout-tight-05",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "04:49:50",
+   "ended": "05:37:45",
+   "minutes": 47.9
   },
   {
    "name": "rollout-tight-06",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "04:54:07",
+   "ended": "05:37:31",
+   "minutes": 43.4
   },
   {
    "name": "rollout-tight-07",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "05:13:38",
+   "ended": "05:57:10",
+   "minutes": 43.5
   },
   {
    "name": "rollout-tight-08",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "05:37:31",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "rollout-tight-09",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "05:37:45",
+   "ended": "06:17:02",
+   "minutes": 39.3
   },
   {
    "name": "rollout-tight-10",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "05:57:10",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "rollout-tight-11",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "06:17:02",
    "ended": "",
    "minutes": 0.0
   },
