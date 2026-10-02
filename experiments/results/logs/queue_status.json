@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 11:25:22",
- "hours_running": 12.4,
+ "updated": "2026-10-02 11:49:46",
+ "hours_running": 12.81,
  "workers": 3,
  "counts": {
-  "done": 92,
+  "done": 94,
   "running": 3,
-  "pending": 39
+  "pending": 37
  },
  "jobs": [
   {
@@ -746,19 +746,19 @@
   },
   {
    "name": "distance-00",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "10:47:41",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "11:27:43",
+   "minutes": 40.0
   },
   {
    "name": "distance-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "11:13:37",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "11:49:46",
+   "minutes": 36.1
   },
   {
    "name": "distance-02",
@@ -770,17 +770,17 @@
   },
   {
    "name": "distance-03",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "11:27:44",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "distance-04",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "11:49:46",
    "ended": "",
    "minutes": 0.0
   },

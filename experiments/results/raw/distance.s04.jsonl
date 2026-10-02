@@ -1,0 +1,1 @@
+{"key":"distance|S0|4|insertion","study":"distance","network":"S0","snapshot":4,"planner":"insertion","elapsed_s":238.622,"budget_s":null,"served":154,"reported_km":167.6296,"driven_km":216.7054,"routes":3,"routes_over_shift":1,"overrun_min_total":28.192,"overrun_min_worst":28.192,"late_arrivals":8,"shift_min":480.0,"reported_routes_over_shift":0}
