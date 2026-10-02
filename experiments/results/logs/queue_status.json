@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 17:16:27",
- "hours_running": 18.25,
+ "updated": "2026-10-02 17:56:13",
+ "hours_running": 18.92,
  "workers": 3,
  "counts": {
-  "done": 117,
+  "done": 118,
   "running": 3,
-  "pending": 14
+  "pending": 13
  },
  "jobs": [
   {
@@ -946,11 +946,11 @@
   },
   {
    "name": "weights-lambdax2-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "17:12:55",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "17:56:13",
+   "minutes": 43.3
   },
   {
    "name": "depot-4-00",
@@ -970,9 +970,9 @@
   },
   {
    "name": "depot-9-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "17:56:13",
    "ended": "",
    "minutes": 0.0
   },
