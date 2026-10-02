@@ -1,0 +1,10 @@
+
+=== 2026-10-02 09:23:23 experiments.exp_compare --study ablation --shard 1 --of 5
+[ablation] shard 1/5: 2 of 10 units
+  S0 snapshot 1
+    insertion           urgency         obj    1867.5  served 152   252.7s
+    insertion           ageing          obj    1349.1  served 155   267.3s
+    insertion           tier_bounded    obj    1364.3  served 156   235.7s
+    insertion           tier_unbounded  obj    1365.1  served 156   235.6s
+    insertion           reserve_bounded obj    1296.7  served 157   217.8s
+    insertion           full_ageing     obj    1417.3  served 150   219.2s

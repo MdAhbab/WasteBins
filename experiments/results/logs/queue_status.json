@@ -1,11 +1,11 @@
 {
- "updated": "2026-10-02 08:25:15",
- "hours_running": 9.4,
+ "updated": "2026-10-02 09:48:03",
+ "hours_running": 10.78,
  "workers": 3,
  "counts": {
-  "done": 80,
+  "done": 87,
   "running": 3,
-  "pending": 51
+  "pending": 44
  },
  "jobs": [
   {
@@ -650,81 +650,81 @@
   },
   {
    "name": "rollout-hazard-01",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "08:05:22",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "08:49:10",
+   "minutes": 43.8
   },
   {
    "name": "rollout-hazard-02",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "08:13:36",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "08:50:32",
+   "minutes": 36.9
   },
   {
    "name": "rollout-hazard-03",
-   "state": "running",
+   "state": "done",
    "returncode": 0,
    "started": "08:25:15",
-   "ended": "",
-   "minutes": 0.0
+   "ended": "08:53:01",
+   "minutes": 27.8
   },
   {
    "name": "rollout-hazard-04",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "08:49:10",
+   "ended": "09:16:27",
+   "minutes": 27.3
   },
   {
    "name": "rollout-hazard-05",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "08:50:32",
+   "ended": "09:23:23",
+   "minutes": 32.8
   },
   {
    "name": "rollout-hazard-06",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "08:53:01",
+   "ended": "09:19:23",
+   "minutes": 26.4
   },
   {
    "name": "rollout-hazard-07",
-   "state": "pending",
+   "state": "done",
    "returncode": 0,
-   "started": "",
-   "ended": "",
-   "minutes": 0.0
+   "started": "09:16:27",
+   "ended": "09:48:03",
+   "minutes": 31.6
   },
   {
    "name": "ablation-00",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "09:19:23",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "ablation-01",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "09:23:23",
    "ended": "",
    "minutes": 0.0
   },
   {
    "name": "ablation-02",
-   "state": "pending",
+   "state": "running",
    "returncode": 0,
-   "started": "",
+   "started": "09:48:03",
    "ended": "",
    "minutes": 0.0
   },

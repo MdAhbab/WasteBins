@@ -3,3 +3,8 @@
 [rollout-hazard] shard 1/8: networks ['R1']
   R1 insertion   full             wait mean  17.8 p95    48 max    72  never  0  overflow  0.36%  served 40.7  km  41.1  use  98%   8.7 min
   R1 insertion   tier_unbounded   wait mean  17.7 p95    48 max    84  never  0  overflow  0.36%  served 40.7  km  41.1  use  97%   9.0 min
+  R1 insertion   full_r4          wait mean  17.8 p95    48 max    60  never  0  overflow  0.26%  served 40.4  km  42.2  use  97%   8.8 min
+  R1 ortools     tier_unbounded   wait mean  16.0 p95    36 max    60  never  0  overflow  0.16%  served 45.2  km  39.6  use  99%   8.7 min
+  R1 ortools     full             wait mean  15.9 p95    36 max    60  never  0  overflow  0.21%  served 45.4  km  40.0  use  99%   8.7 min
+  R1: 5 chains, 43.8 min
+[rollout-hazard] shard 1 finished

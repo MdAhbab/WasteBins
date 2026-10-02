@@ -2,3 +2,9 @@
 === 2026-10-02 08:13:36 experiments.exp_rollout --load hazard --shard 2 --of 8
 [rollout-hazard] shard 2/8: networks ['R2']
   R2 insertion   full             wait mean  18.9 p95    48 max   120  never  0  overflow  2.19%  served 38.2  km  46.8  use  99%   7.3 min
+  R2 insertion   tier_unbounded   wait mean  18.7 p95    48 max   180  never  0  overflow  2.45%  served 38.5  km  47.1  use  99%   7.3 min
+  R2 insertion   full_r4          wait mean  18.4 p95    48 max    72  never  0  overflow  1.15%  served 39.2  km  47.1  use  99%   7.6 min
+  R2 ortools     tier_unbounded   wait mean  16.6 p95    36 max    60  never  0  overflow  0.16%  served 43.4  km  42.2  use  99%   7.3 min
+  R2 ortools     full             wait mean  16.7 p95    36 max    60  never  0  overflow  0.16%  served 43.2  km  42.4  use  99%   7.3 min
+  R2: 5 chains, 36.9 min
+[rollout-hazard] shard 2 finished
