@@ -122,6 +122,7 @@ COMPARE_FIELDS = {
     "objective": lambda r: r["objective"],
     "km": lambda r: r["metrics"]["distance_km"],
     "co2_kg": lambda r: r["metrics"]["co2_kg"],
+    "co2_per_km": lambda r: r["metrics"]["co2_kg_per_km"],
     "hours": lambda r: r["metrics"]["duration_min"] / 60.0,
     "served": lambda r: r["metrics"]["bins_served"],
     "unserved": lambda r: r["unserved"],
@@ -146,11 +147,19 @@ def by_unit(records: Iterable[Dict]) -> Dict[Tuple[str, int], Dict[str, Dict]]:
 
 
 def compare_study(study: str, reference_from: Optional[str] = None,
-                  against: Sequence[str] = ()) -> Optional[Dict]:
+                  against: Sequence[str] = (),
+                  only_units: Optional[set] = None,
+                  only_policies: Optional[Sequence[str]] = None) -> Optional[Dict]:
     records = ST.read(study)
     if not records:
         return None
     units = by_unit(records)
+    if only_units is not None:
+        units = {u: row for u, row in units.items() if u in only_units}
+    if only_policies is not None:
+        # A smaller family of comparisons, such as the planners of one study.
+        units = {u: {p: r for p, r in row.items() if p in only_policies}
+                 for u, row in units.items()}
     if reference_from:
         # The reference solve of these units was made in another study.
         borrowed = by_unit(ST.read(reference_from))
@@ -292,6 +301,12 @@ def rollout_study(load: str) -> Optional[Dict]:
         row["infeasible_chains"] = int(sum(0 if s["feasible"] else 1 for s in summaries))
         row["head_failures"] = int(sum(s["head_failures"] for s in summaries))
         row["head_repairs"] = int(sum(s["head_repairs"] for s in summaries))
+        # The longest wait and overflow of each network, for the full tables of
+        # the supplement.
+        row["by_network"] = {
+            n: {"worst_wait_h": _num(per[n]["summary"]["worst_wait_any_dispatch_h"]),
+                "overflow_pct": _num(ROLLOUT_FIELDS["overflow_pct"](per[n]["summary"]), 3)}
+            for n in networks if n in per}
         out["policies"][policy] = row
 
         # The bound of the queueing proposition, where a head is reserved.
@@ -319,6 +334,10 @@ def rollout_study(load: str) -> Optional[Dict]:
         row["services"] = len(waits)
         row["share_served_overdue_pct"] = _num(
             100.0 * float(np.mean(np.asarray(waits) >= AG.DEFAULT_TAU_H)) if waits else 0.0)
+        # Collections made after more than twice the deadline.
+        row["share_served_past_two_deadlines_pct"] = _num(
+            100.0 * float(np.mean(np.asarray(waits) > 2 * AG.DEFAULT_TAU_H)) if waits else 0.0,
+            3)
 
     # Each rule against the full rule on the same planner, paired by network.
     for planner in sorted({p.split("/")[0] for p in chains}):
@@ -565,6 +584,14 @@ def variants(prefix: str) -> Dict:
         study = compare_study(name, reference_from=reference_from)
         if study:
             out[name.split("-", 1)[1]] = study
+    if prefix == "budget" and out:
+        # The budget factor 1 is the main comparison, on the same snapshots.
+        units = {u for name in names for u in by_unit(ST.read(name))}
+        planners = {p for study in out.values() for p in study["policies"]}
+        base = compare_study("main", only_units=units,
+                             only_policies=planners | {label(*REFERENCE)})
+        if base:
+            out["1"] = base
     return out
 
 

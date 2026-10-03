@@ -73,7 +73,7 @@ def fig_waits(load: str = "moderate") -> None:
     if not shown:
         print(f"fig_waits: no rollout-{load} records yet")
         return
-    fig, (left, right) = plt.subplots(1, 2, figsize=(FS.FULL_W, 2.8),
+    fig, (left, right) = plt.subplots(1, 2, figsize=(FS.FULL_W, 3.3),
                                       gridspec_kw={"width_ratios": [1.15, 1.0]})
     for policy, name, colour, style, _marker in shown:
         waits = np.array([w for r in chains[policy].values()
@@ -88,7 +88,9 @@ def fig_waits(load: str = "moderate") -> None:
     left.set_xlabel("Wait at collection (h)")
     left.set_ylabel("Share of collections at or\nabove this wait (log scale)")
     left.set_title("(a) Waits at collection", loc="left")
-    left.legend(loc="upper right", fontsize=8.5, handlelength=2.0)
+    handles, labels = left.get_legend_handles_labels()
+    fig.legend(handles, labels, loc="outside lower center", ncol=4, fontsize=8.5,
+               handlelength=2.0)
 
     for row, (policy, name, colour, _style, marker) in enumerate(shown):
         worst = [r["summary"]["worst_wait_any_dispatch_h"] for r in chains[policy].values()]

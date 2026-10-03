@@ -164,8 +164,21 @@ python -m experiments.analyze
 ```
 
 ```bash
-python -m experiments.make_tables
+python -m experiments.make_tables --out experiments/results/tables
 ```
+
+Without `--out`, the tables go to the manuscript folder `../Paper/tables`, which
+is not part of this repository.
+
+**Machines.** Set `--workers` to the number of physical cores minus one. A
+budgeted planner receives the wall-clock time that the insertion planner took on
+the same instance, so a study and any study it borrows its reference times from
+(`ablation` and `budget-*` borrow from `main`) must run on one machine. The
+records in this repository came from two machines: a six-core Windows
+workstation (tuning, `main`, `wyndham`, `ablation`, `budget-*`,
+`rollout-moderate`, `weather-rain`) and a four-processor Linux machine (every
+other study). Each `results/raw/<study>.meta.json` records the machine, the
+package versions and the start time of its study.
 
 | Module | Study | Answers |
 |---|---|---|

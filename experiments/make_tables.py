@@ -209,6 +209,30 @@ def weather_demand_table(out: pathlib.Path) -> None:
                 "restrictions in Victoria from 16 March 2020.")
 
 
+def weather_live() -> None:
+    """The dated demonstration on a live reading: derived factors and plan outcome."""
+    data = load("weather_live.json")
+    google = dig(data, "sources", "google", default={}) or {}
+    effects = google.get("effects", {})
+    stamp = str(dig(data, "retrieved_utc", default="") or "")
+    months = ["January", "February", "March", "April", "May", "June", "July", "August",
+              "September", "October", "November", "December"]
+    if len(stamp) >= 16:
+        macro("liveDate", f"{int(stamp[8:10])} {months[int(stamp[5:7]) - 1]} {stamp[:4]}")
+        macro("liveTime", stamp[11:16])
+    else:
+        macro("liveDate", NA)
+        macro("liveTime", NA)
+    macro("liveRain", str(effects.get("rain_class", NA)))
+    macro("liveService", num(effects.get("service_factor"), 2))
+    macro("liveGas", num(effects.get("gas_factor"), 2))
+    macro("liveLitter", num(effects.get("litter_demand_factor"), 2))
+    snaps = google.get("snapshots", [])
+    macro("liveSnapshots", whole(len(snaps)))
+    macro("liveNominalDropped", whole(sum(s["nominal_plan"]["dropped"] for s in snaps)))
+    macro("liveLiveDropped", whole(sum(s["live_plan"]["dropped"] for s in snaps)))
+
+
 def weather_scenarios(out: pathlib.Path) -> None:
     """The factors each cycle type of each scenario produces."""
     data = load("weather_scenarios.json")
@@ -341,6 +365,29 @@ def planner_config(out: pathlib.Path) -> None:
           rows, tabcolsep="4pt",
           notes="Each grid was run on three tuning instances at the matched time; the "
                 "setting with the lowest mean objective was kept.")
+
+
+def tuning_grid(out: pathlib.Path) -> None:
+    """Every setting of every grid with its objective on each tuning instance."""
+    data = load("tuning.json")
+    rows = []
+    for solver in ("ortools", "aco", "genetic"):
+        grid = dig(data, "grid", solver, default=[]) or []
+        if rows and grid:
+            rows.append("\\addlinespace")
+        for index, entry in enumerate(grid):
+            rows.append([NAMES[solver] if index == 0 else "",
+                         _setting(entry["config"], TUNED[solver]),
+                         *[num(x, 0) for x in entry.get("objectives", [])],
+                         num(entry["mean_objective"], 0)])
+    if not rows:
+        rows = [["\\multicolumn{6}{l}{\\emph{The tuning runs have not been made.}}"]]
+    table(out / "tab_tuning.tex", "Objective of every setting on the tuning instances.",
+          "tab:tuning", "lp{0.38\\textwidth}rrrr",
+          ["Planner & Setting & Instance 1 & Instance 2 & Instance 3 & Mean \\\\"],
+          rows, tabcolsep="4pt", fontsize="footnotesize",
+          notes="Set T160 at the matched time; settings in order of mean objective, "
+                "the first one kept.")
 
 
 def prize_weight(out: pathlib.Path) -> None:
@@ -559,6 +606,18 @@ def environment() -> None:
                          ("Numpy", "numpy"), ("Scipy", "scipy")):
         macro(f"env{name}", str(versions.get(module) or NA))
     macro("envCpus", whole(dig(env, "logical_cpus")))
+    # A second machine, where some studies ran.  Each study ran on one machine.
+    machine = (dig(env, "processor"), dig(env, "logical_cpus"))
+    other, studies = None, []
+    for path in metas:
+        e = dig(json.loads(path.read_text()), "environment")
+        if e and (e.get("processor"), e.get("logical_cpus")) != machine:
+            other = other or e
+            studies.append(path.name.replace(".meta.json", ""))
+    macro("envOtherPython", str(dig(other, "versions", "python") or NA))
+    macro("envOtherOrtools", str(dig(other, "versions", "ortools") or NA))
+    macro("envOtherCpus", whole(dig(other, "logical_cpus")))
+    macro("envOtherStudies", whole(len(studies)) if other else "0")
 
 
 def write_macros(out: pathlib.Path) -> None:
@@ -579,8 +638,10 @@ def main() -> int:
     weather_demand()
     weather_demand_table(out)
     weather_scenarios(out)
+    weather_live()
     emissions(out)
     planner_config(out)
+    tuning_grid(out)
     prize_weight(out)
     network(out)
     wait_bound(out)

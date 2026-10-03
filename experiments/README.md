@@ -37,7 +37,8 @@ python -m experiments.fig_results
 
 `analyze` writes `results/summary.json` (intervals, Wilcoxon tests with Holm
 adjustment, Cliff's delta). `make_tables` writes every table and the macro file
-`numbers.tex` into the manuscript's `tables/` folder. `fig_results` draws the
+`numbers.tex` into the manuscript's `tables/` folder, or into the folder given
+with `--out`, such as `experiments/results/tables`. `fig_results` draws the
 multi-cycle and weather figures.
 
 ## What each script does
@@ -74,6 +75,13 @@ software. The paper does not use them.
 The search budget is wall-clock, so a busier machine gives the metaheuristics
 fewer iterations in the same time. The paper reports differences together with
 their intervals across instances.
+
+A study must run on one machine, together with any study it borrows reference
+times from: `ablation` and `budget-*` take the insertion times of `main`. If a
+run is interrupted on a new machine, move the shard files of its unfinished jobs
+to `results/raw_partial/`, which the analysis does not read, and run them again
+in full. The records here came from two machines; each
+`results/raw/<study>.meta.json` names the machine of its study.
 
 `build_roadnets.py` and `dhaka_containers.py` query Overpass live, so a rebuild
 picks up map edits and will not reproduce the committed extracts byte for byte.
