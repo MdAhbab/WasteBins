@@ -30,3 +30,27 @@
   S0 snapshot 5
   S0 snapshot 5: 0 solves, 0s (total 0.0 min)
 [ablation] shard 0 finished
+
+=== 2026-10-03 17:39:24 experiments.exp_compare --study ablation --shard 0 --of 5
+[ablation] shard 0/5: 2 of 10 units
+  S0 snapshot 0
+    insertion           urgency         obj    1712.7  served 145   247.4s
+    insertion           ageing          obj    1481.6  served 141   324.0s
+    insertion           tier_bounded    obj    1054.2  served 155   208.9s
+    insertion           tier_unbounded  obj    1054.2  served 155   204.0s
+    insertion           reserve_bounded obj    1082.4  served 153   197.0s
+    insertion           full_ageing     obj    1133.2  served 152   192.0s
+    insertion_cheapest  full            obj    1190.2  served 141   191.6s
+    insertion_construct full            obj    1210.9  served 153   166.1s
+  S0 snapshot 0: 8 solves, 1737s (total 28.9 min)
+  S0 snapshot 5
+    insertion           urgency         obj    1539.9  served 157   168.9s
+    insertion           ageing          obj    1946.4  served 152   194.5s
+    insertion           tier_bounded    obj    1349.0  served 158   140.5s
+    insertion           tier_unbounded  obj    1349.1  served 158   139.5s
+    insertion           reserve_bounded obj    1362.0  served 156   151.8s
+    insertion           full_ageing     obj    1444.8  served 146   163.8s
+    insertion_cheapest  full            obj    1373.7  served 157   162.8s
+    insertion_construct full            obj    1407.2  served 156   108.4s
+  S0 snapshot 5: 8 solves, 1235s (total 49.5 min)
+[ablation] shard 0 finished

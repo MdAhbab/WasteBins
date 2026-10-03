@@ -1,0 +1,23 @@
+\begin{table}[!t]
+\caption{Computing time by instance size.}
+\label{tab:scale}
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{rrrrrrrr}
+\toprule
+Containers & Vehicles & \multicolumn{3}{c}{Insertion} & \multicolumn{2}{c}{OR-Tools} & OR-Tools vs. \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-7}
+ & & construction (s) & total (s) & served (\%) & total (s) & served (\%) & insertion (\%) \\
+\midrule
+40 & 2 & 4.7 & 30.4 & 95.0 & 30.4 & 95.0 & \ensuremath{-}0.7 \\
+60 & 2 & 17.1 & 44.7 & 95.0 & 44.7 & 97.8 & \ensuremath{-}4.1 \\
+80 & 3 & 41.0 & 71.3 & 95.4 & 71.3 & 97.1 & \ensuremath{-}10.7 \\
+120 & 5 & 93.3 & 123.4 & 95.0 & 123.4 & 99.2 & \ensuremath{-}17.6 \\
+160 & 6 & 204.5 & 234.5 & 95.8 & 234.5 & 99.4 & \ensuremath{-}21.2 \\
+240 & 10 & 482.1 & 512.1 & 96.0 & 512.2 & 99.7 & \ensuremath{-}30.4 \\
+320 & 13 & 959.6 & 989.6 & 97.4 & 989.7 & 99.8 & \ensuremath{-}30.4 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Three snapshots per size; OR-Tools receives the insertion time. Means over snapshots.
+\end{table}

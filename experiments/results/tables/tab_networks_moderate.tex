@@ -1,0 +1,32 @@
+\begin{table}[!t]
+\caption{Longest wait (h) on each network, moderate load.}
+\label{tab:networks_moderate}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{1.8pt}
+\begin{tabular}{lrrrrrrrrrrrrrrrr}
+\toprule
+Policy & R0 & R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 & R9 & R10 & R11 & R12 & R13 & R14 & R15 \\
+\midrule
+Insertion, urgency & 228 & 144 & 156 & 132 & 144 & 192 & 216 & 192 & 120 & 180 & 168 & 216 & 192 & 132 & 144 & 144 \\
+Insertion, ageing & 84 & 96 & 84 & 108 & 96 & 108 & 216 & 120 & 72 & 96 & 120 & 168 & 132 & 132 & 144 & 84 \\
+Insertion, tier, bounded & 60 & 48 & 48 & 60 & 60 & 48 & 84 & 72 & 48 & 60 & 60 & 60 & 48 & 72 & 48 & 48 \\
+Insertion, tier, unbounded & 60 & 48 & 48 & 60 & 60 & 48 & 84 & 72 & 48 & 60 & 60 & 60 & 48 & 72 & 48 & 48 \\
+Insertion, reservation, bounded & 60 & 48 & 48 & 60 & 60 & 48 & 72 & 60 & 60 & 60 & 60 & 60 & 48 & 72 & 60 & 48 \\
+Insertion, full, $r = 1$ & 60 & 48 & 48 & 60 & 60 & 48 & 72 & 60 & 60 & 60 & 60 & 60 & 48 & 72 & 48 & 48 \\
+Insertion, full, $r = 2$ & 60 & 48 & 48 & 60 & 60 & 48 & 60 & 72 & 60 & 60 & 60 & 60 & 60 & 72 & 48 & 48 \\
+Insertion, full, $r = 4$ & 72 & 48 & 48 & 60 & 60 & 48 & 60 & 60 & 60 & 60 & 60 & 60 & 48 & 72 & 48 & 60 \\
+Insertion, full, $r = 8$ & 72 & 48 & 48 & 60 & 60 & 60 & 60 & 60 & 48 & 48 & 60 & 60 & 48 & 72 & 48 & 48 \\
+Insertion, full with ageing & 48 & 48 & 48 & 60 & 60 & 48 & 60 & 60 & 48 & 60 & 60 & 60 & 48 & 60 & 48 & 48 \\
+OR-Tools, urgency & 240 & 144 & 156 & 168 & 144 & 168 & 216 & 156 & 108 & 108 & 156 & 216 & 192 & 156 & 132 & 180 \\
+OR-Tools, tier, unbounded & 60 & 48 & 48 & 60 & 60 & 60 & 132 & 60 & 48 & 72 & 72 & 72 & 48 & 72 & 48 & 72 \\
+OR-Tools, full, $r = 1$ & 60 & 60 & 60 & 60 & 60 & 60 & 72 & 60 & 48 & 60 & 72 & 60 & 60 & 72 & 48 & 48 \\
+OR-Tools, full, $r = 4$ & 60 & 48 & 48 & 48 & 60 & 60 & 60 & 60 & 48 & 60 & 60 & 60 & 48 & 60 & 48 & 60 \\
+Ant colony, tier, unbounded & 156 & 108 & 120 & 84 & 72 & 96 & 288 & 108 & 84 & 84 & 444 & 156 & 72 & 108 & 96 & 84 \\
+Genetic algorithm, tier, unbounded & 72 & 60 & 72 & 60 & 84 & 84 & 408 & 132 & 60 & 120 & 156 & 108 & 72 & 84 & 60 & 60 \\
+Risk graph, tier, unbounded & 468 & 468 & 468 & 468 & 468 & 468 & 468 & 468 & 456 & 468 & 468 & 468 & 384 & 468 & 468 & 300 \\
+Static sweep & 60 & 48 & 72 & 48 & 48 & 36 & 84 & 72 & 60 & 60 & 72 & 60 & 48 & 72 & 60 & 36 \\
+Fill threshold & 300 & 240 & 216 & 300 & 156 & 204 & 276 & 216 & 240 & 312 & 348 & 264 & 216 & 264 & 252 & 228 \\
+\bottomrule
+\end{tabular}
+\end{table}

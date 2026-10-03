@@ -27,3 +27,22 @@
   S0 snapshot 5
   S0 snapshot 5: 0 solves, 0s (total 0.0 min)
 [budget-0.1] shard 1 finished
+
+=== 2026-10-03 18:29:07 experiments.exp_compare --study budget-0.1 --shard 1 --of 2
+[budget-0.1] shard 1/2: 3 of 6 units
+  S0 snapshot 1
+    ortools             full            obj    1114.5  served 160    19.3s
+    aco                 full            obj    1449.1  served 145    19.3s
+    genetic             full            obj    1748.4  served 141    19.2s
+  S0 snapshot 1: 3 solves, 62s (total 1.0 min)
+  S0 snapshot 3
+    ortools             full            obj     911.5  served 159    20.1s
+    aco                 full            obj    1136.1  served 152    20.1s
+    genetic             full            obj    1436.2  served 142    20.1s
+  S0 snapshot 3: 3 solves, 64s (total 2.1 min)
+  S0 snapshot 5
+    ortools             full            obj    1183.9  served 160    15.5s
+    aco                 full            obj    1432.8  served 153    15.5s
+    genetic             full            obj    1827.9  served 148    15.5s
+  S0 snapshot 5: 3 solves, 51s (total 3.0 min)
+[budget-0.1] shard 1 finished

@@ -21,3 +21,22 @@
     genetic             full            obj    1121.3  served 157   362.7s
   S0 snapshot 4: 3 solves, 1096s (total 57.2 min)
 [budget-2] shard 0 finished
+
+=== 2026-10-03 18:31:25 experiments.exp_compare --study budget-2 --shard 0 --of 2
+[budget-2] shard 0/2: 3 of 6 units
+  S0 snapshot 0
+    ortools             full            obj     845.4  served 159   394.9s
+    aco                 full            obj     957.0  served 155   394.9s
+    genetic             full            obj     974.8  served 158   394.9s
+  S0 snapshot 0: 3 solves, 1189s (total 19.8 min)
+  S0 snapshot 2
+    ortools             full            obj     911.0  served 158   378.3s
+    aco                 full            obj     977.9  served 156   378.3s
+    genetic             full            obj    1087.6  served 155   378.3s
+  S0 snapshot 2: 3 solves, 1139s (total 38.8 min)
+  S0 snapshot 4
+    ortools             full            obj     996.0  served 158   362.7s
+    aco                 full            obj    1066.3  served 158   363.0s
+    genetic             full            obj    1100.6  served 157   362.7s
+  S0 snapshot 4: 3 solves, 1093s (total 57.0 min)
+[budget-2] shard 0 finished

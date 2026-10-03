@@ -1,0 +1,24 @@
+\begin{table}[!t]
+\caption{Longest wait (h) on each network, tight load.}
+\label{tab:networks_tight}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{1.8pt}
+\begin{tabular}{lrrrrrrrrrrrrrrrr}
+\toprule
+Policy & R0 & R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 & R9 & R10 & R11 & R12 & R13 & R14 & R15 \\
+\midrule
+Insertion, urgency & 240 & 108 & 108 & 180 & 156 & 156 & 180 & 180 & 204 & 156 & 108 & 108 & 168 & 120 & 144 & 144 \\
+Insertion, ageing & 240 & 108 & 108 & 168 & 144 & 120 & 168 & 180 & 204 & 96 & 120 & 84 & 156 & 84 & 144 & 144 \\
+Insertion, tier, unbounded & 60 & 48 & 48 & 72 & 72 & 84 & 96 & 48 & 60 & 168 & 48 & 60 & 84 & 60 & 84 & 60 \\
+Insertion, full, $r = 1$ & 60 & 48 & 48 & 60 & 60 & 60 & 72 & 60 & 72 & 72 & 48 & 60 & 72 & 60 & 72 & 60 \\
+Insertion, full, $r = 4$ & 60 & 48 & 48 & 60 & 60 & 60 & 72 & 60 & 60 & 60 & 48 & 48 & 60 & 48 & 60 & 60 \\
+OR-Tools, urgency & 240 & 144 & 108 & 228 & 180 & 336 & 468 & 120 & 264 & 468 & 108 & 108 & 180 & 108 & 144 & 468 \\
+OR-Tools, tier, unbounded & 168 & 84 & 60 & 96 & 252 & 372 & 276 & 60 & 120 & 468 & 72 & 84 & 408 & 156 & 204 & 180 \\
+OR-Tools, full, $r = 1$ & 72 & 72 & 60 & 60 & 72 & 72 & 72 & 72 & 72 & 72 & 60 & 60 & 60 & 60 & 72 & 84 \\
+OR-Tools, full, $r = 4$ & 60 & 48 & 60 & 60 & 72 & 60 & 60 & 48 & 60 & 72 & 48 & 60 & 60 & 48 & 60 & 60 \\
+Static sweep & 60 & 36 & 60 & 48 & 48 & 60 & 72 & 60 & 60 & 72 & 48 & 48 & 60 & 60 & 72 & 60 \\
+Fill threshold & 192 & 156 & 180 & 168 & 168 & 144 & 144 & 192 & 204 & 300 & 156 & 216 & 156 & 132 & 120 & 144 \\
+\bottomrule
+\end{tabular}
+\end{table}

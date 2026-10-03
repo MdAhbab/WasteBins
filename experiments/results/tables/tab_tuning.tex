@@ -1,0 +1,38 @@
+\begin{table}[!t]
+\caption{Objective of every setting on the tuning instances.}
+\label{tab:tuning}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l>{\raggedright\arraybackslash}p{0.38\textwidth}rrrr}
+\toprule
+Planner & Setting & Instance 1 & Instance 2 & Instance 3 & Mean \\
+\midrule
+OR-Tools & first solution parallel cheapest insertion, metaheuristic guided local search & 750 & 928 & 908 & 862 \\
+ & first solution parallel cheapest insertion, metaheuristic tabu search & 750 & 934 & 924 & 869 \\
+ & first solution path cheapest arc, metaheuristic guided local search & 759 & 945 & 939 & 881 \\
+ & first solution path cheapest arc, metaheuristic tabu search & 761 & 996 & 911 & 889 \\
+ & first solution parallel cheapest insertion, metaheuristic simulated annealing & 766 & 963 & 945 & 891 \\
+ & first solution path cheapest arc, metaheuristic simulated annealing & 847 & 1{,}035 & 952 & 945 \\
+\addlinespace
+Ant colony & ants 8, $\beta$ 2.5, local-search share 0.3 & 812 & 1{,}051 & 950 & 938 \\
+ & ants 16, $\beta$ 4, local-search share 0.3 & 795 & 1{,}030 & 1{,}008 & 944 \\
+ & ants 8, $\beta$ 4, local-search share 0.3 & 813 & 1{,}038 & 1{,}083 & 978 \\
+ & ants 16, $\beta$ 2.5, local-search share 0.3 & 894 & 1{,}083 & 1{,}060 & 1{,}012 \\
+ & ants 8, $\beta$ 4, local-search share 0 & 1{,}263 & 1{,}519 & 1{,}210 & 1{,}331 \\
+ & ants 16, $\beta$ 4, local-search share 0 & 1{,}305 & 1{,}488 & 1{,}282 & 1{,}358 \\
+ & ants 16, $\beta$ 2.5, local-search share 0 & 1{,}262 & 1{,}573 & 1{,}341 & 1{,}392 \\
+ & ants 8, $\beta$ 2.5, local-search share 0 & 1{,}324 & 1{,}550 & 1{,}336 & 1{,}403 \\
+\addlinespace
+Genetic algorithm & population 40, mutation rate 0.5, local-search share 0.3 & 882 & 1{,}096 & 1{,}026 & 1{,}002 \\
+ & population 40, mutation rate 0.2, local-search share 0.3 & 845 & 1{,}081 & 1{,}140 & 1{,}022 \\
+ & population 20, mutation rate 0.5, local-search share 0.3 & 907 & 1{,}053 & 1{,}124 & 1{,}028 \\
+ & population 20, mutation rate 0.2, local-search share 0.3 & 910 & 1{,}044 & 1{,}147 & 1{,}034 \\
+ & population 20, mutation rate 0.5, local-search share 0 & 1{,}635 & 1{,}888 & 1{,}900 & 1{,}808 \\
+ & population 40, mutation rate 0.5, local-search share 0 & 1{,}779 & 1{,}877 & 1{,}980 & 1{,}878 \\
+ & population 20, mutation rate 0.2, local-search share 0 & 1{,}772 & 1{,}949 & 2{,}082 & 1{,}934 \\
+ & population 40, mutation rate 0.2, local-search share 0 & 1{,}780 & 2{,}047 & 2{,}010 & 1{,}946 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Set T160 at the matched time; settings in order of mean objective, the first one kept.
+\end{table}
