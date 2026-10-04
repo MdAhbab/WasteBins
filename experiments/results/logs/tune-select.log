@@ -85,3 +85,32 @@ genetic
      1945.8  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.2,"polish_fraction":0.0,"population_size":40,"tournament":3}
 
 wrote C:\Users\ahbab\Downloads\Wastage optimisation\wastebins\experiments\results\tuning.json
+
+=== 2026-10-03 19:38:39 experiments.exp_tune --select
+ortools
+      861.9  {"emission_model":"mean_load","first_solution":"PARALLEL_CHEAPEST_INSERTION","metaheuristic":"GUIDED_LOCAL_SEARCH"}
+      869.2  {"emission_model":"mean_load","first_solution":"PARALLEL_CHEAPEST_INSERTION","metaheuristic":"TABU_SEARCH"}
+      881.1  {"emission_model":"mean_load","first_solution":"PATH_CHEAPEST_ARC","metaheuristic":"GUIDED_LOCAL_SEARCH"}
+      889.0  {"emission_model":"mean_load","first_solution":"PATH_CHEAPEST_ARC","metaheuristic":"TABU_SEARCH"}
+      891.4  {"emission_model":"mean_load","first_solution":"PARALLEL_CHEAPEST_INSERTION","metaheuristic":"SIMULATED_ANNEALING"}
+      944.7  {"emission_model":"mean_load","first_solution":"PATH_CHEAPEST_ARC","metaheuristic":"SIMULATED_ANNEALING"}
+aco
+      938.0  {"alpha":1.0,"beta":2.5,"n_ants":8,"polish_fraction":0.3,"q0":0.25,"rho":0.1}
+      944.5  {"alpha":1.0,"beta":4.0,"n_ants":16,"polish_fraction":0.3,"q0":0.25,"rho":0.1}
+      978.1  {"alpha":1.0,"beta":4.0,"n_ants":8,"polish_fraction":0.3,"q0":0.25,"rho":0.1}
+     1012.4  {"alpha":1.0,"beta":2.5,"n_ants":16,"polish_fraction":0.3,"q0":0.25,"rho":0.1}
+     1330.7  {"alpha":1.0,"beta":4.0,"n_ants":8,"polish_fraction":0.0,"q0":0.25,"rho":0.1}
+     1358.5  {"alpha":1.0,"beta":4.0,"n_ants":16,"polish_fraction":0.0,"q0":0.25,"rho":0.1}
+     1392.2  {"alpha":1.0,"beta":2.5,"n_ants":16,"polish_fraction":0.0,"q0":0.25,"rho":0.1}
+     1403.5  {"alpha":1.0,"beta":2.5,"n_ants":8,"polish_fraction":0.0,"q0":0.25,"rho":0.1}
+genetic
+     1001.5  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.5,"polish_fraction":0.3,"population_size":40,"tournament":3}
+     1022.3  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.2,"polish_fraction":0.3,"population_size":40,"tournament":3}
+     1028.0  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.5,"polish_fraction":0.3,"population_size":20,"tournament":3}
+     1033.7  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.2,"polish_fraction":0.3,"population_size":20,"tournament":3}
+     1807.7  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.5,"polish_fraction":0.0,"population_size":20,"tournament":3}
+     1878.5  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.5,"polish_fraction":0.0,"population_size":40,"tournament":3}
+     1934.4  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.2,"polish_fraction":0.0,"population_size":20,"tournament":3}
+     1945.8  {"crossover_rate":0.85,"elite":4,"mutation_rate":0.2,"polish_fraction":0.0,"population_size":40,"tournament":3}
+
+wrote C:\Users\ahbab\Downloads\Wastage optimisation\wastebins\experiments\results\tuning.json

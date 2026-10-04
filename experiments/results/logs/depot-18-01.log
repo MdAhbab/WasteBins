@@ -34,3 +34,23 @@
     aco                 full            obj    1009.8  served 147   156.0s
   S0 snapshot 7: 3 solves, 474s (total 30.9 min)
 [depot-18] shard 1 finished
+
+=== 2026-10-04 06:39:34 experiments.exp_compare --study depot-18 --shard 1 --of 2
+[depot-18] shard 1/2: 4 of 8 units
+  S0 snapshot 1
+    ortools             full            obj    1192.1  served 160   169.9s
+    aco                 full            obj    1328.8  served 158   169.8s
+  S0 snapshot 1: 3 solves, 514s (total 8.6 min)
+  S0 snapshot 3
+    ortools             full            obj     919.3  served 158   151.1s
+    aco                 full            obj    1106.0  served 149   151.2s
+  S0 snapshot 3: 3 solves, 458s (total 16.2 min)
+  S0 snapshot 5
+    ortools             full            obj    1173.9  served 160   164.2s
+    aco                 full            obj    1316.8  served 158   164.2s
+  S0 snapshot 5: 3 solves, 496s (total 24.5 min)
+  S0 snapshot 7
+    ortools             full            obj     912.5  served 159   159.3s
+    aco                 full            obj     957.0  served 158   159.3s
+  S0 snapshot 7: 3 solves, 482s (total 32.5 min)
+[depot-18] shard 1 finished

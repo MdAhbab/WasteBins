@@ -34,3 +34,19 @@
 [weather-heat] shard 2/8: networks ['R2']
   R2: 0 chains, 0.0 min
 [weather-heat] shard 2 finished
+
+=== 2026-10-03 19:39:03 experiments.exp_weather --scenario heat --shard 2 --of 8
+[weather-heat] shard 2/8: networks ['R2']
+  R2 heat  blind    insertion full      served 37.4>35.2  dropped  4.8  max wait  168  breach False  heads lost 9  overflow 0.12>1.67   6.4 min
+  R2 heat  blind    insertion urgency   served 39.4>35.8  dropped  5.2  max wait  180  breach None  heads lost 0  overflow 0.12>1.50   6.4 min
+  R2 heat  blind    ortools   full      served 42.5>36.6  dropped  4.9  max wait  192  breach True  heads lost 11  overflow 0.25>1.17   6.4 min
+  R2 heat  protectedinsertion full      served 38.2>34.4  dropped  5.6  max wait  120  breach False  heads lost 0  overflow 0.00>1.58   5.9 min
+  R2 heat  protectedortools   full      served 42.1>36.8  dropped  5.8  max wait   96  breach False  heads lost 0  overflow 0.12>1.42   5.9 min
+  R2 heat  current  insertion full      served 38.4>34.7  dropped  3.1  max wait   84  breach False  heads lost 4  overflow 0.00>1.33   5.7 min
+  R2 heat  current  insertion urgency   served 37.4>35.5  dropped  2.3  max wait  156  breach None  heads lost 0  overflow 0.12>0.50   5.8 min
+  R2 heat  current  ortools   full      served 42.1>37.4  dropped  1.9  max wait   84  breach False  heads lost 5  overflow 0.12>0.75   5.7 min
+  R2 heat  forecast insertion full      served 38.1>34.3  dropped  0.8  max wait   72  breach False  heads lost 2  overflow 0.38>0.58   5.6 min
+  R2 heat  forecast insertion urgency   served 37.4>35.7  dropped  0.8  max wait  156  breach None  heads lost 0  overflow 0.12>0.17   5.8 min
+  R2 heat  forecast ortools   full      served 42.1>35.2  dropped  0.8  max wait   60  breach False  heads lost 1  overflow 0.12>0.25   5.6 min
+  R2: 11 chains, 65.3 min
+[weather-heat] shard 2 finished

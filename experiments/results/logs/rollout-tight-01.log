@@ -19,3 +19,19 @@
 [rollout-tight] shard 1/16: networks ['R1']
   R1: 0 chains, 0.0 min
 [rollout-tight] shard 1 finished
+
+=== 2026-10-03 23:48:08 experiments.exp_rollout --load tight --networks R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15 --shard 1 --of 16
+[rollout-tight] shard 1/16: networks ['R1']
+  R1 insertion   full             wait mean  19.4 p95    36 max    48  never  0  overflow  3.12%  served 37.1  km  52.3  use  99%   5.8 min
+  R1 insertion   urgency          wait mean  19.3 p95    36 max   156  never  0  overflow  2.86%  served 37.5  km  52.9  use  99%   5.8 min
+  R1 insertion   ageing           wait mean  19.4 p95    36 max   108  never  0  overflow  2.45%  served 37.4  km  51.4  use  99%   5.8 min
+  R1 insertion   tier_unbounded   wait mean  19.3 p95    36 max    48  never  0  overflow  3.28%  served 37.2  km  51.8  use  99%   5.8 min
+  R1 insertion   full_r4          wait mean  19.4 p95    36 max    48  never  0  overflow  3.07%  served 37.2  km  51.8  use 100%   5.7 min
+  R1 ortools     urgency          wait mean  17.5 p95    36 max   120  never  0  overflow  1.77%  served 41.2  km  46.6  use 100%   5.8 min
+  R1 ortools     tier_unbounded   wait mean  17.9 p95    36 max    72  never  0  overflow  2.03%  served 40.2  km  48.5  use  99%   5.8 min
+  R1 ortools     full             wait mean  17.8 p95    36 max    72  never  0  overflow  2.14%  served 40.3  km  48.8  use 100%   5.8 min
+  R1 ortools     full_r4          wait mean  17.8 p95    36 max    48  never  0  overflow  2.24%  served 40.5  km  48.0  use  99%   5.8 min
+  R1 static_sweepfull             wait mean  36.0 p95    36 max    36  never  0  overflow 13.70%  served 20.1  km  31.6  use 100%   0.0 min
+  R1 threshold   full             wait mean  38.2 p95    60 max   156  never  0  overflow 10.94%  served 18.8  km  39.5  use  97%   1.8 min
+  R1: 11 chains, 53.9 min
+[rollout-tight] shard 1 finished

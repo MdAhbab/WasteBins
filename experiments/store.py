@@ -107,6 +107,27 @@ def environment() -> Dict:
     }
 
 
+def write_meta(study: str, meta: Dict) -> None:
+    """
+    Store the settings of a study with the environment they ran in.
+
+    A job whose units are all stored still starts and returns at once.  When
+    the settings and the machine are unchanged and records exist, the file is
+    kept, so its start time stays that of the run that made the records.
+    """
+    path = RAW / f"{study}.meta.json"
+    text = json.dumps(meta, indent=2, default=str)
+    if path.exists() and any(RAW.glob(f"{study}.s*.jsonl")):
+        old, new = json.loads(path.read_text()), json.loads(text)
+        for entry in (old, new):
+            for field in ("utc", "platform"):
+                entry.get("environment", {}).pop(field, None)
+        if old == new:
+            return
+    RAW.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
 def keep_awake() -> Optional[int]:
     """
     Ask Windows not to sleep while this process is running.

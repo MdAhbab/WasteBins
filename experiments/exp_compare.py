@@ -37,7 +37,6 @@ Out:  results/raw/<study>.sNN.jsonl
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
 import sys
 import time
@@ -204,13 +203,13 @@ def main() -> int:
     units: List[Tuple[str, int]] = [(network, i) for network, count in cfg["networks"]
                                     for i in range(count)]
     (ST.RAW).mkdir(parents=True, exist_ok=True)
-    (ST.RAW / f"{args.study}.meta.json").write_text(json.dumps({
+    ST.write_meta(args.study, {
         "study": args.study,
         "config": {k: v for k, v in cfg.items()},
         "improve_s": cfg["improve_s"],
         "solver_config": PO.tuned_config(),
         "environment": ST.environment(),
-    }, indent=2, default=str))
+    })
 
     done = ST.index(args.study)
     reference_done = ST.index(cfg["reference_from"]) if cfg["reference_from"] else {}

@@ -174,10 +174,8 @@ is not part of this repository.
 budgeted planner receives the wall-clock time that the insertion planner took on
 the same instance, so a study and any study it borrows its reference times from
 (`ablation` and `budget-*` borrow from `main`) must run on one machine. The
-records in this repository came from two machines: a six-core Windows
-workstation (tuning, `main`, `wyndham`, `ablation`, `budget-*`,
-`rollout-moderate`, `weather-rain`) and a four-processor Linux machine (every
-other study). Each `results/raw/<study>.meta.json` records the machine, the
+records in this repository came from one six-core Windows workstation running
+five workers. Each `results/raw/<study>.meta.json` records the machine, the
 package versions and the start time of its study.
 
 | Module | Study | Answers |

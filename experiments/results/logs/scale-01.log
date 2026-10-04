@@ -8,3 +8,10 @@
 
 === 2026-10-02 19:09:58 experiments.exp_scale --shard 1 --of 5
 [scale] shard 1 finished
+
+=== 2026-10-04 03:35:45 experiments.exp_scale --shard 1 --of 5
+  n= 320 snapshot 1: construction   653.8s  insertion    2264.4  ortools    1566.8
+  n= 160 snapshot 0: construction   154.2s  insertion    1064.7  ortools     852.3
+  n= 120 snapshot 2: construction    74.8s  insertion    1028.5  ortools     881.5
+  n=  60 snapshot 1: construction    11.0s  insertion     440.1  ortools     402.2
+[scale] shard 1 finished

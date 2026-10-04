@@ -619,7 +619,7 @@ def main() -> int:
     study = f"weather-{args.scenario}"
     networks = args.networks.split(",") if args.networks else list(NETWORKS)
     ST.RAW.mkdir(parents=True, exist_ok=True)
-    (ST.RAW / f"{study}.meta.json").write_text(json.dumps({
+    ST.write_meta(study, {
         "study": study, "scenario": args.scenario, "modes": MODES[args.scenario],
         "load": RO.LOADS[LOAD], "networks": networks,
         "spell_cycles": [SPELL[0], SPELL[-1]],
@@ -634,7 +634,7 @@ def main() -> int:
         "weather_source": WD.ATTRIBUTION,
         "solver_config": PO.tuned_config(),
         "environment": ST.environment(),
-    }, indent=2, default=str))
+    })
 
     done = ST.index(study)
     mine = list(ST.mine(networks, args.shard, args.of))

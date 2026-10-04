@@ -606,18 +606,14 @@ def environment() -> None:
                          ("Numpy", "numpy"), ("Scipy", "scipy")):
         macro(f"env{name}", str(versions.get(module) or NA))
     macro("envCpus", whole(dig(env, "logical_cpus")))
-    # A second machine, where some studies ran.  Each study ran on one machine.
+    # The text names one machine, so say so if any study ran elsewhere.
     machine = (dig(env, "processor"), dig(env, "logical_cpus"))
-    other, studies = None, []
-    for path in metas:
-        e = dig(json.loads(path.read_text()), "environment")
-        if e and (e.get("processor"), e.get("logical_cpus")) != machine:
-            other = other or e
-            studies.append(path.name.replace(".meta.json", ""))
-    macro("envOtherPython", str(dig(other, "versions", "python") or NA))
-    macro("envOtherOrtools", str(dig(other, "versions", "ortools") or NA))
-    macro("envOtherCpus", whole(dig(other, "logical_cpus")))
-    macro("envOtherStudies", whole(len(studies)) if other else "0")
+    others = [path.name.replace(".meta.json", "") for path in metas
+              if (e := dig(json.loads(path.read_text()), "environment"))
+              and (e.get("processor"), e.get("logical_cpus")) != machine]
+    if others:
+        print(f"{len(others)} studies ran on another machine than main: "
+              + ", ".join(others))
 
 
 def write_macros(out: pathlib.Path) -> None:

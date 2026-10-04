@@ -179,8 +179,8 @@ class Builder:
                   " & wait (h) & mean & p95 & collected & (\\%) & in cycle (\\%) & per cycle & "
                   "container \\\\"]
         caption = f"Multi-cycle results, {load} load."
-        notes = ("Worst wait is the largest over all networks; other columns are means "
-                 "over networks.")
+        notes = ("Worst wait is the largest over all networks and never collected the total "
+                 "over networks; other columns are means over networks.")
         if not block:
             self.table(self.out / f"tab_{label}.tex", caption, f"tab:{label}",
                        "l" + "r" * (columns - 1), header, self.empty(columns, "This run"),

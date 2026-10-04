@@ -56,3 +56,17 @@
   S4 snapshot 6
   S4 snapshot 6: 0 solves, 0s (total 0.0 min)
 [main] shard 9 finished
+
+=== 2026-10-03 19:38:47 experiments.exp_compare --study main --shard 9 --of 13
+[main] shard 9/13: 5 of 65 units
+  S0 snapshot 9
+  S0 snapshot 9: 0 solves, 0s (total 0.0 min)
+  S0 snapshot 22
+  S0 snapshot 22: 0 solves, 0s (total 0.0 min)
+  S2 snapshot 0
+  S2 snapshot 0: 0 solves, 0s (total 0.0 min)
+  S3 snapshot 3
+  S3 snapshot 3: 0 solves, 0s (total 0.0 min)
+  S4 snapshot 6
+  S4 snapshot 6: 0 solves, 0s (total 0.0 min)
+[main] shard 9 finished

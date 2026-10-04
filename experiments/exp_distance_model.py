@@ -39,7 +39,6 @@ Out:  results/raw/distance.sNN.jsonl
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
 import sys
 import time
@@ -106,12 +105,12 @@ def main() -> int:
 
     ST.keep_awake()
     ST.RAW.mkdir(parents=True, exist_ok=True)
-    (ST.RAW / f"{STUDY}.meta.json").write_text(json.dumps({
+    ST.write_meta(STUDY, {
         "study": STUDY, "constant_detour_factor": CONSTANT_DETOUR,
         "network": "S0", "snapshots": args.snapshots, "planners": PLANNERS,
         "improve_s": IMPROVE_S, "solver_config": PO.tuned_config(),
         "environment": ST.environment(),
-    }, indent=2, default=str))
+    })
 
     done = ST.index(STUDY)
     weights = VRP.ObjectiveWeights()

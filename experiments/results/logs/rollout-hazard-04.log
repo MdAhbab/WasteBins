@@ -13,3 +13,13 @@
 [rollout-hazard] shard 4/8: networks ['R4']
   R4: 0 chains, 0.0 min
 [rollout-hazard] shard 4 finished
+
+=== 2026-10-04 02:39:54 experiments.exp_rollout --load hazard --shard 4 --of 8
+[rollout-hazard] shard 4/8: networks ['R4']
+  R4 insertion   full             wait mean  21.7 p95    72 max   108  never  0  overflow  2.55%  served 33.1  km  55.3  use  99%   4.7 min
+  R4 insertion   tier_unbounded   wait mean  22.5 p95    72 max   192  never  0  overflow  3.12%  served 32.2  km  55.3  use  99%   4.5 min
+  R4 insertion   full_r4          wait mean  21.0 p95    60 max    84  never  0  overflow  1.25%  served 34.4  km  54.6  use  99%   4.8 min
+  R4 ortools     tier_unbounded   wait mean  19.4 p95    48 max    84  never  0  overflow  0.31%  served 37.2  km  49.9  use  99%   4.7 min
+  R4 ortools     full             wait mean  19.2 p95    48 max    60  never  0  overflow  0.21%  served 37.5  km  49.6  use  99%   4.7 min
+  R4: 5 chains, 23.3 min
+[rollout-hazard] shard 4 finished

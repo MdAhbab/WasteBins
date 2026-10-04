@@ -30,3 +30,23 @@
   S0 snapshot 7
   S0 snapshot 7: 0 solves, 0s (total 0.0 min)
 [weights-co2x0] shard 1 finished
+
+=== 2026-10-04 04:16:51 experiments.exp_compare --study weights-co2x0 --shard 1 --of 2
+[weights-co2x0] shard 1/2: 4 of 8 units
+  S0 snapshot 1
+    ortools             full            obj     712.1  served 160   196.0s
+    aco                 full            obj     791.0  served 159   196.0s
+  S0 snapshot 1: 3 solves, 593s (total 9.9 min)
+  S0 snapshot 3
+    ortools             full            obj     498.2  served 159   183.0s
+    aco                 full            obj     558.1  served 159   183.0s
+  S0 snapshot 3: 3 solves, 553s (total 19.1 min)
+  S0 snapshot 5
+    ortools             full            obj     730.6  served 160   184.1s
+    aco                 full            obj     812.9  served 160   184.1s
+  S0 snapshot 5: 3 solves, 557s (total 28.4 min)
+  S0 snapshot 7
+    ortools             full            obj     409.9  served 159   171.3s
+    aco                 full            obj     549.8  served 154   173.0s
+  S0 snapshot 7: 3 solves, 520s (total 37.0 min)
+[weights-co2x0] shard 1 finished

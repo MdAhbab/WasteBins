@@ -19,3 +19,19 @@
 [weather-onset] shard 2/8: networks ['R2']
   R2: 0 chains, 0.0 min
 [weather-onset] shard 2 finished
+
+=== 2026-10-03 22:27:26 experiments.exp_weather --scenario onset --shard 2 --of 8
+[weather-onset] shard 2/8: networks ['R2']
+  R2 onset blind    insertion full      served 37.2>38.2  dropped  2.0  max wait   60  breach False  heads lost 1  overflow 0.25>0.75   5.9 min
+  R2 onset blind    insertion urgency   served 36.4>37.8  dropped  1.5  max wait  156  breach None  heads lost 0  overflow 0.38>0.25   5.8 min
+  R2 onset blind    ortools   full      served 42.9>40.0  dropped  1.9  max wait   60  breach False  heads lost 2  overflow 0.25>0.25   5.9 min
+  R2 onset protectedinsertion full      served 38.1>37.8  dropped  1.6  max wait   60  breach False  heads lost 0  overflow 0.38>0.50   5.8 min
+  R2 onset protectedortools   full      served 42.5>40.7  dropped  1.9  max wait   60  breach False  heads lost 0  overflow 0.12>0.08   5.8 min
+  R2 onset current  insertion full      served 38.1>38.1  dropped  0.8  max wait   60  breach False  heads lost 3  overflow 0.38>0.08   5.8 min
+  R2 onset current  insertion urgency   served 37.4>37.9  dropped  0.8  max wait  168  breach None  heads lost 0  overflow 0.12>0.33   5.9 min
+  R2 onset current  ortools   full      served 42.1>40.6  dropped  0.8  max wait   60  breach False  heads lost 1  overflow 0.12>0.08   5.7 min
+  R2 onset forecast insertion full      served 38.4>39.2  dropped  0.2  max wait   60  breach False  heads lost 0  overflow 0.00>0.25   5.7 min
+  R2 onset forecast insertion urgency   served 36.4>38.2  dropped  0.0  max wait  156  breach None  heads lost 0  overflow 0.38>0.08   5.8 min
+  R2 onset forecast ortools   full      served 42.1>40.4  dropped  0.2  max wait   60  breach False  heads lost 1  overflow 0.12>0.17   5.7 min
+  R2: 11 chains, 63.8 min
+[weather-onset] shard 2 finished

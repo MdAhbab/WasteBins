@@ -21,3 +21,16 @@
 [weather-storm] shard 3/8: networks ['R3']
   R3: 0 chains, 0.0 min
 [weather-storm] shard 3 finished
+
+=== 2026-10-03 21:30:05 experiments.exp_weather --scenario storm --shard 3 --of 8
+[weather-storm] shard 3/8: networks ['R3']
+  R3 storm blind    insertion full      served 34.9>28.8  dropped  5.6  max wait  180  breach False  heads lost 10  overflow 0.00>1.17   5.6 min
+  R3 storm blind    insertion urgency   served 32.6>31.2  dropped  3.8  max wait  240  breach None  heads lost 0  overflow 0.00>1.17   5.7 min
+  R3 storm blind    ortools   full      served 37.9>32.8  dropped  6.6  max wait  168  breach False  heads lost 9  overflow 0.00>1.08   5.6 min
+  R3 storm protectedinsertion full      served 34.1>30.1  dropped  4.5  max wait  132  breach False  heads lost 0  overflow 0.00>1.25   5.6 min
+  R3 storm protectedortools   full      served 37.9>31.8  dropped  6.7  max wait  120  breach False  heads lost 0  overflow 0.00>1.42   5.6 min
+  R3 storm current  insertion full      served 34.2>29.8  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.00>0.17   5.1 min
+  R3 storm current  insertion urgency   served 32.6>32.0  dropped  0.0  max wait  168  breach None  heads lost 0  overflow 0.00>0.25   5.2 min
+  R3 storm current  ortools   full      served 37.9>31.3  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.00>0.17   5.1 min
+  R3: 8 chains, 43.4 min
+[weather-storm] shard 3 finished

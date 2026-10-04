@@ -36,3 +36,27 @@
   W snapshot 9
   W snapshot 9: 0 solves, 0s (total 0.0 min)
 [depot-point_cook] shard 1 finished
+
+=== 2026-10-04 06:48:55 experiments.exp_compare --study depot-point_cook --shard 1 --of 2
+[depot-point_cook] shard 1/2: 5 of 10 units
+  W snapshot 1
+    ortools             full            obj     139.1  served  29    29.6s
+    aco                 full            obj     139.8  served  29    24.1s
+  W snapshot 1: 3 solves, 83s (total 1.4 min)
+  W snapshot 3
+    ortools             full            obj     137.6  served  32    25.8s
+    aco                 full            obj     137.6  served  32    23.3s
+  W snapshot 3: 3 solves, 75s (total 2.6 min)
+  W snapshot 5
+    ortools             full            obj     127.9  served  32    29.1s
+    aco                 full            obj     128.4  served  32    25.2s
+  W snapshot 5: 3 solves, 84s (total 4.0 min)
+  W snapshot 7
+    ortools             full            obj     137.6  served  32    28.3s
+    aco                 full            obj     137.6  served  32    24.9s
+  W snapshot 7: 3 solves, 82s (total 5.4 min)
+  W snapshot 9
+    ortools             full            obj     131.2  served  31    29.1s
+    aco                 full            obj     133.0  served  29    22.3s
+  W snapshot 9: 3 solves, 81s (total 6.7 min)
+[depot-point_cook] shard 1 finished

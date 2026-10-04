@@ -36,3 +36,27 @@
   W snapshot 8
   W snapshot 8: 0 solves, 0s (total 0.0 min)
 [depot-werribee] shard 0 finished
+
+=== 2026-10-04 06:41:14 experiments.exp_compare --study depot-werribee --shard 0 --of 2
+[depot-werribee] shard 0/2: 5 of 10 units
+  W snapshot 0
+    ortools             full            obj     136.2  served  30    28.5s
+    aco                 full            obj     142.7  served  29    23.2s
+  W snapshot 0: 3 solves, 80s (total 1.3 min)
+  W snapshot 2
+    ortools             full            obj     136.7  served  31    26.3s
+    aco                 full            obj     142.6  served  31    22.2s
+  W snapshot 2: 3 solves, 75s (total 2.6 min)
+  W snapshot 4
+    ortools             full            obj     137.9  served  31    25.4s
+    aco                 full            obj     137.9  served  31    21.5s
+  W snapshot 4: 3 solves, 72s (total 3.8 min)
+  W snapshot 6
+    ortools             full            obj     128.7  served  31    27.8s
+    aco                 full            obj     130.9  served  30    21.8s
+  W snapshot 6: 3 solves, 78s (total 5.1 min)
+  W snapshot 8
+    ortools             full            obj     130.2  served  32    28.1s
+    aco                 full            obj     130.5  served  32    25.1s
+  W snapshot 8: 3 solves, 81s (total 6.4 min)
+[depot-werribee] shard 0 finished

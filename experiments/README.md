@@ -80,7 +80,7 @@ A study must run on one machine, together with any study it borrows reference
 times from: `ablation` and `budget-*` take the insertion times of `main`. If a
 run is interrupted on a new machine, move the shard files of its unfinished jobs
 to `results/raw_partial/`, which the analysis does not read, and run them again
-in full. The records here came from two machines; each
+in full. The records here came from one machine; each
 `results/raw/<study>.meta.json` names the machine of its study.
 
 `build_roadnets.py` and `dhaka_containers.py` query Overpass live, so a rebuild

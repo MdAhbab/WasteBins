@@ -16,3 +16,8 @@
 [weather-rain] shard 3/8: networks ['R3']
   R3: 0 chains, 0.0 min
 [weather-rain] shard 3 finished
+
+=== 2026-10-03 19:38:59 experiments.exp_weather --scenario rain --shard 3 --of 8
+[weather-rain] shard 3/8: networks ['R3']
+  R3: 0 chains, 0.0 min
+[weather-rain] shard 3 finished

@@ -256,3 +256,57 @@
   W snapshot 24
   W snapshot 24: 0 solves, 0s (total 0.0 min)
 [wyndham] shard 0 finished
+
+=== 2026-10-03 19:38:48 experiments.exp_compare --study wyndham --shard 0 --of 1
+[wyndham] shard 0/1: 25 of 25 units
+  W snapshot 0
+  W snapshot 0: 0 solves, 0s (total 0.0 min)
+  W snapshot 1
+  W snapshot 1: 0 solves, 0s (total 0.0 min)
+  W snapshot 2
+  W snapshot 2: 0 solves, 0s (total 0.0 min)
+  W snapshot 3
+  W snapshot 3: 0 solves, 0s (total 0.0 min)
+  W snapshot 4
+  W snapshot 4: 0 solves, 0s (total 0.0 min)
+  W snapshot 5
+  W snapshot 5: 0 solves, 0s (total 0.0 min)
+  W snapshot 6
+  W snapshot 6: 0 solves, 0s (total 0.0 min)
+  W snapshot 7
+  W snapshot 7: 0 solves, 0s (total 0.0 min)
+  W snapshot 8
+  W snapshot 8: 0 solves, 0s (total 0.0 min)
+  W snapshot 9
+  W snapshot 9: 0 solves, 0s (total 0.0 min)
+  W snapshot 10
+  W snapshot 10: 0 solves, 0s (total 0.0 min)
+  W snapshot 11
+  W snapshot 11: 0 solves, 0s (total 0.0 min)
+  W snapshot 12
+  W snapshot 12: 0 solves, 0s (total 0.0 min)
+  W snapshot 13
+  W snapshot 13: 0 solves, 0s (total 0.0 min)
+  W snapshot 14
+  W snapshot 14: 0 solves, 0s (total 0.0 min)
+  W snapshot 15
+  W snapshot 15: 0 solves, 0s (total 0.0 min)
+  W snapshot 16
+  W snapshot 16: 0 solves, 0s (total 0.0 min)
+  W snapshot 17
+  W snapshot 17: 0 solves, 0s (total 0.0 min)
+  W snapshot 18
+  W snapshot 18: 0 solves, 0s (total 0.0 min)
+  W snapshot 19
+  W snapshot 19: 0 solves, 0s (total 0.0 min)
+  W snapshot 20
+  W snapshot 20: 0 solves, 0s (total 0.0 min)
+  W snapshot 21
+  W snapshot 21: 0 solves, 0s (total 0.0 min)
+  W snapshot 22
+  W snapshot 22: 0 solves, 0s (total 0.0 min)
+  W snapshot 23
+  W snapshot 23: 0 solves, 0s (total 0.0 min)
+  W snapshot 24
+  W snapshot 24: 0 solves, 0s (total 0.0 min)
+[wyndham] shard 0 finished

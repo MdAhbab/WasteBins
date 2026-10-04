@@ -16,3 +16,16 @@
 [weather-storm] shard 4/8: networks ['R4']
   R4: 0 chains, 0.0 min
 [weather-storm] shard 4 finished
+
+=== 2026-10-03 21:30:57 experiments.exp_weather --scenario storm --shard 4 --of 8
+[weather-storm] shard 4/8: networks ['R4']
+  R4 storm blind    insertion full      served 36.0>30.6  dropped  4.3  max wait  144  breach False  heads lost 8  overflow 0.50>1.25   5.5 min
+  R4 storm blind    insertion urgency   served 33.9>30.2  dropped  4.2  max wait  180  breach None  heads lost 0  overflow 0.38>1.08   5.5 min
+  R4 storm blind    ortools   full      served 37.5>32.4  dropped  4.4  max wait  156  breach False  heads lost 9  overflow 0.25>0.83   5.5 min
+  R4 storm protectedinsertion full      served 36.0>30.5  dropped  4.6  max wait   96  breach False  heads lost 0  overflow 0.50>1.25   5.5 min
+  R4 storm protectedortools   full      served 38.4>31.3  dropped  5.6  max wait   96  breach False  heads lost 0  overflow 0.25>1.17   5.5 min
+  R4 storm current  insertion full      served 34.0>30.6  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.38>0.25   5.2 min
+  R4 storm current  insertion urgency   served 34.5>31.8  dropped  0.0  max wait  132  breach None  heads lost 0  overflow 0.50>0.25   5.4 min
+  R4 storm current  ortools   full      served 38.4>32.2  dropped  0.0  max wait   60  breach False  heads lost 0  overflow 0.25>0.33   5.2 min
+  R4: 8 chains, 43.4 min
+[weather-storm] shard 4 finished

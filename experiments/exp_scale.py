@@ -30,7 +30,6 @@ Out:  results/raw/scale.sNN.jsonl
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
 import sys
 import time
@@ -80,12 +79,12 @@ def main() -> int:
     units: List[Tuple[int, int]] = [(n, i) for n in sorted(sizes, reverse=True)
                                     for i in range(args.snapshots)]
     ST.RAW.mkdir(parents=True, exist_ok=True)
-    (ST.RAW / f"{STUDY}.meta.json").write_text(json.dumps({
+    ST.write_meta(STUDY, {
         "study": STUDY, "sizes": sizes, "snapshots": args.snapshots,
         "containers_per_vehicle": CONTAINERS_PER_VEHICLE,
         "improve_s": IMPROVE_S, "solver_config": PO.tuned_config(),
         "environment": ST.environment(),
-    }, indent=2, default=str))
+    })
 
     done = ST.index(STUDY)
     weights = VRP.ObjectiveWeights()

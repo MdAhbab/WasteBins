@@ -46,7 +46,6 @@ Out:  results/raw/rollout-<load>.sNN.jsonl
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import pathlib
 import sys
@@ -663,7 +662,7 @@ def main() -> int:
                 else [f"R{k}" for k in range(8)])
     specs = {"hazard": SPECS_HAZARD, "tight": SPECS_TIGHT}.get(args.load, SPECS)
     ST.RAW.mkdir(parents=True, exist_ok=True)
-    (ST.RAW / f"{study}.meta.json").write_text(json.dumps({
+    ST.write_meta(study, {
         "study": study, "load": LOADS[args.load],
         "cycle_h": CYCLE_H, "n_cycles": args.cycles, "burn_in": BURN_IN,
         "shift_min": SHIFT_MIN, "tau_h": TAU_H, "improve_s": IMPROVE_S,
@@ -680,7 +679,7 @@ def main() -> int:
         "specs": [REFERENCE] + specs,
         "solver_config": PO.tuned_config(),
         "environment": ST.environment(),
-    }, indent=2, default=str))
+    })
 
     done = ST.index(study)
     mine = list(ST.mine(networks, args.shard, args.of))
