@@ -563,7 +563,7 @@ def wait_bound(out: pathlib.Path) -> None:
              num(r["served_at_h_price_only"], 0), num(r["served_at_h_reserved"], 0)]
             for r in sweep]
     table(out / "tab_pricesweep.tex",
-          "Price sweep: one overdue container at eight distances.",
+          "Penalty sweep: one overdue container at eight distances.",
           "tab:pricesweep", "rrrrrr",
           ["Distance & Round-trip & Threshold of & Predicted & "
            "\\multicolumn{2}{c}{Observed wait at collection} \\\\",
