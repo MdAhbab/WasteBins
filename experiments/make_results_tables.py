@@ -26,6 +26,8 @@ RULES = {
 #: Planners whose rule is nominal, because they ignore prices and reservation.
 RULELESS = ("static_sweep", "threshold")
 REFERENCE = "insertion/full"
+#: Cycles of every multi-cycle chain, as in `exp_rollout.N_CYCLES`.
+N_CYCLES = 40
 
 
 def policy_name(policy: str, with_rule: bool = True) -> str:
@@ -257,11 +259,18 @@ class Builder:
                   "Worst & Breaches \\\\",
                   " & & (smallest) & in advance (h) & backlog $M$ & backlog (h) & wait (h) & \\\\"]
         rows, breaches, checked = [], 0, 0
+        repairs = failures = 0
         for load in ("moderate", "tight", "hazard"):
             block = self.dig(self.s, "rollout", load)
             if not block:
                 continue
             for policy, b in sorted(block.get("bound", {}).items()):
+                # How often a plan omitted a reserved container and was rebuilt
+                # from the certificate, and how often a dispatched plan still
+                # missed one.  Both are counted over every cycle of every chain.
+                p = self.dig(block, "policies", policy, default={})
+                repairs += int(p.get("head_repairs", 0))
+                failures += int(p.get("head_failures", 0))
                 rows.append([load, policy_name(policy),
                              self.whole(b.get("min_heads_reserved")),
                              self.num(b.get("bound_known_in_advance_h"), 0),
@@ -279,10 +288,14 @@ class Builder:
                            self.num(self.dig(b, "bound_at_observed_backlog_h", "max"), 0))
                 self.macro(f"{stem}Slack", self.mean(b.get("slack_h"), 0))
                 self.macro(f"{stem}Reserved", self.whole(b.get("min_heads_reserved")))
+                self.macro(f"{stem}Repairs", self.whole(p.get("head_repairs", 0)))
         if not rows:
             rows = self.empty(columns, "The multi-cycle run")
         self.macro("boundBreaches", self.whole(breaches) if checked else self.NA)
         self.macro("boundChains", self.whole(checked) if checked else self.NA)
+        self.macro("boundCycles", self.whole(checked * N_CYCLES) if checked else self.NA)
+        self.macro("boundRepairs", self.whole(repairs) if checked else self.NA)
+        self.macro("boundHeadFailures", self.whole(failures) if checked else self.NA)
         self.table(self.out / "tab_bound.tex",
                    "Waiting-time bound in the multi-cycle runs.",
                    "tab:bound", "ll" + "r" * (columns - 2), header, rows, tabcolsep="3pt",
