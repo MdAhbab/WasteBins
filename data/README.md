@@ -137,8 +137,8 @@ distance_m, freeflow_kmh, snap_m = net.matrices(coords)
 
 ## Licences
 
-**The data is not under the repository's code licence.** Each source keeps its
-own licence, and every one allows redistribution with attribution.
+**The data is not under the repository's code licence (MIT).** Each source keeps
+its own licence, and every one allows redistribution with attribution.
 
 `wyndham/containers.csv` and `wyndham/fill_daily.csv` derive from the Wyndham
 Smart Bin Daily Fill Level dataset published by **Wyndham City Council** on

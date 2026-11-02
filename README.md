@@ -41,6 +41,8 @@ is not a formality: read it before quoting any number.
 - [Tests](#tests)
 - [Configuration](#configuration)
 - [Limitations](#limitations)
+- [Citation and contributors](#citation-and-contributors)
+- [Licence](#licence)
 
 ---
 
@@ -627,3 +629,10 @@ Waste Collection. Manuscript under review, 2026.
 
 Software contributors: Md Ahbab Hamid Khan, Ahnaf Atique, Khandokar Md. Rahat
 Hossain.
+
+## Licence
+
+The code is under the MIT License (`LICENSE`). The experiment records, tables
+and figures in `experiments/results/` are under Creative Commons Attribution 4.0
+International. Everything in `data/` keeps the licence of its upstream source,
+as listed in `data/README.md`.
