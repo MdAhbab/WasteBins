@@ -160,23 +160,27 @@ The tables and every number quoted in the paper are then written from the raw
 records, never typed by hand:
 
 ```bash
+python -m experiments.corpus
 python -m experiments.analyze
-```
-
-```bash
 python -m experiments.make_tables --out experiments/results/tables
+python -m experiments.fig_results
+python -m experiments.fig_corpus
 ```
 
-Without `--out`, the tables go to the manuscript folder `../Paper/tables`, which
-is not part of this repository.
+Without `--out`, the tables go to the manuscript folder
+`../Optimized_Wasatage_collection/tables`, which is not part of this repository.
 
 **Machines.** Set `--workers` to the number of physical cores minus one. A
 budgeted planner receives the wall-clock time that the insertion planner took on
 the same instance, so a study and any study it borrows its reference times from
 (`ablation` and `budget-*` borrow from `main`) must run on one machine. The
-records in this repository came from one six-core Windows workstation running
-five workers. Each `results/raw/<study>.meta.json` records the machine, the
-package versions and the start time of its study.
+first-round records came from one six-core Windows workstation running five
+workers. The second-round studies, whose names start with `kg-`, ran on Kaggle
+CPU sessions (two-core Intel Xeon at 2.20 GHz). Each Kaggle process owned whole
+networks, so every policy of a network ran on one processor and took its budgets
+from its own reference chain. `kaggle/make_kernels.py` writes the sessions and
+`kaggle/runner.py` runs one. Each `results/raw/<study>.meta.json` records the
+machine, the package versions and the start time of its study.
 
 | Module | Study | Answers |
 |---|---|---|
@@ -184,6 +188,9 @@ package versions and the start time of its study.
 | `exp_tune.py` | `tune-*` | Planner settings on T160; the prize weight checked on T60 |
 | `exp_compare.py` | `main`, `wyndham`, `ablation`, `weights-*`, `depot-*`, `budget-*` | Single-cycle planner and rule comparisons at matched wall-clock time |
 | `exp_rollout.py` | `rollout-moderate`, `-tight`, `-hazard` | Forty dispatch cycles with evolving demand; per-container waits and the bound check |
+| `exp_rollout.py` | `kg-rollout-moderate`, `-tight`, `-hazard` | The rule components, hazard reservation and wait-power penalty; the hazard load on sixteen networks |
+| `exp_replay.py` | `kg-replay-moderate`, `-tight` | Forty cycles on sixteen observed Wyndham windows |
+| `corpus.py` | `corpus.json` | The open fill-level corpus of Wyndham, Mildura and Boston |
 | `exp_weather.py` | `weather-rain`, `-storm`, `-heat`, `-onset` | Six-day adverse spells; plans made blind, protected, on current conditions or on the forecast |
 | `exp_weather_demand.py` | `weather_demand.json` | Fill rate against weather in the Wyndham record |
 | `exp_distance_model.py` | `distance` | Plans made on a constant detour factor, driven on the street graph |
@@ -611,5 +618,12 @@ possible. It is bounded and never exceeds the budget, but it is user-visible.
 
 ## Citation and contributors
 
-Md Ahbab Hamid Khan, Ahnaf Atique, Khandokar Md. Rahat Hossain. Please cite the
-accompanying manuscript; this repository is its reproduction package.
+This repository is the reproduction package of the manuscript below. Please
+cite the manuscript, and the upstream data sources listed in `data/README.md`.
+
+Md Ahbab Hamid Khan, Ahnaf Atique, Md Sakhawat Hossain, Suman Ahmmed and
+Ohidujjaman. Queue-Reserved Vehicle Dispatch for Bounded Waiting Times in Smart
+Waste Collection. Manuscript under review, 2026.
+
+Software contributors: Md Ahbab Hamid Khan, Ahnaf Atique, Khandokar Md. Rahat
+Hossain.

@@ -30,16 +30,23 @@ on twelve logical cores.
 Then, from the repository root:
 
 ```bash
+python -m experiments.corpus
 python -m experiments.analyze
 python -m experiments.make_tables
 python -m experiments.fig_results
+python -m experiments.fig_corpus
 ```
 
-`analyze` writes `results/summary.json` (intervals, Wilcoxon tests with Holm
-adjustment, Cliff's delta). `make_tables` writes every table and the macro file
-`numbers.tex` into the manuscript's `tables/` folder, or into the folder given
-with `--out`, such as `experiments/results/tables`. `fig_results` draws the
-multi-cycle and weather figures.
+`corpus` builds the harmonised fill-level corpus in `data/corpus/processed/` and
+`results/corpus.json`. `analyze` writes `results/summary.json` (intervals,
+Wilcoxon tests with Holm adjustment, Cliff's delta). `make_tables` writes every
+table and the macro file `numbers.tex` into the manuscript's `tables/` folder, or
+into the folder given with `--out`, such as `experiments/results/tables`.
+`fig_results` draws the multi-cycle and weather figures and `fig_corpus` the
+corpus figure.
+
+The second-round studies (`kg-rollout-*`, `kg-replay-*`) ran on Kaggle CPU
+sessions written by `kaggle/make_kernels.py` and run by `kaggle/runner.py`.
 
 ## What each script does
 
@@ -55,6 +62,8 @@ multi-cycle and weather figures.
 | `exp_tune.py` | Planner settings on T160; the prize weight on T60 |
 | `exp_compare.py` | Single-cycle comparisons at matched wall-clock time |
 | `exp_rollout.py` | Forty dispatch cycles with evolving demand; the bound check |
+| `exp_replay.py` | Forty dispatch cycles on observed Wyndham demand |
+| `corpus.py` | The open fill-level corpus in one schema |
 | `exp_weather.py` | Adverse weather spells on the multi-cycle study |
 | `exp_weather_demand.py` | Fill rate against weather in the Wyndham record |
 | `exp_wait_bound.py` | The controlled price sweep and tightness instances |
@@ -63,7 +72,7 @@ multi-cycle and weather figures.
 | `exp_scale.py` | Construction and improvement time by instance size |
 | `exp_emissions.py` | The emission model at stated settings |
 | `exp_fleet.py` | Shared fleet, snapshot and travel-model code used by the studies above |
-| `fig_bound.py`, `fig_results.py`, `figstyle.py` | Figures, from the result files |
+| `fig_bound.py`, `fig_results.py`, `fig_corpus.py`, `figstyle.py` | Figures, from the result files |
 
 `exp_model.py`, `exp_censoring.py`, `exp_continual.py`, `exp_realdata.py`,
 `eval_sensor_health.py` and `eval_xai_agreement.py`, with `dataset.py` and
