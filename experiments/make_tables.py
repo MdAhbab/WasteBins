@@ -18,7 +18,7 @@ A quantity that has no result yet is written as ``n/a``, so the manuscript
 compiles at any stage of the runs and an unfinished study is visible in the PDF.
 
 Run:  python -m experiments.analyze && python -m experiments.make_tables
-Out:  ../Paper/tables/  (or the folder given with --out)
+Out:  ../Optimized_Wasatage_collection/tables/  (or the folder given with --out)
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ from experiments import store as ST               # noqa: E402
 
 RESULTS = ST.RESULTS
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-DEFAULT_OUT = ROOT.parent / "Paper" / "tables"
+DEFAULT_OUT = ROOT.parent / "Optimized_Wasatage_collection" / "tables"
 NA = "n/a"
 
 MACROS: Dict[str, str] = {}
@@ -103,7 +103,7 @@ def table(path: pathlib.Path, caption: str, label: str, columns: str,
           header: Sequence[str], rows: Sequence[Sequence[str]],
           notes: str = "", small: bool = True, tabcolsep: Optional[str] = None,
           fontsize: Optional[str] = None) -> None:
-    lines = ["\\begin{table}[!t]", f"\\caption{{{caption}}}", f"\\label{{{label}}}",
+    lines = ["\\begin{table}[!htbp]", f"\\caption{{{caption}}}", f"\\label{{{label}}}",
              "\\centering"]
     if fontsize:
         lines.append(f"\\{fontsize}")
@@ -579,14 +579,136 @@ def wait_bound(out: pathlib.Path) -> None:
     macro("tightCases", whole(dig(data, "n_tight_cases")))
     macro("tightAttained", whole(dig(data, "n_tight")))
     tight = dig(data, "tightness", default=[])
+    short = dig(data, "tightness_short_deadline", default=[])
+    macro("tightShortOptimal", whole(dig(data, "n_short_optimal")))
+    macro("tightShortCases", whole(dig(data, "n_short_cases")))
+    excess = sorted({r.get("excess_over_lower_bound_h") for r in tight})
+    # The excess over the bound for any policy is one value when the
+    # proposition holds; print it only then, so that a change shows as n/a.
+    macro("tightExcess", num(excess[0], 0) if len(excess) == 1 else NA)
     rows = [[whole(r["containers"]), whole(r["reserved_per_cycle"]), whole(r["shift_min"]),
-             num(r["bound_h"], 0), num(r["worst_wait_at_service_h"], 0)] for r in tight]
+             num(r["lower_bound_any_policy_h"], 0),
+             num(r["bound_h"], 0), num(r["worst_wait_at_service_h"], 0),
+             num(s["bound_h"], 0), num(s["worst_wait_at_service_h"], 0)]
+            for r, s in zip(tight, short)]
     table(out / "tab_tightness.tex",
-          "Tightness of the waiting-time bound.",
-          "tab:tightness", "rrrrr",
-          ["Containers & Reserved $r$ & Shift (min) & Bound $W$ (h) & Longest wait (h) \\\\"],
+          "Tightness and optimality of the waiting-time bound.",
+          "tab:tightness", "rrrrrrrr",
+          ["& & & Any policy & \\multicolumn{2}{c}{$\\tau = 48$~h} & "
+           "\\multicolumn{2}{c}{$\\tau = 12$~h} \\\\",
+           "\\cmidrule(lr){5-6}\\cmidrule(lr){7-8}",
+           "$n$ & $r$ & Shift (min) & $\\lceil n/r \\rceil \\Delta$ (h) & Bound $W$ & "
+           "Longest & Bound $W$ & Longest \\\\"],
           rows,
-          notes="Each instance lets the fleet serve exactly $r$ containers per cycle.")
+          notes="Each instance lets the fleet serve exactly $r$ containers per cycle. "
+                "Waits in hours; $\\Delta = 12$~h.")
+
+
+# ---------------------------------------------------------------------------
+# The open fill-level corpus
+# ---------------------------------------------------------------------------
+def _month(day: Optional[str]) -> str:
+    import datetime
+    return datetime.date.fromisoformat(day).strftime("%b %Y") if day else NA
+
+
+def corpus(out: pathlib.Path) -> None:
+    data = load("corpus.json")
+    cities = dig(data, "cities", default={})
+    het = dig(data, "heterogeneity", default={})
+    names = {"wyndham": "Wy", "mildura": "Mi", "boston": "Bo"}
+    for city, tag in names.items():
+        c = cities.get(city, {})
+        macro(f"cp{tag}Containers", whole(c.get("containers")))
+        macro(f"cp{tag}Readings", whole(c.get("readings")))
+        macro(f"cp{tag}Collections", whole(c.get("collections_detected")))
+        macro(f"cp{tag}Invalid", whole(dig(c, "quality", "rows_invalid")))
+        macro(f"cp{tag}Duplicates", whole(dig(c, "quality", "duplicates")))
+        h = het.get(city, {})
+        macro(f"cp{tag}Rated", whole(h.get("containers")))
+        macro(f"cp{tag}RelMin", num(h.get("relative_min"), 2))
+        macro(f"cp{tag}RelMax", num(h.get("relative_max"), 2))
+        macro(f"cp{tag}RelPten", num(h.get("relative_p10"), 2))
+        macro(f"cp{tag}RelPninety", num(h.get("relative_p90"), 2))
+        macro(f"cp{tag}RelCv", num(h.get("relative_cv"), 2))
+    macro("cpContainers", whole(sum(c.get("containers", 0) for c in cities.values())))
+    macro("cpReadings", whole(sum(c.get("readings", 0) for c in cities.values())))
+    macro("cpCollections", whole(sum(c.get("collections_detected", 0) for c in cities.values())))
+    macro("cpWyRises", whole(dig(cities, "wyndham", "daily_rises")))
+    macro("cpMiRises", whole(dig(cities, "mildura", "daily_rises")))
+
+    day = dig(data, "diurnal", "mildura")
+    macro("cpMiDayShare", num(100 * dig(day, "day_share", default=float("nan")), 0))
+    macro("cpModelDayShare", num(100 * dig(day, "model_day_share", default=float("nan")), 0))
+    for city, tag in (("wyndham", "Wy"), ("mildura", "Mi")):
+        w = dig(data, "weather_response", city)
+        t, wet = dig(w, "temperature_per_10C"), dig(w, "wet")
+        macro(f"cp{tag}Pairs", whole(dig(w, "observations")))
+        macro(f"cp{tag}TempPct", num(dig(t, "percent_change"), 1, signed=True))
+        macro(f"cp{tag}TempP", pvalue(dig(t, "p")))
+        macro(f"cp{tag}WetPct", num(dig(wet, "percent_change"), 1, signed=True))
+        macro(f"cp{tag}WetP", pvalue(dig(wet, "p")))
+
+    b = dig(data, "boston", default={})
+    alt = dig(b, "sensitivity_any_collection_call", default={})
+    pct = lambda x: num(100 * x if x is not None else None, 1)   # noqa: E731
+    macro("cpBoVisits", whole(b.get("visits")))
+    macro("cpBoCycles", whole(b.get("cycles_kept")))
+    macro("cpBoCyclesAll", whole(b.get("cycles")))
+    macro("cpBoMaxCycleDays", whole(dig(data, "definitions", "boston_max_cycle_days")))
+    macro("cpBoMergeH", num(dig(data, "definitions", "boston_merge_h"), 0))
+    macro("cpBoMinCycles", whole(dig(data, "definitions", "boston_min_cycles")))
+    macro("cpBoInLocations", whole(dig(cities, "boston", "quality", "units_in_locations_file")))
+    macro("cpBoNotGreen", whole(dig(cities, "boston", "quality", "collection_calls_not_green")))
+    macro("cpBoYellowShare", pct(b.get("share_reaching_yellow")))
+    macro("cpBoNoYellow", whole(None if not b else
+                                b.get("cycles_kept", 0) - dig(b, "time_to_yellow_h", "n", default=0)))
+    macro("cpBoRedShare", pct(b.get("share_reaching_red")))
+    macro("cpBoCycleMedian", num(dig(b, "cycle_length_h", "median"), 0))
+    macro("cpBoCyclePninety", num(dig(b, "cycle_length_h", "p90"), 0))
+    macro("cpBoToYellowMedian", num(dig(b, "time_to_yellow_h", "median"), 0))
+    full, unit = dig(b, "wait_at_full_h", default={}), dig(b, "unit_longest_wait_at_full_h", default={})
+    macro("cpBoFullEpisodes", whole(full.get("n")))
+    macro("cpBoFullMedian", num(full.get("median"), 1))
+    macro("cpBoFullPninety", num(full.get("p90"), 0))
+    macro("cpBoFullMax", num(full.get("max"), 0))
+    macro("cpBoFullOverFortyEight", pct(full.get("share_over_48h")))
+    macro("cpBoFullOverSeventyTwo", pct(full.get("share_over_72h")))
+    macro("cpBoFullOverSeventyTwoAlt", pct(dig(alt, "wait_at_full_h", "share_over_72h")))
+    macro("cpBoUnitsRed", whole(unit.get("n")))
+    macro("cpBoUnitsOverSeventyTwo", pct(unit.get("share_over_72h")))
+    macro("cpBoUnitsOverSeventyTwoAlt", pct(dig(alt, "unit_longest_wait_at_full_h",
+                                                "share_over_72h")))
+    macro("cpBoYellowDayShare", num(100 * b["yellow_day_share"] if "yellow_day_share" in b
+                                    else None, 0))
+
+    s = dig(data, "service_times", default={})
+    macro("cpAiEvents", whole(s.get("events")))
+    macro("cpAiVehicles", whole(s.get("vehicles")))
+    macro("cpAiDays", whole(s.get("days")))
+    macro("cpAiLiftMedian", num(s.get("lift_s_median"), 0))
+    macro("cpAiGapMedian", num(s.get("gap_s_median"), 0))
+
+    def row(city, label, sensor, licence):
+        c = cities.get(city, {})
+        return [label, f"{_month(c.get('first'))} to {_month(c.get('last'))}",
+                whole(c.get("containers")), whole(c.get("readings")),
+                num(c.get("median_reading_gap_h"), 0), sensor,
+                whole(c.get("collections_detected")), licence]
+    rows = [row("wyndham", "Wyndham, Australia", "Six levels", "CC BY 2.5 AU"),
+            row("mildura", "Mildura, Australia", "Ultrasonic distance", "CC BY 3.0 AU"),
+            row("boston", "Boston, United States", "Three levels, compactor", "PDDL"),
+            ["AI4WASTE, Slovakia", f"{whole(s.get('days'))} days", "--",
+             whole(s.get("events")), "--", "Lift events, no fill", "--", "CC BY 4.0"]]
+    table(out / "tab_corpus.tex", "Records of the open fill-level corpus.", "tab:corpus",
+          "p{0.17\\textwidth}p{0.17\\textwidth}rrrp{0.15\\textwidth}rl",
+          ["Source & Period & Containers & Records & Gap (h) & Sensor & Collections & "
+           "License \\\\"],
+          rows, fontsize="footnotesize", tabcolsep="3pt",
+          notes="Gap is the median time between two records of one container. "
+                "Collections are detected from a fall in fill, or read from the "
+                "collection call in Boston. AI4WASTE records the lifts of "
+                "collection vehicles and enters only the service-time check.")
 
 
 # ---------------------------------------------------------------------------
@@ -606,6 +728,23 @@ def environment() -> None:
                          ("Numpy", "numpy"), ("Scipy", "scipy")):
         macro(f"env{name}", str(versions.get(module) or NA))
     macro("envCpus", whole(dig(env, "logical_cpus")))
+    # The second-round studies ran on Kaggle CPU sessions; their versions come
+    # from the study record and the processor from the stamp on each chain.
+    kg = ST.RAW / "kg-rollout-hazard.meta.json"
+    kg_env = dig(json.loads(kg.read_text()), "environment") if kg.exists() else None
+    kg_versions = dig(kg_env, "versions", default={})
+    for name, module in (("Python", "python"), ("Ortools", "ortools"),
+                         ("Numpy", "numpy"), ("Scipy", "scipy")):
+        macro(f"envKg{name}", str(kg_versions.get(module) or NA))
+    cpus = set()
+    for path in sorted(ST.RAW.glob("kg-*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                cpus.add(dig(json.loads(line), "machine", "cpu_model"))
+    # One processor model is expected; anything else prints as n/a.
+    macro("envKgCpu", cpus.pop().replace("(R)", "") if len(cpus) == 1 and None not in cpus
+          else NA)
+    macro("envKgThreads", whole(dig(kg_env, "logical_cpus")))
     # The text names one machine, so say so if any study ran elsewhere.
     machine = (dig(env, "processor"), dig(env, "logical_cpus"))
     others = [path.name.replace(".meta.json", "") for path in metas
@@ -641,6 +780,7 @@ def main() -> int:
     prize_weight(out)
     network(out)
     wait_bound(out)
+    corpus(out)
     environment()
     from experiments import make_results_tables
     make_results_tables.build(out, load("summary.json"), macro, table, num, whole,

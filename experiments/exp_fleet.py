@@ -336,18 +336,21 @@ def _wyndham_snapshot(rng: np.random.Generator, index: int, depot=None) -> Dict:
 def build_tasks(snapshot: Dict, gamma: float = AG.DEFAULT_GAMMA,
                 tau_h: float = AG.DEFAULT_TAU_H,
                 overdue_tier: bool = True,
-                escalating_price: bool = True) -> List[VRP.BinTask]:
+                escalating_price: bool = True,
+                wait_power: float = 1.0) -> List[VRP.BinTask]:
     """
     Apply the equity term, then assemble the routing tasks.
 
-    The two switches remove one part of the method each, for the ablation; see
-    `aging.effective_priorities`.
+    The switches remove or replace one part of the method each, for the
+    ablation; see `aging.effective_priorities`.  A snapshot from a rollout also
+    carries the age of each hazard episode, which orders the hazard queue.
     """
     tiered = AG.effective_priorities(
         snapshot["prizes"], snapshot["waits"],
         {nid: (1.0 if snapshot["hazards"][nid] else 0.0) for nid in snapshot["node_ids"]},
         gamma=gamma, tau_h=tau_h,
         overdue_tier=overdue_tier, escalating_price=escalating_price,
+        wait_power=wait_power,
     )
     return SC.make_tasks(
         snapshot["node_ids"],
@@ -365,6 +368,7 @@ def build_tasks(snapshot: Dict, gamma: float = AG.DEFAULT_GAMMA,
         densities=snapshot["densities"],
         service_minutes=snapshot["service"],
         windows=snapshot["windows"],
+        hazard_ages=snapshot.get("hazard_age"),
     )
 
 

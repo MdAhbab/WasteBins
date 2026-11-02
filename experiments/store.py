@@ -90,6 +90,26 @@ def mine(units: Iterable, shard: int, of: int) -> Iterator:
             yield unit
 
 
+def machine() -> Dict:
+    """
+    The processor a record was produced on, stored with every timed record.
+
+    A budgeted comparison is valid only between records from one machine, so
+    the model name is kept per record and not only per study: two sessions of
+    one study can land on different processors.
+    """
+    model = platform.processor() or ""
+    cpuinfo = pathlib.Path("/proc/cpuinfo")
+    if cpuinfo.exists():
+        for line in cpuinfo.read_text(errors="ignore").splitlines():
+            if line.lower().startswith("model name"):
+                model = line.split(":", 1)[1].strip()
+                break
+    return {"cpu_model": model, "logical_cpus": os.cpu_count(),
+            "host": platform.node(),
+            "kaggle": bool(os.environ.get("KAGGLE_KERNEL_RUN_TYPE"))}
+
+
 def environment() -> Dict:
     """Software and hardware a result was produced on, stored with the result."""
     versions = {"python": sys.version.split()[0]}

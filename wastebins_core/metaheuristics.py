@@ -813,7 +813,7 @@ def solve_with(name: str, tasks: Sequence[BinTask], vehicles: Sequence[VehicleSp
                travel: TravelModel, weights: Optional[ObjectiveWeights] = None,
                seed: int = 42, time_budget_s: float = 8.0,
                config: Optional[Dict] = None,
-               reserve: int = 0) -> Optional[FleetPlan]:
+               reserve: int = 0, reserve_hazard: int = 0) -> Optional[FleetPlan]:
     """
     Dispatch by name; returns ``None`` only for an unavailable optional solver.
 
@@ -825,6 +825,9 @@ def solve_with(name: str, tasks: Sequence[BinTask], vehicles: Sequence[VehicleSp
     bins it cannot afford to skip, and any head it still leaves out is restored
     afterwards.  The wait bound is a property of the rule and not of the planner
     it sits on, and this is how that is shown rather than said.
+
+    ``reserve_hazard`` adds heads of the hazard queue, certified beside the
+    overdue heads by `vrp.reserve_heads`.
     """
     name = name.lower()
     config = dict(config or {})
@@ -834,14 +837,16 @@ def solve_with(name: str, tasks: Sequence[BinTask], vehicles: Sequence[VehicleSp
                          time_budget_s=time_budget_s,
                          reserve_overdue=config.pop("reserve_overdue",
                                                     reserve if reserve > 0 else True),
-                         **config)
-    if reserve <= 0:
+                         reserve_hazard=reserve_hazard, **config)
+    if reserve <= 0 and reserve_hazard <= 0:
         return _run(name, tasks, vehicles, travel, weights, seed, time_budget_s, config)
 
     started = time.perf_counter()
-    queue = vrp.overdue_queue(tasks)
-    heads, certificate, unservable = vrp.certify_heads(queue, vehicles, travel,
-                                                       weights, reserve)
+    reservation = vrp.reserve_heads(tasks, vehicles, travel, weights, reserve,
+                                    reserve_hazard)
+    queue, heads, certificate, unservable = (reservation["queue"], reservation["heads"],
+                                             reservation["certificate"],
+                                             reservation["unservable"])
     for head in heads:
         head.mandatory = True
     try:
@@ -868,7 +873,8 @@ def solve_with(name: str, tasks: Sequence[BinTask], vehicles: Sequence[VehicleSp
                         (time.perf_counter() - started) * 1000.0)
     served_ids = {s.task.node_id for r in rebuilt.routes for s in r.stops}
     rebuilt.metrics.update(extra)
-    rebuilt.metrics.update(vrp.reservation_report(queue, heads, unservable,
-                                                  served_ids, reserve,
+    rebuilt.metrics.update(vrp.reservation_report(queue, reservation["overdue_heads"],
+                                                  unservable, served_ids, reserve,
                                                   repaired=missing))
+    rebuilt.metrics.update(vrp.hazard_report(reservation, served_ids, reserve_hazard))
     return rebuilt

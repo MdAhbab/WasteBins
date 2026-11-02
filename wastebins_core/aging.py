@@ -205,6 +205,22 @@ def wait_to_outprice(insertion_cost: float, tau_h: float = DEFAULT_TAU_H,
     return float(2.0 * max(0.0, float(tau_h)) * max(0.0, float(insertion_cost)) / denom)
 
 
+def power_pressure(wait_hours: float, tau_h: float = DEFAULT_TAU_H,
+                   power: float = 2.0) -> float:
+    """
+    A superlinear pricing escalation, :math:`(w/\\tau)^p / 2`.
+
+    It agrees with :func:`overdue_pressure` at the deadline, where both equal
+    one half, and grows faster after it.  It is the ablation for a penalty that
+    weights waiting time by a power, as dynamic-routing policies for waiting
+    time do.  It is unbounded like the linear form, so the free-vehicle
+    proposition of the paper applies to it unchanged: without a reservation it
+    forces a collection only when a vehicle is free.
+    """
+    tau = max(1e-9, float(tau_h))
+    return 0.5 * (max(0.0, float(wait_hours)) / tau) ** float(power)
+
+
 def queue_wait_bound(tau_h: float = DEFAULT_TAU_H,
                      cycle_h: float = 12.0,
                      max_overdue: int = 1,
@@ -383,7 +399,8 @@ def effective_priorities(priorities: Mapping[int, float],
                          kappa: float = DEFAULT_KAPPA,
                          hazard_threshold: float = DEFAULT_HAZARD_THRESHOLD,
                          overdue_tier: bool = True,
-                         escalating_price: bool = True
+                         escalating_price: bool = True,
+                         wait_power: float = 1.0
                          ) -> Dict[int, TieredPriority]:
     """
     Apply aging to a whole fleet and assign the lexicographic tier.
@@ -401,8 +418,15 @@ def effective_priorities(priorities: Mapping[int, float],
     prices a skip on the bounded ranking score, which is the form with a
     ceiling.  ``overdue`` is reported either way, so a reservation can still
     find the longest-waiting bin when the price says nothing about it.
+    ``wait_power`` above one replaces the linear escalation by
+    :func:`power_pressure`.
     """
     hazard_probs = hazard_probs or {}
+
+    def price(wait: float) -> float:
+        if float(wait_power) == 1.0:
+            return overdue_pressure(wait, tau_h)
+        return power_pressure(wait, tau_h, wait_power)
     out: Dict[int, TieredPriority] = {}
     for node_id, base in priorities.items():
         wait = float(wait_hours.get(node_id, 0.0))
@@ -424,8 +448,7 @@ def effective_priorities(priorities: Mapping[int, float],
             node_id=node_id,
             tier=tier,
             score=score,
-            pressure=(overdue_pressure(wait, tau_h)
-                      if promoted and escalating_price else 0.0),
+            pressure=(price(wait) if promoted and escalating_price else 0.0),
             base_priority=float(base),
             wait_hours=wait,
             hazard_prob=hazard,

@@ -45,7 +45,7 @@ TAU_H = 48.0
 #: between them are grey; the other planner is green.
 WAIT_POLICIES = [
     ("insertion/urgency", "Urgency", FS.ORANGE, "-", "v"),
-    ("insertion/ageing", "Ageing", FS.ORANGE, "--", "^"),
+    ("insertion/ageing", "Aging", FS.ORANGE, "--", "^"),
     ("insertion/tier_unbounded", "Tier, unbounded, no reservation", FS.GREY, "-", "o"),
     ("insertion/full", "Full rule, r = 1", FS.BLUE, "-", "s"),
     ("insertion/full_r4", "Full rule, r = 4", FS.BLUE, "--", "D"),

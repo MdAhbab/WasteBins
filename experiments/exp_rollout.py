@@ -126,6 +126,20 @@ SPECS_HAZARD: List[Tuple[str, str]] = [
     ("insertion", "tier_unbounded"), ("insertion", "full_r4"),
     ("ortools", "tier_unbounded"), ("ortools", "full"),
 ]
+#: The ablation studies of the second round run at every load on all sixteen
+#: networks.  Each carries its own reference policies, because it runs on a
+#: different machine from the studies above and a budgeted planner must take
+#: its reference times from the machine it runs on.  The two ablations are the
+#: hazard reservation and the superlinear penalty, each under both planners.
+SPECS_ABLATION: List[Tuple[str, str]] = [
+    ("insertion", "urgency"), ("insertion", "tier_unbounded"),
+    ("insertion", "tier_power"), ("insertion", "full_r4"),
+    ("insertion", "full_hazard"),
+    ("ortools", "urgency"), ("ortools", "tier_unbounded"),
+    ("ortools", "tier_power"), ("ortools", "full"), ("ortools", "full_hazard"),
+]
+#: Study-name prefix of the ablation studies, which run on Kaggle CPU sessions.
+ABLATION_PREFIX = "kg-"
 
 
 # ---------------------------------------------------------------------------
@@ -397,12 +411,27 @@ def run_chain(world: World, planner: str, rule_name: str,
     # Where a fixed round stopped, for a planner that reports it.  Only the
     # static sweep does, so that its round continues from shift to shift.
     round_next = None
+    # Hazard episodes.  An episode starts at the first dispatch instant at which
+    # a container is seen hazardous and ends when it is collected, or, censored,
+    # when it stops being hazardous first.  Its length counts the cycles from
+    # the first to the one that collected it, both included.
+    hazard_onset = np.full(n, -1, dtype=int)
+    hazard_episodes: List[Tuple[int, int]] = []    # (onset cycle, cycles to collection)
+    hazard_censored = 0
 
     for cycle in range(world.n_cycles):
         snapshot = world.observe(cycle, fill, wait)
         if round_next is not None:
             snapshot["round_start"] = round_next
         wait_trace[cycle] = wait
+        hazardous = np.array([bool(snapshot["hazards"][nid]) for nid in node_ids])
+        lapsed = (hazard_onset >= 0) & ~hazardous
+        hazard_censored += int(lapsed.sum())
+        hazard_onset[lapsed] = -1
+        hazard_onset[hazardous & (hazard_onset < 0)] = cycle
+        snapshot["hazard_age"] = {nid: (float((cycle - hazard_onset[i]) * CYCLE_H)
+                                        if hazard_onset[i] >= 0 else 0.0)
+                                  for i, nid in enumerate(node_ids)}
         budget = budgets[cycle] if budgets else (
             8.0 if planner in PO.BUDGETED else None)
         if conduct is None:
@@ -425,7 +454,11 @@ def run_chain(world: World, planner: str, rule_name: str,
         search = plan.metrics
         reserved = int(search.get("heads_reserved", 0))
         heads = set(search.get("head_ids", []))
+        hazard_reserved = int(search.get("hazard_heads_reserved", 0))
+        hazard_heads = set(search.get("hazard_head_ids", []))
         if reserved and int(search.get("heads_served", 0)) != reserved:
+            head_failures += 1
+        if hazard_reserved and int(search.get("hazard_heads_served", 0)) != hazard_reserved:
             head_failures += 1
 
         rate = world.cycle_rate(cycle)
@@ -452,8 +485,14 @@ def run_chain(world: World, planner: str, rule_name: str,
                 late_services[i] += 1
                 late_now += 1
             times_served[i] += 1
+            # The last field marks a reserved head: 1 overdue, 2 hazard.
             services.append([cycle, i, float(wait[i]),
-                             1 if node_ids[i] in heads else 0])
+                             1 if node_ids[i] in heads
+                             else 2 if node_ids[i] in hazard_heads else 0])
+            if hazard_onset[i] >= 0:
+                hazard_episodes.append((int(hazard_onset[i]),
+                                        int(cycle - hazard_onset[i] + 1)))
+                hazard_onset[i] = -1
             rest = CYCLE_H - served_at
             later = None if sudden_at is None or sudden_at <= served_at \
                 else sudden_at - served_at
@@ -483,6 +522,9 @@ def run_chain(world: World, planner: str, rule_name: str,
             "heads_reserved": reserved,
             "heads_served": int(search.get("heads_served", 0)),
             "head_repairs": int(search.get("head_repairs", 0)),
+            "hazard_queue": int(search.get("hazard_queue_total", 0)),
+            "hazard_heads_reserved": hazard_reserved,
+            "hazard_heads_served": int(search.get("hazard_heads_served", 0)),
             "max_wait_h": float(wait_trace[cycle].max()),
             "overflow_events": int(new_events),
             "overflow_hours": round(float(overflow_hours.sum()) - hours_before, 3),
@@ -513,6 +555,24 @@ def run_chain(world: World, planner: str, rule_name: str,
         bound_known = AG.queue_wait_bound(TAU_H, CYCLE_H, n, min_reserved)
         bound_backlog = AG.queue_wait_bound(TAU_H, CYCLE_H, backlog, min_reserved)
     worst_wait = float(wait_trace.max())
+
+    # The hazard bound, stated like the waiting-time bound: H is the largest
+    # number of containers hazardous at one dispatch instant, h the smallest
+    # number of hazard heads the dispatcher was certain to serve.  An episode
+    # then lasts at most ceil(H / h) cycles.
+    hazard_backlog = max((c["hazards"] for c in per_cycle), default=0)
+    hazard_effective = [rule.reserve_hazard
+                        if c["hazard_heads_reserved"] >= min(rule.reserve_hazard,
+                                                             c["hazard_queue"])
+                        else c["hazard_heads_reserved"]
+                        for c in per_cycle if c["hazard_queue"] > 0]
+    min_hazard_heads = (min(hazard_effective) if hazard_effective
+                        and rule.reserve_hazard > 0 else None)
+    hazard_bound = (int(math.ceil(hazard_backlog / min_hazard_heads))
+                    if min_hazard_heads else None)
+    lengths = [length for _onset, length in hazard_episodes]
+    after_lengths = [length for onset, length in hazard_episodes if onset >= BURN_IN]
+    longest_episode = max(lengths) if lengths else 0
     return {
         "planner": planner, "rule": rule_name,
         "n_cycles": world.n_cycles, "burn_in": BURN_IN,
@@ -566,6 +626,18 @@ def run_chain(world: World, planner: str, rule_name: str,
                 [c["hazard_served_pct"] for c in per_cycle[BURN_IN:] if c["hazards"]] or [100.0])),
             "elapsed_per_solve_s": float(np.mean([c["elapsed_s"] for c in per_cycle])),
             "feasible": len(violations) == 0,
+            "hazard_episodes": len(lengths),
+            "hazard_episodes_censored": int(hazard_censored),
+            "hazard_episodes_open_at_end": int((hazard_onset >= 0).sum()),
+            "hazard_episode_cycles_mean": float(np.mean(after_lengths)) if after_lengths else None,
+            "hazard_episode_cycles_max": int(longest_episode),
+            "hazard_in_cycle_share": (float(np.mean([x == 1 for x in after_lengths]))
+                                      if after_lengths else None),
+            "max_hazard_backlog": int(hazard_backlog),
+            "min_hazard_heads_reserved": min_hazard_heads,
+            "hazard_bound_cycles": hazard_bound,
+            "hazard_bound_breached": (None if hazard_bound is None
+                                      else bool(longest_episode > hazard_bound)),
         },
     }
 
@@ -575,8 +647,8 @@ def key_of(load: str, network: str, planner: str, rule: str) -> str:
 
 
 def run_network(load: str, network: str, shard: int, done: Dict[str, Dict],
-                specs: List[Tuple[str, str]], n_cycles: int) -> int:
-    study = f"rollout-{load}"
+                specs: List[Tuple[str, str]], n_cycles: int, prefix: str = "") -> int:
+    study = f"{prefix}rollout-{load}"
     ref_key = key_of(load, network, *REFERENCE)
     wanted = [s for s in specs if key_of(load, network, *s) not in done]
     if ref_key in done and not wanted:
@@ -587,7 +659,7 @@ def run_network(load: str, network: str, shard: int, done: Dict[str, Dict],
     def stamp(record: Dict, planner: str, rule: str) -> Dict:
         record.update({"key": key_of(load, network, planner, rule),
                        "study": study, "network": network, "load": load,
-                       "world": world.describe(),
+                       "world": world.describe(), "machine": ST.machine(),
                        "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
         return record
 
@@ -649,6 +721,10 @@ def main() -> int:
     parser.add_argument("--cycles", type=int, default=N_CYCLES)
     parser.add_argument("--pilot", action="store_true")
     parser.add_argument("--pilot-fill-hours", default="144,96,72,48,36")
+    parser.add_argument("--ablation", action="store_true",
+                        help="run SPECS_ABLATION into the study kg-rollout-<load>")
+    parser.add_argument("--file-shard", type=int, default=None,
+                        help="number of the output file, when it must differ from --shard")
     args = parser.parse_args()
 
     ST.keep_awake()
@@ -657,10 +733,16 @@ def main() -> int:
               (args.networks or "P0,P1").split(","), args.cycles)
         return 0
 
-    study = f"rollout-{args.load}"
+    prefix = ABLATION_PREFIX if args.ablation else ""
+    study = f"{prefix}rollout-{args.load}"
     networks = (args.networks.split(",") if args.networks
                 else [f"R{k}" for k in range(8)])
-    specs = {"hazard": SPECS_HAZARD, "tight": SPECS_TIGHT}.get(args.load, SPECS)
+    specs = (SPECS_ABLATION if args.ablation else
+             {"hazard": SPECS_HAZARD, "tight": SPECS_TIGHT}.get(args.load, SPECS))
+    if args.ablation and args.load != "hazard":
+        # Four reserved heads are compared only at the hazard load, where the
+        # first round reported them; elsewhere the first round already did.
+        specs = [s for s in specs if s != ("insertion", "full_r4")]
     ST.RAW.mkdir(parents=True, exist_ok=True)
     ST.write_meta(study, {
         "study": study, "load": LOADS[args.load],
@@ -686,7 +768,9 @@ def main() -> int:
     print(f"[{study}] shard {args.shard}/{args.of}: networks {mine}", flush=True)
     for network in mine:
         t0 = time.perf_counter()
-        solved = run_network(args.load, network, args.shard, done, specs, args.cycles)
+        out_shard = args.shard if args.file_shard is None else args.file_shard
+        solved = run_network(args.load, network, out_shard, done, specs, args.cycles,
+                             prefix=prefix)
         print(f"  {network}: {solved} chains, {(time.perf_counter() - t0) / 60:.1f} min",
               flush=True)
     print(f"[{study}] shard {args.shard} finished", flush=True)

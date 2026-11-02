@@ -25,6 +25,12 @@ Rules
 ``full``
     Overdue tier, unbounded penalty, one reserved queue head.  ``full_rK``
     reserves up to ``K``, and ``full_ageing`` adds the ageing blend.
+``tier_power``
+    Overdue tier, skip penalty growing with the square of the wait, no
+    reservation.  The ablation for a superlinear waiting-time penalty.
+``full_hazard``
+    The full rule with two heads of the hazard queue reserved as well, oldest
+    hazard episode first.  The two-class reservation.
 
 Scoring
 -------
@@ -68,6 +74,10 @@ class Rule:
     #: against, and ``full_ageing`` measures what adding it to the full rule does.
     gamma: float = 0.0
     reserve: int = 1
+    #: Heads of the hazard queue reserved beside the overdue heads.
+    reserve_hazard: int = 0
+    #: Exponent of the escalating penalty; 1 is the linear form of the paper.
+    wait_power: float = 1.0
 
 
 RULES: Dict[str, Rule] = {r.name: r for r in (
@@ -82,6 +92,8 @@ RULES: Dict[str, Rule] = {r.name: r for r in (
     Rule("full_r4", reserve=4),
     Rule("full_r8", reserve=8),
     Rule("full_ageing", gamma=AG.DEFAULT_GAMMA, reserve=1),
+    Rule("tier_power", reserve=0, wait_power=2.0),
+    Rule("full_hazard", reserve=1, reserve_hazard=2),
 )}
 
 #: Planners whose search is limited by a wall-clock budget they are handed.
@@ -119,7 +131,8 @@ def build_tasks(snapshot: Dict, rule: Rule,
                 tau_h: float = AG.DEFAULT_TAU_H) -> List[VRP.BinTask]:
     return EF.build_tasks(snapshot, gamma=rule.gamma, tau_h=tau_h,
                           overdue_tier=rule.overdue_tier,
-                          escalating_price=rule.escalating_price)
+                          escalating_price=rule.escalating_price,
+                          wait_power=rule.wait_power)
 
 
 def plan_with(planner: str, rule: Rule, snapshot: Dict, travel, fleet,
@@ -139,16 +152,19 @@ def plan_with(planner: str, rule: Rule, snapshot: Dict, travel, fleet,
         return VRP.solve(tasks, fleet, travel, weights,
                          improve_budget_s=improve_s,
                          reserve_overdue=rule.reserve,
+                         reserve_hazard=rule.reserve_hazard,
                          construction=("cheapest" if planner == "insertion_cheapest"
                                        else "regret2"))
     if planner == "insertion_construct":
         return VRP.solve(tasks, fleet, travel, weights, improve=False,
-                         reserve_overdue=rule.reserve)
+                         reserve_overdue=rule.reserve,
+                         reserve_hazard=rule.reserve_hazard)
     if planner in BUDGETED:
         chosen = dict((config or tuned_config()).get(planner, {}))
         return MH.solve_with(planner, tasks, fleet, travel, weights, seed=seed,
                              time_budget_s=budget_s, config=chosen,
-                             reserve=rule.reserve)
+                             reserve=rule.reserve,
+                             reserve_hazard=rule.reserve_hazard)
     if planner == "risk_graph":
         return MH.solve_with("risk_graph", tasks, fleet, travel, weights,
                              reserve=rule.reserve)
@@ -250,7 +266,9 @@ SEARCH_FIELDS = ("generations", "population", "iterations", "ants",
                  "ortools_objective", "first_solution", "metaheuristic",
                  "emission_model", "overdue_total", "heads_requested",
                  "heads_reserved", "heads_served", "head_repairs",
-                 "unservable_overdue", "head_ids", "construct_s", "improve_s",
+                 "unservable_overdue", "head_ids", "hazard_queue_total",
+                 "hazard_heads_requested", "hazard_heads_reserved",
+                 "hazard_heads_served", "hazard_head_ids", "construct_s", "improve_s",
                  "descents", "ruin_rounds", "ruin_accepted", "construction",
                  "trips", "vehicles_used")
 

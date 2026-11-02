@@ -64,6 +64,10 @@ SATURATION_WAITS_H = (48.0, 96.0, 240.0, 1e3, 1e4, 1e6)
 # Star networks for the tightness instance: (containers, reserved heads).
 TIGHTNESS_CASES = tuple((n, r) for n in (6, 12, 24) for r in (1, 2, 3, 4))
 SPOKE_KM = 10.0
+# The same instances with a deadline of one cycle.  No plan on them serves more
+# than r containers in a cycle, so no dispatch policy at all can keep every wait
+# below ceil(n / r) cycles, and with tau <= Delta the bound equals that value.
+SHORT_DEADLINE_H = 12.0
 
 
 def one_task(wait_h: float, tau_h: float = AG.DEFAULT_TAU_H) -> VRP.BinTask:
@@ -276,6 +280,10 @@ def tightness(weights: VRP.ObjectiveWeights,
                 else:
                     waits[node_id] += CYCLE_H
         bound = AG.queue_wait_bound(tau_h, CYCLE_H, n, reserve)
+        # No plan serves more than `reserve` containers in a cycle here, so any
+        # policy leaves some container uncollected for ceil(n / r) - 1 cycles
+        # running, which it then enters at a wait of ceil(n / r) cycles.
+        lower = CYCLE_H * math.ceil(n / reserve)
         rows.append({
             "containers": n,
             "reserved_per_cycle": reserve,
@@ -285,9 +293,12 @@ def tightness(weights: VRP.ObjectiveWeights,
             "min_reserved": least_reserved,
             "all_heads_served": bool(all_heads_served),
             "bound_h": bound,
+            "lower_bound_any_policy_h": lower,
+            "excess_over_lower_bound_h": bound - lower,
             "worst_wait_at_service_h": worst_served,
             "attained": abs(worst_served - bound) < 1e-9,
             "holds": worst_served <= bound + 1e-9,
+            "optimal": abs(worst_served - lower) < 1e-9,
         })
     return rows
 
@@ -298,6 +309,7 @@ def main() -> None:
     sweep = price_sweep(weights, tau)
     saturation = bounded_penalty_saturation(weights, tau)
     tight = tightness(weights, tau)
+    short = tightness(weights, SHORT_DEADLINE_H)
 
     print("Price sweep: one container, one vehicle, no reservation")
     print("=" * 76)
@@ -332,6 +344,14 @@ def main() -> None:
         print(f"{r['containers']:>4}{r['reserved_per_cycle']:>4}{r['max_backlog']:>9}"
               f"{r['bound_h']:>10.0f}{r['worst_wait_at_service_h']:>10.0f}{verdict:>12}")
 
+    print()
+    print(f"Deadline of one cycle ({SHORT_DEADLINE_H:.0f} h): bound against the lower "
+          f"bound of any policy")
+    for r in short:
+        print(f"{r['containers']:>4}{r['reserved_per_cycle']:>4}{r['bound_h']:>10.0f}"
+              f"{r['lower_bound_any_policy_h']:>10.0f}{r['worst_wait_at_service_h']:>10.0f}"
+              f"{'optimal' if r['optimal'] else '':>10}")
+
     payload = {
         "protocol": {
             "cycle_h": CYCLE_H,
@@ -363,6 +383,10 @@ def main() -> None:
         "n_tight": sum(1 for r in tight if r["attained"]),
         "n_tight_cases": len(tight),
         "n_breaches": sum(1 for r in tight if not r["holds"]),
+        "short_deadline_h": SHORT_DEADLINE_H,
+        "tightness_short_deadline": short,
+        "n_short_optimal": sum(1 for r in short if r["optimal"]),
+        "n_short_cases": len(short),
     }
     RESULTS.mkdir(exist_ok=True)
     (RESULTS / "wait_bound.json").write_text(json.dumps(payload, indent=2))

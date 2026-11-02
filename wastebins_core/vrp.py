@@ -148,6 +148,12 @@ class BinTask:
     # supplies neither is ordered on the pressure, as before.
     wait_hours: float = 0.0
     overdue: bool = False
+    # Hours since the bin was first seen hazardous in its current hazard
+    # episode, at this dispatch instant.  An episode ends when the bin is
+    # collected or stops being hazardous.  The hazard queue is ordered on this
+    # field, oldest first, so that a bin that turns hazardous later never moves
+    # ahead of one that turned hazardous earlier.  Zero when not tracked.
+    hazard_age_h: float = 0.0
     # A reserved head of the overdue queue, which the planner may not decline.
     #
     # Every other bin is governed by a price, and a price is a preference: the
@@ -1088,6 +1094,29 @@ def overdue_queue(tasks: Sequence[BinTask]) -> List[BinTask]:
     return sorted(promoted, key=key)
 
 
+def _is_hazardous(task: BinTask) -> bool:
+    return bool(task.hazard) or task.tier == TIER_HAZARD
+
+
+def hazard_queue(tasks: Sequence[BinTask], exclude=()) -> List[BinTask]:
+    """
+    The hazardous bins in the order the hazard bound is stated in.
+
+    Oldest hazard episode first, then the shorter predicted time to overflow,
+    then the container id.  Ordering on the age of the episode, and not on the
+    time to overflow, is what keeps the order stable from cycle to cycle: a bin
+    that turns hazardous later has a younger episode and joins behind every bin
+    already waiting, exactly as a bin that becomes overdue later joins the
+    overdue queue behind the others.  Bins in ``exclude``, the overdue heads
+    already reserved in this cycle, are left out because they are served anyway.
+    """
+    skip = set(exclude)
+    chosen = [t for t in tasks if _is_hazardous(t) and t.node_id not in skip]
+    return sorted(chosen, key=lambda t: (-_finite(t.hazard_age_h),
+                                         _finite(t.time_to_overflow_h, math.inf),
+                                         t.node_id))
+
+
 def servable_alone(task: BinTask, vehicles: Sequence[VehicleSpec],
                    travel: TravelModel) -> bool:
     """Whether some vehicle can collect this bin on a dedicated round trip."""
@@ -1099,7 +1128,8 @@ def servable_alone(task: BinTask, vehicles: Sequence[VehicleSpec],
 
 
 def certify_heads(queue: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
-                  travel: TravelModel, weights: ObjectiveWeights, reserve: int
+                  travel: TravelModel, weights: ObjectiveWeights, reserve: int,
+                  initial: Optional[Dict[int, List[BinTask]]] = None
                   ) -> Tuple[List[BinTask], Dict[int, List[BinTask]], List[BinTask]]:
     """
     Choose the reserved heads and prove they fit, before anything else is planned.
@@ -1128,10 +1158,23 @@ def certify_heads(queue: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     dispatch rule can collect it, the assumptions of the bound exclude it, and
     letting it sit at the front would block every bin behind it for ever.
 
+    ``initial`` is a certificate already built for other heads.  The hazard
+    reservation passes the certificate of the overdue heads here, so the bins it
+    adds are certified beside those heads and never in place of them.
+
     Returns ``(heads, routes, unservable)``.
     """
     orders: Dict[int, List[BinTask]] = {v.vehicle_id: [] for v in vehicles}
     costs = {v.vehicle_id: 0.0 for v in vehicles}
+    if initial:
+        for vehicle in vehicles:
+            order = list(initial.get(vehicle.vehicle_id, []))
+            if order:
+                evaluated = evaluate_route(order, vehicle, travel)
+                if evaluated is None:
+                    raise ValueError("the initial certificate is not feasible")
+                orders[vehicle.vehicle_id] = order
+                costs[vehicle.vehicle_id] = route_cost(evaluated, weights)
     heads: List[BinTask] = []
     unservable: List[BinTask] = []
     for task in queue:
@@ -1221,7 +1264,8 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
           reserve_overdue=True,
           improve_budget_s: Optional[float] = None,
           construction: str = "regret2",
-          overdue_order: str = "wait") -> FleetPlan:
+          overdue_order: str = "wait",
+          reserve_hazard: int = 0) -> FleetPlan:
     """
     Reserve, construct, then improve, then report a fully evaluated fleet plan.
 
@@ -1238,6 +1282,10 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     ``reserve_overdue`` is how many heads of the overdue queue are reserved:
     ``True`` or ``1`` for one, an integer ``r`` for up to ``r``, ``False`` or
     ``0`` for none.  See `certify_heads`.
+
+    ``reserve_hazard`` reserves up to that many heads of the hazard queue as
+    well, certified after the overdue heads and beside them.  See
+    `hazard_queue` and `reserve_heads`.
 
     Two ways to bound the search, and they answer different questions.
 
@@ -1261,13 +1309,11 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     # the descent and the ruin-and-recreate all work on a plan that already
     # holds them and all price them the same way.
     reserve = _reserve_count(reserve_overdue)
-    queue = overdue_queue(tasks)
-    heads: List[BinTask] = []
-    certificate: Optional[Dict[int, List[BinTask]]] = None
-    unservable: List[BinTask] = []
-    if reserve > 0 and queue:
-        heads, certificate, unservable = certify_heads(queue, vehicles, travel,
-                                                       weights, reserve)
+    reservation = reserve_heads(tasks, vehicles, travel, weights, reserve,
+                                reserve_hazard)
+    queue, heads, certificate, unservable = (reservation["queue"], reservation["heads"],
+                                             reservation["certificate"],
+                                             reservation["unservable"])
     for head in heads:
         head.mandatory = True
 
@@ -1415,8 +1461,9 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
     served_ids = {s.task.node_id for r in routes for s in r.stops}
     objective = plan_objective(routes, unserved, weights)
     metrics = summarise(routes, unserved, tasks, weights)
-    metrics.update(reservation_report(queue, heads, unservable, served_ids,
-                                      reserve, repaired=len(missing)))
+    metrics.update(reservation_report(queue, reservation["overdue_heads"], unservable,
+                                      served_ids, reserve, repaired=len(missing)))
+    metrics.update(hazard_report(reservation, served_ids, reserve_hazard))
     metrics.update({
         "construct_s": round(construct_s, 3),
         "improve_s": round(improve_s, 3),
@@ -1434,6 +1481,54 @@ def solve(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
         compute_ms=(time.perf_counter() - started) * 1000.0,
         algorithm=algorithm,
     )
+
+
+def reserve_heads(tasks: Sequence[BinTask], vehicles: Sequence[VehicleSpec],
+                  travel: TravelModel, weights: ObjectiveWeights,
+                  reserve: int, reserve_hazard: int = 0) -> Dict:
+    """
+    Certify the overdue heads, then the hazard heads beside them.
+
+    The overdue heads come first so that the waiting-time bound never depends
+    on how many hazardous bins there are: the hazard heads are inserted into
+    the certificate of the overdue heads and stop at the first one that does
+    not fit.  ``heads`` is the union the planner must serve.
+    """
+    queue = overdue_queue(tasks)
+    overdue_heads: List[BinTask] = []
+    certificate: Optional[Dict[int, List[BinTask]]] = None
+    unservable: List[BinTask] = []
+    if reserve > 0 and queue:
+        overdue_heads, certificate, unservable = certify_heads(
+            queue, vehicles, travel, weights, reserve)
+    hazards: List[BinTask] = []
+    hazard_heads: List[BinTask] = []
+    if reserve_hazard > 0:
+        hazards = hazard_queue(tasks, exclude=[h.node_id for h in overdue_heads])
+        if hazards:
+            hazard_heads, certificate, hazard_unservable = certify_heads(
+                hazards, vehicles, travel, weights, reserve_hazard,
+                initial=certificate)
+            unservable = unservable + [t for t in hazard_unservable
+                                       if t not in unservable]
+    return {"queue": queue, "overdue_heads": overdue_heads,
+            "hazard_queue": hazards, "hazard_heads": hazard_heads,
+            "heads": overdue_heads + hazard_heads,
+            "certificate": certificate, "unservable": unservable}
+
+
+def hazard_report(reservation: Dict, served_ids, requested: int) -> Dict:
+    """What the hazard reservation did in one plan; empty when none was asked."""
+    if requested <= 0:
+        return {}
+    heads = reservation["hazard_heads"]
+    return {
+        "hazard_queue_total": len(reservation["hazard_queue"]),
+        "hazard_heads_requested": int(requested),
+        "hazard_heads_reserved": len(heads),
+        "hazard_heads_served": sum(1 for h in heads if h.node_id in served_ids),
+        "hazard_head_ids": [h.node_id for h in heads],
+    }
 
 
 def reservation_report(queue: Sequence[BinTask], heads: Sequence[BinTask],

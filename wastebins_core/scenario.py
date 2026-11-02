@@ -78,8 +78,10 @@ def make_tasks(node_ids: Sequence[int],
                densities: Optional[Dict[int, float]] = None,
                service_minutes: Optional[Dict[int, float]] = None,
                windows: Optional[Dict[int, Tuple[float, float]]] = None,
+               hazard_ages: Optional[Dict[int, float]] = None,
                ) -> List[vrp.BinTask]:
     """Assemble ``BinTask`` objects from per-node dictionaries."""
+    hazard_ages = hazard_ages or {}
     index_of = index_of or {nid: i for i, nid in enumerate(node_ids)}
     hazards = hazards or {}
     tiers = tiers or {}
@@ -114,6 +116,7 @@ def make_tasks(node_ids: Sequence[int],
             overdue_pressure=float(overdue_pressures.get(nid, 0.0)),
             wait_hours=float(waits.get(nid, 0.0)),
             overdue=bool(overdue.get(nid, False)),
+            hazard_age_h=float(hazard_ages.get(nid, 0.0)),
             time_to_overflow_h=float(tto_hours.get(nid, float("inf"))),
             density_kg_per_m3=float(densities.get(nid, 220.0)),
         ))

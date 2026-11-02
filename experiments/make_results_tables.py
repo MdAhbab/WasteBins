@@ -18,10 +18,11 @@ PLANNERS = {
     "static_sweep": "Static sweep", "threshold": "Fill threshold",
 }
 RULES = {
-    "urgency": "urgency", "ageing": "ageing", "tier_bounded": "tier, bounded",
+    "urgency": "urgency", "ageing": "aging", "tier_bounded": "tier, bounded",
     "tier_unbounded": "tier, unbounded", "reserve_bounded": "reservation, bounded",
     "full": "full, $r = 1$", "full_r2": "full, $r = 2$", "full_r4": "full, $r = 4$",
-    "full_r8": "full, $r = 8$", "full_ageing": "full with ageing",
+    "full_r8": "full, $r = 8$", "full_ageing": "full with aging",
+    "tier_power": "wait power", "full_hazard": "full with hazard heads",
 }
 #: Planners whose rule is nominal, because they ignore prices and reservation.
 RULELESS = ("static_sweep", "threshold")
@@ -47,7 +48,7 @@ def tag_of(policy: str) -> str:
     rule = {"urgency": "Urg", "ageing": "Age", "tier_bounded": "TierB",
             "tier_unbounded": "TierU", "reserve_bounded": "ResB", "full": "Full",
             "full_r2": "Fullr", "full_r4": "Fullrr", "full_r8": "Fullrrr",
-            "full_ageing": "FullAge"}
+            "full_ageing": "FullAge", "tier_power": "TierP", "full_hazard": "FullHaz"}
     planner, r = policy.split("/")
     return short.get(planner, "X") + rule.get(r, "X")
 
@@ -150,8 +151,8 @@ class Builder:
         self.table(self.out / f"tab_{label}.tex", caption, f"tab:{label}",
                    "l" + "r" * (columns - 1), header, rows,
                    notes=("Ten snapshots of the primary sample. " if with_rule else
-                          "Matched computing time; every planner except the risk graph "
-                          "under the full rule. ") +
+                          "Matched computing time for the four general-purpose planners "
+                          "under the full rule; all plans scored under the full rule. ") +
                          "Means $\\pm$ standard deviation over snapshots. The relative "
                          "difference is the ratio of means with a 95 percent percentile "
                          "bootstrap interval; $\\delta$ is Cliff's delta and $p$ the "
@@ -171,23 +172,31 @@ class Builder:
                        ("km_per_served", "KmPer"), ("hazard_served_pct", "Hazard"),
                        ("served_per_cycle", "Served"), ("objective_per_cycle", "Objective"))
 
-    def rollout(self, load: str, order: Sequence[str]) -> None:
-        block = self.dig(self.s, "rollout", load)
-        label = f"rollout_{load}"
+    def rollout(self, load: str, order: Sequence[str], block: Optional[Dict] = None,
+                label: Optional[str] = None, pre: Optional[str] = None,
+                caption: Optional[str] = None, write: bool = True) -> List[List[str]]:
+        """
+        One multi-cycle study: its table and its macros, ``<pre><policy><metric>``.
+        The second-round studies pass their own block, label and macro prefix.
+        """
+        block = block if block is not None else self.dig(self.s, "rollout", load)
+        label = label or f"rollout_{load}"
+        pre = pre or {"moderate": "rm", "tight": "rt", "hazard": "rh"}[load]
         columns = 9
         header = ["Policy & Worst & \\multicolumn{2}{c}{Wait at collection (h)} & Never & "
                   "Overflow & Hazards & Served & km per \\\\",
                   "\\cmidrule(lr){3-4}",
                   " & wait (h) & mean & p95 & collected & (\\%) & in cycle (\\%) & per cycle & "
                   "container \\\\"]
-        caption = f"Multi-cycle results, {load} load."
+        caption = caption or f"Multi-cycle results, {load} load."
         notes = ("Worst wait is the largest over all networks and never collected the total "
                  "over networks; other columns are means over networks.")
         if not block:
-            self.table(self.out / f"tab_{label}.tex", caption, f"tab:{label}",
-                       "l" + "r" * (columns - 1), header, self.empty(columns, "This run"),
-                       tabcolsep="3pt", notes=notes)
-            return
+            if write:
+                self.table(self.out / f"tab_{label}.tex", caption, f"tab:{label}",
+                           "l" + "r" * (columns - 1), header, self.empty(columns, "This run"),
+                           tabcolsep="3pt", notes=notes)
+            return []
         policies = block["policies"]
         rows = []
         for policy in [p for p in order if p in policies] + sorted(
@@ -204,7 +213,6 @@ class Builder:
                 self.mean(row.get("km_per_served"), 2),
             ])
             t = tag_of(policy)
-            pre = {"moderate": "rm", "tight": "rt", "hazard": "rh"}[load]
             self.macro(f"{pre}{t}Worst", self.num(row.get("worst_wait_over_networks_h"), 0))
             self.macro(f"{pre}{t}WorstMean", self.mean(row.get("worst_wait_h"), 0))
             self.macro(f"{pre}{t}PastTwo", self.num(row.get("share_served_past_two_deadlines_pct"), 2))
@@ -224,7 +232,6 @@ class Builder:
                 if c and c.get("n_pairs"):
                     self.macro(f"{pre}{t}{name}P", self.pvalue(c.get("p_holm", c.get("p"))))
                     self.macro(f"{pre}{t}{name}Rel", self.num(c.get("relative_pct"), 1))
-        pre = {"moderate": "rm", "tight": "rt", "hazard": "rh"}[load]
         self.macro(f"{pre}Networks", self.whole(len(block.get("networks", []))))
         # The full rule set against the timetable, in the direction the
         # literature reports it: the change from the timetable.
@@ -248,9 +255,11 @@ class Builder:
                 if c and c.get("n_pairs"):
                     self.macro(f"{pre}W{t}{short}P", self.pvalue(c.get("p_holm", c.get("p"))))
                     self.macro(f"{pre}W{t}{short}Rel", self.num(c.get("relative_pct"), 1))
-        self.table(self.out / f"tab_{label}.tex", caption, f"tab:{label}",
-                   "l" + "r" * (columns - 1), header, rows, tabcolsep="3pt", notes=notes,
-                   fontsize="footnotesize")
+        if write:
+            self.table(self.out / f"tab_{label}.tex", caption, f"tab:{label}",
+                       "l" + "r" * (columns - 1), header, rows, tabcolsep="3pt", notes=notes,
+                       fontsize="footnotesize")
+        return rows
 
     def bound(self) -> None:
         """Proposition 1 against every reserving policy and load."""
@@ -260,8 +269,18 @@ class Builder:
                   " & & (smallest) & in advance (h) & backlog $M$ & backlog (h) & wait (h) & \\\\"]
         rows, breaches, checked = [], 0, 0
         repairs = failures = 0
-        for load in ("moderate", "tight", "hazard"):
-            block = self.dig(self.s, "rollout", load)
+        # The hazard load is the sixteen-network run of the second round, and
+        # the replay of observed demand adds two rows per planner.  The
+        # ablations repeat policies already listed, so they enter the counts
+        # and not the rows.
+        studies = [("moderate", "Mod", self.dig(self.s, "rollout", "moderate"), True),
+                   ("tight", "Tight", self.dig(self.s, "rollout", "tight"), True),
+                   ("hazard", "Haz", self.dig(self.s, "kg_rollout", "hazard"), True),
+                   ("observed, moderate", "ObsMod", self.dig(self.s, "kg_replay", "moderate"), True),
+                   ("observed, tight", "ObsTight", self.dig(self.s, "kg_replay", "tight"), True),
+                   ("moderate", "AblMod", self.dig(self.s, "kg_rollout", "moderate"), False),
+                   ("tight", "AblTight", self.dig(self.s, "kg_rollout", "tight"), False)]
+        for load, tag, block, listed in studies:
             if not block:
                 continue
             for policy, b in sorted(block.get("bound", {}).items()):
@@ -271,6 +290,10 @@ class Builder:
                 p = self.dig(block, "policies", policy, default={})
                 repairs += int(p.get("head_repairs", 0))
                 failures += int(p.get("head_failures", 0))
+                breaches += int(b.get("breaches", 0))
+                checked += int(b.get("networks", 0))
+                if not listed:
+                    continue
                 rows.append([load, policy_name(policy),
                              self.whole(b.get("min_heads_reserved")),
                              self.num(b.get("bound_known_in_advance_h"), 0),
@@ -278,10 +301,7 @@ class Builder:
                              self.num(self.dig(b, "bound_at_observed_backlog_h", "max"), 0),
                              self.num(b.get("worst_wait_h"), 0),
                              f"{b.get('breaches', 0)} of {b.get('networks', 0)}"])
-                breaches += int(b.get("breaches", 0))
-                checked += int(b.get("networks", 0))
-                stem = "bd" + {"moderate": "Mod", "tight": "Tight", "hazard": "Haz"}[load] \
-                    + tag_of(policy)
+                stem = "bd" + tag + tag_of(policy)
                 self.macro(f"{stem}Known", self.num(b.get("bound_known_in_advance_h"), 0))
                 self.macro(f"{stem}Backlog", self.whole(b.get("max_backlog")))
                 self.macro(f"{stem}AtBacklog",
@@ -299,8 +319,135 @@ class Builder:
         self.table(self.out / "tab_bound.tex",
                    "Waiting-time bound in the multi-cycle runs.",
                    "tab:bound", "ll" + "r" * (columns - 2), header, rows, tabcolsep="3pt",
+                   fontsize="footnotesize",
                    notes="Every policy that reserves queue heads; values are the largest "
-                         "over networks.")
+                         "over networks. Observed rows replay the Wyndham record. The "
+                         "ablation runs repeat these policies and enter only the counts "
+                         "in the text.")
+        # Proposition 4 on every chain that reserved hazard heads.
+        hb_chains = hb_breaches = 0
+        for load, tag, block, _ in studies:
+            for policy, h in (self.dig(block, "hazard_bound", default={}) or {}).items():
+                hb_chains += int(h.get("networks", 0))
+                hb_breaches += int(h.get("breaches", 0))
+                stem = "hb" + tag + tag_of(policy)
+                self.macro(f"{stem}Backlog", self.whole(h.get("max_hazard_backlog")))
+                self.macro(f"{stem}Reserved", self.whole(h.get("min_hazard_heads_reserved")))
+                self.macro(f"{stem}Cycles", self.whole(h.get("bound_cycles_max")))
+                self.macro(f"{stem}Longest", self.whole(h.get("longest_episode_cycles")))
+                self.macro(f"{stem}Networks", self.whole(h.get("networks")))
+        self.macro("hazardBoundChains", self.whole(hb_chains))
+        self.macro("hazardBoundBreaches", self.whole(hb_breaches))
+
+    # -- second round: ablations, observed demand, effect sizes -----------
+    ABLATION_ROWS = ["insertion/full", "insertion/full_hazard", "insertion/tier_power",
+                     "insertion/tier_unbounded", "insertion/urgency", "ortools/full",
+                     "ortools/full_hazard", "ortools/tier_power", "ortools/tier_unbounded",
+                     "ortools/urgency"]
+
+    def ablation_rollout(self) -> None:
+        """The two multi-cycle ablations at the three loads, on one table."""
+        loads = ("moderate", "tight", "hazard")
+        blocks = {load: self.dig(self.s, "kg_rollout", load) for load in loads}
+        pre = {"moderate": "am", "tight": "at", "hazard": "rh"}
+        for load in ("moderate", "tight"):
+            self.rollout(load, self.ABLATION_ROWS, block=blocks[load], pre=pre[load],
+                         write=False)
+        header = ["& \\multicolumn{3}{c}{Moderate} & \\multicolumn{3}{c}{Tight} & "
+                  "\\multicolumn{3}{c}{Hazard} \\\\",
+                  "\\cmidrule(lr){2-4}\\cmidrule(lr){5-7}\\cmidrule(lr){8-10}",
+                  "Policy" + " & Worst & Hazards & Overflow" * 3 + " \\\\"]
+        rows = []
+        for policy in self.ABLATION_ROWS:
+            if policy == "ortools/full":
+                rows.append("\\addlinespace")
+            cells = [policy_name(policy)]
+            for load in loads:
+                row = self.dig(blocks[load], "policies", policy, default={}) or {}
+                cells += [self.num(row.get("worst_wait_over_networks_h"), 0),
+                          self.mean(row.get("hazard_served_pct"), 0),
+                          self.mean(row.get("overflow_pct"), 2)]
+            rows.append(cells)
+        nets = {load: len(self.dig(blocks[load], "networks", default=[]) or [])
+                for load in loads}
+        self.macro("ablModNetworks", self.whole(nets["moderate"]))
+        self.macro("ablTightNetworks", self.whole(nets["tight"]))
+        self.table(self.out / "tab_ablation_rollout.tex",
+                   "Multi-cycle ablations: hazard heads and the wait-power penalty.",
+                   "tab:ablation_rollout", "l" + "r" * 9, header, rows,
+                   tabcolsep="2.5pt", fontsize="footnotesize",
+                   notes="Worst is the longest wait over all networks (h); hazards is the "
+                         "percentage of hazardous containers collected in the cycle they "
+                         "arose; overflow is the percentage of container-cycles. Means over "
+                         f"{nets['moderate']} networks at the moderate load and "
+                         f"{nets['tight']} at the tight and hazard loads, with reference "
+                         "policies re-run on the second-round processor.")
+
+    def replay(self) -> None:
+        """The rollouts on observed demand, both loads on one table."""
+        rows = []
+        for load, pre in (("moderate", "pm"), ("tight", "pt")):
+            block = self.dig(self.s, "kg_replay", load)
+            part = self.rollout(load, ROLLOUT_ORDER, block=block, pre=pre, write=False)
+            if part:
+                if rows:
+                    rows.append("\\addlinespace")
+                rows.append([f"\\multicolumn{{9}}{{l}}{{\\emph{{{load.capitalize()} load}}}}"])
+                rows += part
+        header = ["Policy & Worst & \\multicolumn{2}{c}{Wait at collection (h)} & Never & "
+                  "Overflow & Hazards & Served & km per \\\\",
+                  "\\cmidrule(lr){3-4}",
+                  " & wait (h) & mean & p95 & collected & (\\%) & in cycle (\\%) & per cycle & "
+                  "container \\\\"]
+        self.table(self.out / "tab_replay.tex",
+                   "Multi-cycle results on observed Wyndham demand.",
+                   "tab:replay", "lrrrrrrrr", header, rows or self.empty(9, "This run"),
+                   tabcolsep="3pt", fontsize="footnotesize",
+                   notes="Sixteen windows of 20 days. Worst wait is the largest over all "
+                         "windows and never collected the total over windows; other "
+                         "columns are means over windows.")
+
+    def effects(self) -> None:
+        """Urgency against the full rule: effect sizes with intervals, every study."""
+        studies = [("Dhaka, moderate", self.dig(self.s, "rollout", "moderate")),
+                   ("Dhaka, tight", self.dig(self.s, "rollout", "tight")),
+                   ("Dhaka, hazard", self.dig(self.s, "kg_rollout", "hazard")),
+                   ("Wyndham, moderate", self.dig(self.s, "kg_replay", "moderate")),
+                   ("Wyndham, tight", self.dig(self.s, "kg_replay", "tight"))]
+        header = ["& & & \\multicolumn{3}{c}{Longest wait} & "
+                  "\\multicolumn{3}{c}{km per container} \\\\",
+                  "\\cmidrule(lr){4-6}\\cmidrule(lr){7-9}",
+                  "Study & Planner & Units & Change (\\%) & $\\delta$ & $p$ & Change (\\%) & "
+                  "$\\delta$ & $p$ \\\\"]
+        rows, smallest = [], {}
+        for name, block in studies:
+            if not block:
+                continue
+            for planner in ("insertion", "ortools"):
+                family = self.dig(block, "against", f"{planner}/urgency vs {planner}/full")
+                if not family:
+                    continue
+                cells = [name, PLANNERS[planner]]
+                w, k = family.get("worst_wait_h", {}), family.get("km_per_served", {})
+                cells.append(self.whole(w.get("n_pairs")))
+                for c in (w, k):
+                    cells += [self.rel_cell(c), self.num(c.get("cliffs_delta"), 2),
+                              self.p_cell(c.get("p_holm", c.get("p")))]
+                rows.append(cells)
+                d = w.get("cliffs_delta")
+                if d is not None:
+                    smallest[name + planner] = d
+        if smallest:
+            self.macro("effWorstDeltaMin", self.num(min(smallest.values()), 2))
+        self.table(self.out / "tab_effects.tex",
+                   "Urgency-only dispatch against the full rule.",
+                   "tab:effects", "llrrrrrrr", header, rows or self.empty(9, "This run"),
+                   tabcolsep="2.5pt", fontsize="footnotesize",
+                   notes="Change is the relative difference of means, urgency against the "
+                         "full rule, with a 95 percent bootstrap interval; $\\delta$ is "
+                         "Cliff's delta and $p$ the Holm-adjusted Wilcoxon signed-rank "
+                         "$p$-value over nine metrics; Units is the number of networks or "
+                         "windows.")
 
     # -- weather ----------------------------------------------------------
     def weather(self) -> None:
@@ -517,9 +664,10 @@ class Builder:
                    notes="Three snapshots per size; OR-Tools receives the insertion time. "
                          "Means over snapshots.")
 
-    def rollout_networks(self, load: str, order: Sequence[str]) -> None:
+    def rollout_networks(self, load: str, order: Sequence[str],
+                         block: Optional[Dict] = None) -> None:
         """The longest wait of every policy on every network, for the supplement."""
-        block = self.dig(self.s, "rollout", load)
+        block = block if block is not None else self.dig(self.s, "rollout", load)
         if not block:
             return
         networks = sorted(block["networks"], key=lambda n: int(n.lstrip("R")))
@@ -539,10 +687,10 @@ MAIN_ORDER = ["insertion/full", "ortools/full", "aco/full", "genetic/full",
               "risk_graph/tier_unbounded", "static_sweep/full", "threshold/full"]
 #: Row names of the ablation table, where every row uses the insertion planner.
 ABLATION_NAMES = {
-    "insertion/urgency": "Urgency", "insertion/ageing": "Ageing",
+    "insertion/urgency": "Urgency", "insertion/ageing": "Aging",
     "insertion/tier_bounded": "Tier, bounded", "insertion/tier_unbounded": "Tier, unbounded",
     "insertion/reserve_bounded": "Reservation, bounded", "insertion/full": "Full, $r = 1$",
-    "insertion/full_ageing": "Full with ageing",
+    "insertion/full_ageing": "Full with aging",
     "insertion_cheapest/full": "Full, cheapest insertion",
     "insertion_construct/full": "Full, construction only",
 }
@@ -553,8 +701,9 @@ ABLATION_ORDER = ["insertion/urgency", "insertion/ageing", "insertion/tier_bound
 ROLLOUT_ORDER = ["insertion/urgency", "insertion/ageing", "insertion/tier_bounded",
                  "insertion/tier_unbounded", "insertion/reserve_bounded", "insertion/full",
                  "insertion/full_r2", "insertion/full_r4", "insertion/full_r8",
-                 "insertion/full_ageing", "ortools/urgency", "ortools/tier_unbounded",
-                 "ortools/full", "ortools/full_r4", "aco/tier_unbounded",
+                 "insertion/full_ageing", "insertion/tier_power", "insertion/full_hazard",
+                 "ortools/urgency", "ortools/tier_unbounded", "ortools/tier_power",
+                 "ortools/full", "ortools/full_r4", "ortools/full_hazard", "aco/tier_unbounded",
                  "genetic/tier_unbounded", "risk_graph/tier_unbounded",
                  "static_sweep/full", "threshold/full"]
 
@@ -569,9 +718,18 @@ def build(out: pathlib.Path, summary: Optional[Dict], macro, table, num, whole,
                    MAIN_ORDER, "wy")
     b.single_cycle("ablation", "ablation", "Rule variants under the insertion planner.",
                    ABLATION_ORDER, "ab", with_rule=True)
-    for load in ("moderate", "tight", "hazard"):
+    for load in ("moderate", "tight"):
         b.rollout(load, ROLLOUT_ORDER)
         b.rollout_networks(load, ROLLOUT_ORDER)
+    # The hazard load is the sixteen-network run of the second round, which
+    # replaces the eight-network run of the first.
+    hazard = dig(summary or {}, "kg_rollout", "hazard")
+    b.rollout("hazard", ROLLOUT_ORDER, block=hazard,
+              caption="Multi-cycle results, hazard load.")
+    b.rollout_networks("hazard", ROLLOUT_ORDER, block=hazard)
+    b.ablation_rollout()
+    b.replay()
+    b.effects()
     b.bound()
     b.weather()
     b.distance()

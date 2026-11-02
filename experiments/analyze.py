@@ -280,8 +280,12 @@ def _percentiles(values: Sequence[float]) -> List[float]:
     return [float(v) for v in np.percentile(x, np.arange(0, 101))] if x.size else []
 
 
-def rollout_study(load: str) -> Optional[Dict]:
-    records = ST.read(f"rollout-{load}")
+def rollout_study(load: str, study: Optional[str] = None) -> Optional[Dict]:
+    """
+    Summary of one multi-cycle study.  ``study`` defaults to ``rollout-<load>``;
+    the second-round studies pass ``kg-rollout-<load>`` or ``kg-replay-<load>``.
+    """
+    records = ST.read(study or f"rollout-{load}")
     if not records:
         return None
     chains: Dict[str, Dict[str, Dict]] = defaultdict(dict)      # policy -> network -> record
@@ -325,6 +329,31 @@ def rollout_study(load: str) -> Optional[Dict]:
                 "slack_h": spread([s["bound_at_observed_backlog_h"]
                                    - s["worst_wait_any_dispatch_h"] for s in checked]),
             }
+
+        # The hazard bound of the two-class reservation, where hazard heads are
+        # reserved, and the hazard episodes of every policy.
+        if any("hazard_episode_cycles_max" in s for s in summaries):
+            row["hazard_episode_cycles_max"] = int(max(s.get("hazard_episode_cycles_max", 0)
+                                                       for s in summaries))
+            row["hazard_in_cycle_share_pct"] = spread(
+                [100.0 * s["hazard_in_cycle_share"] for s in summaries
+                 if s.get("hazard_in_cycle_share") is not None])
+            row["hazard_episodes_censored"] = int(sum(s.get("hazard_episodes_censored", 0)
+                                                      for s in summaries))
+        hz = [s for s in summaries if s.get("hazard_bound_cycles") is not None]
+        if hz:
+            out.setdefault("hazard_bound", {})[policy] = {
+                "networks": len(hz),
+                "min_hazard_heads_reserved": int(min(s["min_hazard_heads_reserved"] for s in hz)),
+                "max_hazard_backlog": int(max(s["max_hazard_backlog"] for s in hz)),
+                "bound_cycles": spread([s["hazard_bound_cycles"] for s in hz]),
+                "bound_cycles_max": int(max(s["hazard_bound_cycles"] for s in hz)),
+                "longest_episode_cycles": int(max(s["hazard_episode_cycles_max"] for s in hz)),
+                "breaches": int(sum(1 for s in hz if s["hazard_bound_breached"])),
+            }
+        machines = sorted({(per[n].get("machine") or {}).get("cpu_model", "workstation")
+                           for n in networks if n in per})
+        row["machines"] = machines
 
         # The distribution of the wait at the moment of collection, pooled over
         # networks, after the burn-in.
@@ -630,6 +659,11 @@ def main() -> int:
         "wyndham": compare_study("wyndham", against=[label(*REFERENCE), "ortools/full"]),
         "ablation": compare_study("ablation", reference_from="main"),
         "rollout": {load: rollout_study(load) for load in ("moderate", "tight", "hazard")},
+        "kg_rollout": {load: rollout_study(load, f"kg-rollout-{load}")
+                       for load in ("moderate", "tight", "hazard")},
+        "kg_replay": {load: rollout_study(load, f"kg-replay-{load}")
+                      for load in ("moderate", "tight")},
+        "corpus": load_json("corpus.json"),
         "weather": {name: weather_study(name) for name in ("rain", "storm", "heat", "onset")},
         "weather_scenarios": load_json("weather_scenarios.json"),
         "weather_demand": load_json("weather_demand.json"),
