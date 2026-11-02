@@ -198,9 +198,12 @@
       "min_reserved": 1,
       "all_heads_served": true,
       "bound_h": 108.0,
+      "lower_bound_any_policy_h": 72.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 108.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 6,
@@ -211,9 +214,12 @@
       "min_reserved": 2,
       "all_heads_served": true,
       "bound_h": 72.0,
+      "lower_bound_any_policy_h": 36.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 72.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 6,
@@ -224,9 +230,12 @@
       "min_reserved": 3,
       "all_heads_served": true,
       "bound_h": 60.0,
+      "lower_bound_any_policy_h": 24.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 60.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 6,
@@ -237,9 +246,12 @@
       "min_reserved": 2,
       "all_heads_served": true,
       "bound_h": 60.0,
+      "lower_bound_any_policy_h": 24.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 60.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 12,
@@ -250,9 +262,12 @@
       "min_reserved": 1,
       "all_heads_served": true,
       "bound_h": 180.0,
+      "lower_bound_any_policy_h": 144.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 180.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 12,
@@ -263,9 +278,12 @@
       "min_reserved": 2,
       "all_heads_served": true,
       "bound_h": 108.0,
+      "lower_bound_any_policy_h": 72.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 108.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 12,
@@ -276,9 +294,12 @@
       "min_reserved": 3,
       "all_heads_served": true,
       "bound_h": 84.0,
+      "lower_bound_any_policy_h": 48.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 84.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 12,
@@ -289,9 +310,12 @@
       "min_reserved": 4,
       "all_heads_served": true,
       "bound_h": 72.0,
+      "lower_bound_any_policy_h": 36.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 72.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 24,
@@ -302,9 +326,12 @@
       "min_reserved": 1,
       "all_heads_served": true,
       "bound_h": 324.0,
+      "lower_bound_any_policy_h": 288.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 324.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 24,
@@ -315,9 +342,12 @@
       "min_reserved": 2,
       "all_heads_served": true,
       "bound_h": 180.0,
+      "lower_bound_any_policy_h": 144.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 180.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 24,
@@ -328,9 +358,12 @@
       "min_reserved": 3,
       "all_heads_served": true,
       "bound_h": 132.0,
+      "lower_bound_any_policy_h": 96.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 132.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     },
     {
       "containers": 24,
@@ -341,14 +374,214 @@
       "min_reserved": 4,
       "all_heads_served": true,
       "bound_h": 108.0,
+      "lower_bound_any_policy_h": 72.0,
+      "excess_over_lower_bound_h": 36.0,
       "worst_wait_at_service_h": 108.0,
       "attained": true,
-      "holds": true
+      "holds": true,
+      "optimal": false
     }
   ],
   "n_price_exact": 8,
   "n_price_cases": 8,
   "n_tight": 12,
   "n_tight_cases": 12,
-  "n_breaches": 0
+  "n_breaches": 0,
+  "short_deadline_h": 12.0,
+  "tightness_short_deadline": [
+    {
+      "containers": 6,
+      "reserved_per_cycle": 1,
+      "shift_min": 81.0,
+      "cycles": 17,
+      "max_backlog": 6,
+      "min_reserved": 1,
+      "all_heads_served": true,
+      "bound_h": 72.0,
+      "lower_bound_any_policy_h": 72.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 72.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 6,
+      "reserved_per_cycle": 2,
+      "shift_min": 145.0,
+      "cycles": 11,
+      "max_backlog": 6,
+      "min_reserved": 2,
+      "all_heads_served": true,
+      "bound_h": 36.0,
+      "lower_bound_any_policy_h": 36.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 36.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 6,
+      "reserved_per_cycle": 3,
+      "shift_min": 209.0,
+      "cycles": 9,
+      "max_backlog": 6,
+      "min_reserved": 3,
+      "all_heads_served": true,
+      "bound_h": 24.0,
+      "lower_bound_any_policy_h": 24.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 24.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 6,
+      "reserved_per_cycle": 4,
+      "shift_min": 273.0,
+      "cycles": 9,
+      "max_backlog": 6,
+      "min_reserved": 4,
+      "all_heads_served": true,
+      "bound_h": 24.0,
+      "lower_bound_any_policy_h": 24.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 24.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 1,
+      "shift_min": 81.0,
+      "cycles": 29,
+      "max_backlog": 12,
+      "min_reserved": 1,
+      "all_heads_served": true,
+      "bound_h": 144.0,
+      "lower_bound_any_policy_h": 144.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 144.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 2,
+      "shift_min": 145.0,
+      "cycles": 17,
+      "max_backlog": 12,
+      "min_reserved": 2,
+      "all_heads_served": true,
+      "bound_h": 72.0,
+      "lower_bound_any_policy_h": 72.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 72.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 3,
+      "shift_min": 209.0,
+      "cycles": 13,
+      "max_backlog": 12,
+      "min_reserved": 3,
+      "all_heads_served": true,
+      "bound_h": 48.0,
+      "lower_bound_any_policy_h": 48.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 48.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 12,
+      "reserved_per_cycle": 4,
+      "shift_min": 273.0,
+      "cycles": 11,
+      "max_backlog": 12,
+      "min_reserved": 4,
+      "all_heads_served": true,
+      "bound_h": 36.0,
+      "lower_bound_any_policy_h": 36.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 36.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 1,
+      "shift_min": 81.0,
+      "cycles": 53,
+      "max_backlog": 24,
+      "min_reserved": 1,
+      "all_heads_served": true,
+      "bound_h": 288.0,
+      "lower_bound_any_policy_h": 288.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 288.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 2,
+      "shift_min": 145.0,
+      "cycles": 29,
+      "max_backlog": 24,
+      "min_reserved": 2,
+      "all_heads_served": true,
+      "bound_h": 144.0,
+      "lower_bound_any_policy_h": 144.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 144.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 3,
+      "shift_min": 209.0,
+      "cycles": 21,
+      "max_backlog": 24,
+      "min_reserved": 3,
+      "all_heads_served": true,
+      "bound_h": 96.0,
+      "lower_bound_any_policy_h": 96.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 96.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    },
+    {
+      "containers": 24,
+      "reserved_per_cycle": 4,
+      "shift_min": 273.0,
+      "cycles": 17,
+      "max_backlog": 24,
+      "min_reserved": 4,
+      "all_heads_served": true,
+      "bound_h": 72.0,
+      "lower_bound_any_policy_h": 72.0,
+      "excess_over_lower_bound_h": 0.0,
+      "worst_wait_at_service_h": 72.0,
+      "attained": true,
+      "holds": true,
+      "optimal": true
+    }
+  ],
+  "n_short_optimal": 12,
+  "n_short_cases": 12
 }

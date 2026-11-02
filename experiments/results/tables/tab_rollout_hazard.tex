@@ -1,4 +1,4 @@
-\begin{table}[!t]
+\begin{table}[!htbp]
 \caption{Multi-cycle results, hazard load.}
 \label{tab:rollout_hazard}
 \centering
@@ -10,11 +10,17 @@ Policy & Worst & \multicolumn{2}{c}{Wait at collection (h)} & Never & Overflow &
 \cmidrule(lr){3-4}
  & wait (h) & mean & p95 & collected & (\%) & in cycle (\%) & per cycle & container \\
 \midrule
-Insertion, tier, unbounded & 228 & 20.7 & 58 & 0 & 2.40 & 88 & 35.2 & 1.55 \\
-Insertion, full, $r = 1$ & 108 & 20.5 & 58 & 0 & 2.11 & 86 & 35.3 & 1.53 \\
-Insertion, full, $r = 4$ & 84 & 20.3 & 51 & 0 & 1.22 & 82 & 35.7 & 1.52 \\
-OR-Tools, tier, unbounded & 156 & 18.6 & 45 & 0 & 0.33 & 83 & 39.0 & 1.29 \\
-OR-Tools, full, $r = 1$ & 72 & 18.7 & 45 & 0 & 0.32 & 83 & 38.9 & 1.30 \\
+Insertion, urgency & 288 & 20.4 & 55 & 0 & 2.31 & 87 & 35.4 & 1.43 \\
+Insertion, tier, unbounded & 264 & 20.7 & 56 & 0 & 2.44 & 88 & 34.8 & 1.53 \\
+Insertion, full, $r = 1$ & 120 & 20.7 & 58 & 0 & 2.07 & 87 & 34.9 & 1.53 \\
+Insertion, full, $r = 4$ & 84 & 20.7 & 50 & 0 & 1.31 & 82 & 34.8 & 1.54 \\
+Insertion, wait power & 264 & 20.7 & 58 & 0 & 2.45 & 88 & 34.9 & 1.51 \\
+Insertion, full with hazard heads & 132 & 21.0 & 58 & 0 & 2.27 & 86 & 34.5 & 1.58 \\
+OR-Tools, urgency & 252 & 18.4 & 44 & 0 & 0.50 & 85 & 39.3 & 1.22 \\
+OR-Tools, tier, unbounded & 192 & 18.8 & 46 & 0 & 0.29 & 83 & 38.4 & 1.30 \\
+OR-Tools, wait power & 168 & 18.8 & 46 & 0 & 0.30 & 83 & 38.5 & 1.31 \\
+OR-Tools, full, $r = 1$ & 72 & 18.9 & 46 & 0 & 0.28 & 83 & 38.3 & 1.32 \\
+OR-Tools, full with hazard heads & 84 & 19.4 & 46 & 0 & 0.37 & 83 & 37.5 & 1.40 \\
 \bottomrule
 \end{tabular}
 \par\smallskip\footnotesize Worst wait is the largest over all networks and never collected the total over networks; other columns are means over networks.

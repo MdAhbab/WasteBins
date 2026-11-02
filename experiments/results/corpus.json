@@ -1,0 +1,367 @@
+{
+  "definitions": {
+    "collection_drop": 0.25,
+    "max_start_fill": 0.6,
+    "min_days_for_rate": 60,
+    "mildura_valid_mm": [
+      100.0,
+      9999.0
+    ],
+    "day_hours": [
+      6,
+      18
+    ],
+    "boston_levels": {
+      "GREEN": 0.2,
+      "YELLOW": 0.6,
+      "RED": 1.0
+    },
+    "boston_merge_h": 1.0,
+    "boston_max_cycle_days": 28,
+    "boston_min_cycles": 10
+  },
+  "cities": {
+    "boston": {
+      "containers": 519,
+      "readings": 51440,
+      "first": "2014-01-01",
+      "last": "2014-12-31",
+      "span_days": 365,
+      "container_days": 0,
+      "median_days_per_container": null,
+      "median_reading_gap_h": 38.8,
+      "collections_detected": 22264,
+      "daily_rises": 0,
+      "mean_daily_rise": null,
+      "quality": {
+        "rows_raw": 51440,
+        "rows_invalid": 0,
+        "duplicates": 0,
+        "units_in_locations_file": 518,
+        "collection_calls_not_green": 1281
+      }
+    },
+    "mildura": {
+      "containers": 7,
+      "readings": 41551,
+      "first": "2021-12-14",
+      "last": "2023-09-14",
+      "span_days": 640,
+      "container_days": 3110,
+      "median_days_per_container": 421.0,
+      "median_reading_gap_h": 1.0005555555555556,
+      "collections_detected": 416,
+      "daily_rises": 1665,
+      "mean_daily_rise": 0.10082693808238871,
+      "quality": {
+        "rows_raw": 42061,
+        "rows_invalid": 506,
+        "duplicates": 4
+      }
+    },
+    "wyndham": {
+      "containers": 33,
+      "readings": 31427,
+      "first": "2018-06-26",
+      "last": "2021-05-03",
+      "span_days": 1043,
+      "container_days": 30659,
+      "median_days_per_container": 952.0,
+      "median_reading_gap_h": 24.0,
+      "collections_detected": 4569,
+      "daily_rises": 24273,
+      "mean_daily_rise": 0.13985086309891648,
+      "quality": {
+        "rows_raw": 31427,
+        "rows_invalid": 0,
+        "duplicates": 768
+      }
+    }
+  },
+  "heterogeneity": {
+    "mildura": {
+      "containers": 7,
+      "mean_daily_rise": 0.1009,
+      "relative_min": 0.527,
+      "relative_p10": 0.562,
+      "relative_p90": 1.658,
+      "relative_max": 1.867,
+      "relative_cv": 0.484
+    },
+    "wyndham": {
+      "containers": 32,
+      "mean_daily_rise": 0.1455,
+      "relative_min": 0.188,
+      "relative_p10": 0.471,
+      "relative_p90": 1.47,
+      "relative_max": 1.674,
+      "relative_cv": 0.417
+    },
+    "boston": {
+      "containers": 396,
+      "method": "yellow calls per hour below yellow",
+      "relative_min": 0.302,
+      "relative_p10": 0.503,
+      "relative_p90": 2.685,
+      "relative_max": 18.053,
+      "relative_cv": 0.979
+    }
+  },
+  "diurnal": {
+    "wyndham": null,
+    "mildura": {
+      "increments": 29746,
+      "share_by_hour": [
+        0.0,
+        0.0076,
+        0.0,
+        0.0017,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0131,
+        0.1032,
+        0.1055,
+        0.1077,
+        0.108,
+        0.097,
+        0.1172,
+        0.0818,
+        0.0742,
+        0.0531,
+        0.0466,
+        0.0328,
+        0.0134,
+        0.0144,
+        0.0143,
+        0.0085
+      ],
+      "day_share": 0.8608,
+      "night_share": 0.1392,
+      "model_day_share": 0.65,
+      "implied_day_factor": 1.722,
+      "implied_night_factor": 0.278
+    }
+  },
+  "weather_response": {
+    "wyndham": {
+      "observations": 24095,
+      "containers": 32,
+      "dates": 949,
+      "mean_rise_per_day": 0.14088400083004773,
+      "share_zero_rise": 0.6088815106868645,
+      "share_wet": 0.36928823407345923,
+      "temperature_range_C": [
+        9.4,
+        38.45
+      ],
+      "temperature_per_10C": {
+        "coefficient": 0.10430762850240724,
+        "standard_error": 0.035538549552117216,
+        "z": 2.9350558707929344,
+        "p": 0.003334876350467043,
+        "percent_change": 10.994185215086638,
+        "percent_change_ci95": [
+          3.5260774238755843,
+          19.0010232988866
+        ]
+      },
+      "wet": {
+        "coefficient": -0.09662729412270893,
+        "standard_error": 0.026765674221103472,
+        "z": -3.61011993662102,
+        "p": 0.00030605545403213666,
+        "percent_change": -9.210567936728575,
+        "percent_change_ci95": [
+          -13.85058831786148,
+          -4.320635354027013
+        ]
+      },
+      "restrictions": {
+        "coefficient": -0.16257831953671936,
+        "standard_error": 0.02536180011306955,
+        "z": -6.410361993703232,
+        "p": 1.4517451675149439e-10,
+        "percent_change": -15.00504800340824,
+        "percent_change_ci95": [
+          -19.12670657118536,
+          -10.673331595408698
+        ]
+      },
+      "month_effects": true
+    },
+    "mildura": {
+      "observations": 1665,
+      "containers": 7,
+      "dates": 573,
+      "mean_rise_per_day": 0.10082693808238871,
+      "share_zero_rise": 0.026426426426426425,
+      "share_wet": 0.24384384384384383,
+      "temperature_range_C": [
+        11.05,
+        40.7
+      ],
+      "temperature_per_10C": {
+        "coefficient": -0.045185830540356235,
+        "standard_error": 0.06855943220359617,
+        "z": -0.6590753319859917,
+        "p": 0.5098473953530753,
+        "percent_change": -4.418015518982521,
+        "percent_change_ci95": [
+          -16.436206308277413,
+          9.32863808257698
+        ]
+      },
+      "wet": {
+        "coefficient": 0.065120604493039,
+        "standard_error": 0.05142859091749858,
+        "z": 1.266233496412629,
+        "p": 0.20542949846841063,
+        "percent_change": 6.7287736318783375,
+        "percent_change_ci95": [
+          -3.504863924485291,
+          18.04772327643942
+        ]
+      },
+      "month_effects": true
+    }
+  },
+  "service_times": {
+    "events": 12391,
+    "vehicles": 8,
+    "days": 17,
+    "lift_s_median": 7.0,
+    "lift_s_p95": 20.0,
+    "gap_s_median": 33.5,
+    "gap_s_p90": 110.5,
+    "gap_share_below_60s": 0.7518254372559008
+  },
+  "boston": {
+    "units": 482,
+    "visits": 22264,
+    "cycles": 21765,
+    "cycles_kept": 21221,
+    "cycle_length_h": {
+      "n": 21221,
+      "median": 96.5,
+      "p75": 168.47,
+      "p90": 282.98,
+      "p99": 558.67,
+      "max": 671.42,
+      "share_over_12h": 0.9773,
+      "share_over_24h": 0.9346,
+      "share_over_48h": 0.7905,
+      "share_over_72h": 0.6377
+    },
+    "share_reaching_yellow": 1.0,
+    "share_reaching_red": 0.2821,
+    "time_to_yellow_h": {
+      "n": 21220,
+      "median": 73.65,
+      "p75": 138.87,
+      "p90": 236.74,
+      "p99": 511.53,
+      "max": 664.77,
+      "share_over_12h": 0.9221,
+      "share_over_24h": 0.8505,
+      "share_over_48h": 0.6667,
+      "share_over_72h": 0.5101
+    },
+    "time_to_red_h": {
+      "n": 5986,
+      "median": 70.64,
+      "p75": 136.21,
+      "p90": 226.65,
+      "p99": 508.3,
+      "max": 659.7,
+      "share_over_12h": 0.8605,
+      "share_over_24h": 0.7877,
+      "share_over_48h": 0.6363,
+      "share_over_72h": 0.4916
+    },
+    "wait_from_yellow_h": {
+      "n": 21220,
+      "median": 12.81,
+      "p75": 24.57,
+      "p90": 55.84,
+      "p99": 237.66,
+      "max": 647.88,
+      "share_over_12h": 0.5252,
+      "share_over_24h": 0.2572,
+      "share_over_48h": 0.1206,
+      "share_over_72h": 0.0698
+    },
+    "wait_at_full_h": {
+      "n": 5986,
+      "median": 14.37,
+      "p75": 33.33,
+      "p90": 83.55,
+      "p99": 322.07,
+      "max": 622.88,
+      "share_over_12h": 0.564,
+      "share_over_24h": 0.3177,
+      "share_over_48h": 0.1781,
+      "share_over_72h": 0.1163
+    },
+    "units_with_red": 444,
+    "unit_longest_wait_at_full_h": {
+      "n": 444,
+      "median": 73.92,
+      "p75": 171.65,
+      "p90": 321.26,
+      "p99": 558.21,
+      "max": 622.88,
+      "share_over_12h": 0.9324,
+      "share_over_24h": 0.8288,
+      "share_over_48h": 0.6532,
+      "share_over_72h": 0.5135
+    },
+    "heterogeneity": {
+      "containers": 396,
+      "method": "yellow calls per hour below yellow",
+      "relative_min": 0.302,
+      "relative_p10": 0.503,
+      "relative_p90": 2.685,
+      "relative_max": 18.053,
+      "relative_cv": 0.979
+    },
+    "yellow_day_share": 0.6894,
+    "sensitivity_any_collection_call": {
+      "cycles_kept": 22367,
+      "wait_at_full_h": {
+        "n": 6219,
+        "median": 12.82,
+        "p75": 25.23,
+        "p90": 60.53,
+        "p99": 241.14,
+        "max": 644.88,
+        "share_over_12h": 0.524,
+        "share_over_24h": 0.2653,
+        "share_over_48h": 0.1317,
+        "share_over_72h": 0.077
+      },
+      "unit_longest_wait_at_full_h": {
+        "n": 449,
+        "median": 64.77,
+        "p75": 127.43,
+        "p90": 259.97,
+        "p99": 494.53,
+        "max": 644.88,
+        "share_over_12h": 0.9354,
+        "share_over_24h": 0.8241,
+        "share_over_48h": 0.6281,
+        "share_over_72h": 0.4588
+      },
+      "heterogeneity": {
+        "containers": 402,
+        "method": "yellow calls per hour below yellow",
+        "relative_min": 0.281,
+        "relative_p10": 0.498,
+        "relative_p90": 2.49,
+        "relative_max": 12.984,
+        "relative_cv": 0.873
+      }
+    }
+  }
+}

@@ -1,8 +1,8 @@
-\begin{table}[!t]
+\begin{table}[!htbp]
 \caption{Waiting-time bound in the multi-cycle runs.}
 \label{tab:bound}
 \centering
-\small
+\footnotesize
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{llrrrrrr}
 \toprule
@@ -10,7 +10,7 @@ Load & Policy & $r$ reserved & Bound known & Largest & Bound at & Worst & Breach
  & & (smallest) & in advance (h) & backlog $M$ & backlog (h) & wait (h) & \\
 \midrule
 moderate & Insertion, full, $r = 1$ & 1 & 756 & 13 & 192 & 72 & 0 of 16 \\
-moderate & Insertion, full with ageing & 1 & 756 & 11 & 168 & 60 & 0 of 16 \\
+moderate & Insertion, full with aging & 1 & 756 & 11 & 168 & 60 & 0 of 16 \\
 moderate & Insertion, full, $r = 2$ & 2 & 396 & 13 & 120 & 72 & 0 of 16 \\
 moderate & Insertion, full, $r = 4$ & 2 & 396 & 13 & 120 & 72 & 0 of 16 \\
 moderate & Insertion, full, $r = 8$ & 2 & 396 & 13 & 120 & 72 & 0 of 16 \\
@@ -21,10 +21,18 @@ tight & Insertion, full, $r = 1$ & 1 & 756 & 11 & 168 & 72 & 0 of 16 \\
 tight & Insertion, full, $r = 4$ & 1 & 756 & 11 & 168 & 72 & 0 of 16 \\
 tight & OR-Tools, full, $r = 1$ & 1 & 756 & 10 & 156 & 84 & 0 of 16 \\
 tight & OR-Tools, full, $r = 4$ & 2 & 396 & 11 & 108 & 72 & 0 of 16 \\
-hazard & Insertion, full, $r = 1$ & 1 & 756 & 17 & 240 & 108 & 0 of 8 \\
-hazard & Insertion, full, $r = 4$ & 1 & 756 & 17 & 156 & 84 & 0 of 8 \\
-hazard & OR-Tools, full, $r = 1$ & 1 & 756 & 11 & 168 & 72 & 0 of 8 \\
+hazard & Insertion, full, $r = 1$ & 1 & 756 & 17 & 240 & 120 & 0 of 16 \\
+hazard & Insertion, full with hazard heads & 1 & 756 & 21 & 288 & 132 & 0 of 16 \\
+hazard & Insertion, full, $r = 4$ & 2 & 396 & 17 & 120 & 84 & 0 of 16 \\
+hazard & OR-Tools, full, $r = 1$ & 1 & 756 & 12 & 180 & 72 & 0 of 16 \\
+hazard & OR-Tools, full with hazard heads & 1 & 756 & 12 & 180 & 84 & 0 of 16 \\
+observed, moderate & Insertion, full, $r = 1$ & 1 & 420 & 10 & 156 & 84 & 0 of 16 \\
+observed, moderate & Insertion, full with hazard heads & 1 & 420 & 10 & 156 & 84 & 0 of 16 \\
+observed, moderate & OR-Tools, full, $r = 1$ & 1 & 420 & 9 & 144 & 84 & 0 of 16 \\
+observed, tight & Insertion, full, $r = 1$ & 1 & 420 & 6 & 108 & 84 & 0 of 16 \\
+observed, tight & Insertion, full with hazard heads & 1 & 420 & 7 & 120 & 72 & 0 of 16 \\
+observed, tight & OR-Tools, full, $r = 1$ & 1 & 420 & 7 & 120 & 72 & 0 of 16 \\
 \bottomrule
 \end{tabular}
-\par\smallskip\footnotesize Every policy that reserves queue heads; values are the largest over networks.
+\par\smallskip\footnotesize Every policy that reserves queue heads; values are the largest over networks. Observed rows replay the Wyndham record. The ablation runs repeat these policies and enter only the counts in the text.
 \end{table}

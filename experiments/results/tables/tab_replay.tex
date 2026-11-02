@@ -1,0 +1,35 @@
+\begin{table}[!htbp]
+\caption{Multi-cycle results on observed Wyndham demand.}
+\label{tab:replay}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Policy & Worst & \multicolumn{2}{c}{Wait at collection (h)} & Never & Overflow & Hazards & Served & km per \\
+\cmidrule(lr){3-4}
+ & wait (h) & mean & p95 & collected & (\%) & in cycle (\%) & per cycle & container \\
+\midrule
+\multicolumn{9}{l}{\emph{Moderate load}} \\
+Insertion, urgency & 468 & 18.9 & 44 & 4 & 0.62 & 99 & 19.9 & 0.66 \\
+Insertion, tier, unbounded & 120 & 19.0 & 46 & 0 & 0.80 & 98 & 20.0 & 0.73 \\
+Insertion, full, $r = 1$ & 84 & 19.0 & 47 & 0 & 0.86 & 87 & 20.0 & 0.72 \\
+Insertion, full with hazard heads & 84 & 19.0 & 47 & 0 & 0.90 & 86 & 20.0 & 0.72 \\
+OR-Tools, urgency & 468 & 18.4 & 44 & 4 & 0.55 & 100 & 20.3 & 0.66 \\
+OR-Tools, tier, unbounded & 120 & 18.6 & 47 & 0 & 0.66 & 93 & 20.4 & 0.74 \\
+OR-Tools, full, $r = 1$ & 84 & 18.7 & 48 & 0 & 0.72 & 84 & 20.3 & 0.74 \\
+Static sweep & 84 & 54.0 & 54 & 0 & 3.91 & 54 & 7.5 & 1.65 \\
+\addlinespace
+\multicolumn{9}{l}{\emph{Tight load}} \\
+Insertion, urgency & 468 & 18.2 & 45 & 6 & 4.87 & 98 & 20.4 & 1.01 \\
+Insertion, tier, unbounded & 204 & 18.6 & 48 & 0 & 5.29 & 97 & 20.3 & 1.07 \\
+Insertion, full, $r = 1$ & 84 & 18.6 & 50 & 0 & 5.21 & 88 & 20.3 & 1.06 \\
+Insertion, full with hazard heads & 72 & 18.6 & 50 & 0 & 5.20 & 89 & 20.3 & 1.05 \\
+OR-Tools, urgency & 468 & 17.9 & 41 & 5 & 4.72 & 97 & 20.8 & 0.97 \\
+OR-Tools, tier, unbounded & 168 & 18.3 & 48 & 0 & 4.98 & 93 & 20.7 & 1.00 \\
+OR-Tools, full, $r = 1$ & 72 & 18.3 & 50 & 0 & 4.98 & 87 & 20.6 & 1.01 \\
+Static sweep & 72 & 50.2 & 51 & 0 & 10.63 & 47 & 8.2 & 1.65 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Sixteen windows of 20 days. Worst wait is the largest over all windows and never collected the total over windows; other columns are means over windows.
+\end{table}

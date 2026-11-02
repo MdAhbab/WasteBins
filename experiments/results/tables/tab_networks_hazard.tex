@@ -1,18 +1,24 @@
-\begin{table}[!t]
+\begin{table}[!htbp]
 \caption{Longest wait (h) on each network, hazard load.}
 \label{tab:networks_hazard}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{1.8pt}
-\begin{tabular}{lrrrrrrrr}
+\begin{tabular}{lrrrrrrrrrrrrrrrr}
 \toprule
-Policy & R0 & R1 & R2 & R3 & R4 & R5 & R6 & R7 \\
+Policy & R0 & R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 & R9 & R10 & R11 & R12 & R13 & R14 & R15 \\
 \midrule
-Insertion, tier, unbounded & 180 & 96 & 168 & 144 & 192 & 180 & 144 & 228 \\
-Insertion, full, $r = 1$ & 96 & 72 & 108 & 96 & 108 & 84 & 96 & 108 \\
-Insertion, full, $r = 4$ & 72 & 60 & 72 & 72 & 84 & 72 & 60 & 84 \\
-OR-Tools, tier, unbounded & 96 & 60 & 60 & 96 & 84 & 60 & 156 & 96 \\
-OR-Tools, full, $r = 1$ & 72 & 60 & 60 & 72 & 60 & 60 & 72 & 60 \\
+Insertion, urgency & 180 & 120 & 180 & 180 & 204 & 228 & 240 & 288 & 288 & 228 & 216 & 252 & 252 & 216 & 156 & 192 \\
+Insertion, tier, unbounded & 180 & 84 & 180 & 144 & 204 & 168 & 156 & 264 & 132 & 144 & 132 & 156 & 216 & 132 & 144 & 180 \\
+Insertion, full, $r = 1$ & 96 & 72 & 120 & 108 & 108 & 96 & 96 & 108 & 96 & 96 & 108 & 96 & 108 & 84 & 84 & 84 \\
+Insertion, full, $r = 4$ & 72 & 60 & 72 & 72 & 84 & 72 & 60 & 84 & 72 & 72 & 84 & 72 & 60 & 72 & 72 & 60 \\
+Insertion, wait power & 180 & 84 & 180 & 156 & 180 & 168 & 156 & 264 & 180 & 132 & 132 & 156 & 168 & 168 & 168 & 144 \\
+Insertion, full with hazard heads & 96 & 72 & 120 & 96 & 132 & 96 & 108 & 96 & 96 & 96 & 108 & 108 & 96 & 96 & 96 & 84 \\
+OR-Tools, urgency & 168 & 96 & 168 & 180 & 144 & 120 & 240 & 168 & 120 & 180 & 216 & 252 & 180 & 204 & 168 & 168 \\
+OR-Tools, tier, unbounded & 96 & 60 & 60 & 96 & 84 & 48 & 180 & 96 & 60 & 96 & 192 & 72 & 60 & 108 & 72 & 60 \\
+OR-Tools, wait power & 108 & 60 & 48 & 72 & 84 & 48 & 168 & 96 & 60 & 108 & 144 & 72 & 60 & 108 & 72 & 60 \\
+OR-Tools, full, $r = 1$ & 72 & 60 & 60 & 72 & 60 & 60 & 72 & 60 & 48 & 60 & 60 & 60 & 60 & 72 & 60 & 60 \\
+OR-Tools, full with hazard heads & 60 & 60 & 60 & 84 & 72 & 48 & 72 & 72 & 60 & 60 & 60 & 60 & 60 & 60 & 72 & 60 \\
 \bottomrule
 \end{tabular}
 \end{table}

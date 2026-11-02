@@ -1,0 +1,26 @@
+\begin{table}[!htbp]
+\caption{Urgency-only dispatch against the full rule.}
+\label{tab:effects}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{llrrrrrrr}
+\toprule
+& & & \multicolumn{3}{c}{Longest wait} & \multicolumn{3}{c}{km per container} \\
+\cmidrule(lr){4-6}\cmidrule(lr){7-9}
+Study & Planner & Units & Change (\%) & $\delta$ & $p$ & Change (\%) & $\delta$ & $p$ \\
+\midrule
+Dhaka, moderate & Insertion & 16 & +196.1 [+164.1, +229.2] & 1.00 & 0.003 & \ensuremath{-}11.4 [\ensuremath{-}14.9, \ensuremath{-}8.4] & \ensuremath{-}0.42 & $<0.001$ \\
+Dhaka, moderate & OR-Tools & 16 & +175.0 [+147.6, +204.9] & 1.00 & 0.002 & \ensuremath{-}10.2 [\ensuremath{-}13.5, \ensuremath{-}6.9] & \ensuremath{-}0.38 & $<0.001$ \\
+Dhaka, tight & Insertion & 16 & +163.4 [+138.8, +190.5] & 1.00 & 0.003 & \ensuremath{-}2.8 [\ensuremath{-}6.1, +0.2] & \ensuremath{-}0.07 & 1.000 \\
+Dhaka, tight & OR-Tools & 16 & +237.6 [+152.2, +331.6] & 1.00 & 0.003 & \ensuremath{-}6.1 [\ensuremath{-}9.1, \ensuremath{-}3.4] & \ensuremath{-}0.22 & $<0.001$ \\
+Dhaka, hazard & Insertion & 16 & +119.2 [+98.5, +140.2] & 1.00 & 0.003 & \ensuremath{-}6.7 [\ensuremath{-}9.0, \ensuremath{-}4.3] & \ensuremath{-}0.23 & 0.001 \\
+Dhaka, hazard & OR-Tools & 16 & +178.3 [+150.6, +207.4] & 1.00 & 0.002 & \ensuremath{-}7.4 [\ensuremath{-}10.3, \ensuremath{-}4.7] & \ensuremath{-}0.26 & $<0.001$ \\
+Wyndham, moderate & Insertion & 16 & +272.3 [+200.0, +342.4] & 0.97 & 0.003 & \ensuremath{-}7.8 [\ensuremath{-}10.4, \ensuremath{-}5.2] & \ensuremath{-}0.27 & 0.003 \\
+Wyndham, moderate & OR-Tools & 16 & +368.3 [+293.5, +450.0] & 1.00 & 0.003 & \ensuremath{-}10.4 [\ensuremath{-}14.3, \ensuremath{-}6.4] & \ensuremath{-}0.41 & 0.003 \\
+Wyndham, tight & Insertion & 16 & +360.7 [+285.7, +438.6] & 1.00 & 0.003 & \ensuremath{-}5.1 [\ensuremath{-}7.7, \ensuremath{-}2.5] & \ensuremath{-}0.37 & 0.019 \\
+Wyndham, tight & OR-Tools & 16 & +344.7 [+272.0, +423.5] & 1.00 & 0.002 & \ensuremath{-}3.5 [\ensuremath{-}4.9, \ensuremath{-}2.1] & \ensuremath{-}0.28 & 0.002 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Change is the relative difference of means, urgency against the full rule, with a 95 percent bootstrap interval; $\delta$ is Cliff's delta and $p$ the Holm-adjusted Wilcoxon signed-rank $p$-value over nine metrics; Units is the number of networks or windows.
+\end{table}
